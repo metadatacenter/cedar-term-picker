@@ -1,0 +1,50 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out the picker
+        uses: actions/checkout@v4
+
+      # Pinned to the version in .nvmrc. Angular 22 accepts `^22.22.3 || ^24.15.0 || >=26`;
+      # 24 is the active LTS where 22 is in maintenance, which is the same choice CEE made.
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Lint, typecheck, unit tests, then the production build — the build last, so a
+      # failure that a cheaper check could have caught is reported by that check.
+      - name: Run the gate
+        run: npm run test:ci
+
+      # Deliberately its own step, and deliberately not part of `test:ci`.
+      #
+      # This is the one check that can start failing without anyone having changed
+      # anything: it fails on a disclosure, not on a commit. Inside the gate it would
+      # break an unrelated pull request with an error its author cannot fix there.
+      #
+      # `--omit=dev` because only runtime dependencies reach the bundle a host downloads.
+      - name: Audit what ships
+        run: npm run audit:prod

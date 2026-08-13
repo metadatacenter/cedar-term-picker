@@ -1,0 +1,17 @@
+<section class="picker">
+  <header class="bar">
+    <label class="search">
+      <span class="label">Search</span>
+      <input type="search" placeholder="Search for a term" [value]="text()" (input)="onInput($event)" />
+    </label>
+    <button type="button" (click)="onCancel()">Close</button>
+  </header>
+
+  <nav class="tabs">
+    @for (kind of kinds; track kind) {
+      <span class="tab">{{ kind }}</span>
+    }
+  </nav>
+
+  <p class="placeholder">No search is wired up yet. The current query is "{{ text() }}".</p>
+</section>

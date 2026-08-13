@@ -18,10 +18,16 @@ its own value lookup when a form is filled.
 It reads from the CEDAR terminology server, which serves ontologies, classes
 and value sets either from the versioned local store or from BioPortal.
 
+The component is published as a custom element, `<cedar-term-picker>`, rendered
+in shadow DOM so a host page's stylesheet cannot reach inside it.
+
 ## Status
 
-Design stage. The repository carries its license, conventions and this
-statement of intent; no component code has been written yet. Planned work is
-tracked in `cedar-development/ops/TERM-PICKER-ROADMAP.md`, and build, test and
-release instructions will live alongside it in
+Scaffolded, not built. The Angular 22 project stands up, the gate is green, and
+the element registers and exchanges an input and an event with its host — but
+the component itself renders a search box and four tab names over no search at
+all. Nothing reads from the terminology server yet.
+
+Planned work is tracked in `cedar-development/ops/TERM-PICKER-ROADMAP.md`, which
+also records the decisions already taken. Building, running and testing are in
 `cedar-development/ops/TERM-PICKER-RUNBOOK.md`.

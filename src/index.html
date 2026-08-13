@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>CEDAR Term Picker</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <style>
+      body {
+        margin: 0;
+        padding: 2rem;
+        font-family: system-ui, sans-serif;
+        background: #f6f8f9;
+      }
+      h1 {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      A development host, standing in for the Template Designer. It exists to exercise the
+      custom element the way a host page does: set an attribute, listen for an event. It is
+      not part of what the bundle publishes.
+    -->
+    <h1>Development host</h1>
+    <cedar-term-picker query="disease"></cedar-term-picker>
+    <script>
+      document.querySelector('cedar-term-picker').addEventListener('cancelled', () => {
+        console.log('the picker was closed without a choice');
+      });
+    </script>
+  </body>
+</html>

@@ -7,5 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing released yet. The repository holds its license and conventions while the
-component is designed.
+Nothing released yet.
+
+### Added
+
+- The Angular 22 project: a zoneless application registering `<cedar-term-picker>`
+  as a custom element in shadow DOM, with ESLint, Prettier, the Angular CLI's Vitest
+  builder and a GitHub Actions gate.
+- A placeholder component carrying the element boundary and nothing else — a `query`
+  input, a `cancelled` output, a search box and the four tab names, over no search.

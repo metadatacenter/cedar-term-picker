@@ -1,0 +1,16 @@
+/*
+  The one program that contains every source file.
+
+  tsconfig.json includes no sources of its own, tsconfig.app.json excludes the specs and
+  tsconfig.spec.json includes only them, so neither puts the whole of src/ into a single
+  program. Type-aware lint rules need that, and so does `npm run typecheck`: a file
+  reachable from neither the build entry point nor a spec is checked here or nowhere.
+*/
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["vitest/globals", "node"]
+  },
+  "include": ["src/**/*.ts"]
+}
