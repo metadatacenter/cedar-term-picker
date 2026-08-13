@@ -1,0 +1,38 @@
+// Neutral surfaces, borders and text, which _cee-tokens.scss does not carry.
+//
+// CEE has no neutral palette. Its brand values are collected in the token file this
+// sits beside; its greys are literals written where each is used, in styles-own.scss
+// and in component stylesheets. So these cannot be copied as a file — they are
+// gathered, one value at a time, from what CEE already renders. The comment on each
+// says where it was read from, at cedar-embeddable-editor commit c4ae049.
+//
+// Picker-owned, unlike the token copy: nothing here should be diffed against CEE,
+// because there is nothing upstream to diff against. Consolidating these back into
+// CEE would be a real improvement to both, and is not this repository's to make.
+
+// The border every CEE input carries — source-panels, time-picker and
+// timezone-picker all state it, as does styles-own.scss for its own controls.
+$cedar-border-control: #777;
+
+// The rule under CEE's editor header, tinted toward the brand teal rather than
+// neutral grey, which is what keeps a plain divider from reading as foreign.
+$cedar-border-rule: #d7e0df;
+
+// The lighter rule above its footer, for a separation that should carry less weight.
+$cedar-border-rule-light: #e5ebea;
+
+// The resting background of a panel, from source-panels.
+$cedar-surface-panel: #f5f5f5;
+
+// A tinted surface, from the component header — the teal equivalent of the panel grey.
+$cedar-surface-tinted: #e4f1f1;
+
+// Body text. Not a CEE value in the sense the others are: CEE declares no text
+// colour and inherits Material's default foreground, so this is what it renders
+// rather than what it states. Written down here because the picker takes no
+// Material and would otherwise fall through to the user agent's black.
+$cedar-text-primary: rgba(0, 0, 0, 0.87);
+
+// Secondary text — a hint, a count, anything supporting the line above it. From
+// the time picker and the datetime input.
+$cedar-text-muted: #555;

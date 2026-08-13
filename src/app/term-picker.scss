@@ -1,21 +1,24 @@
-// CEDAR's design values, copied from CEE — see _cee-tokens.scss.
-//
-// What the tokens cover is the type scale, the two brand palettes and a few
-// resolved colours. They carry no neutral surface, border or muted-text colour and
-// no spacing scale; in CEE those live per-component in styles-own.scss. The
-// neutrals below are therefore local and provisional, and are the part of this
-// stylesheet that still needs a decision rather than a copy.
+// CEDAR's design values. The brand and type scale are copied from CEE; the
+// neutrals are gathered from what CEE renders — see the header of each file.
 @use '../cee-tokens' as tokens;
+@use '../cedar-neutrals' as neutrals;
 
+// The host rules CEE sets on its own element, for the same reason: a component
+// dropped into someone else's page should not inherit their box model, and should
+// fit the width it is given rather than assume one.
 :host {
   display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   font-family: tokens.$cee-font-family;
   font-size: tokens.$cee-font-size;
-  color: #202124;
+  line-height: normal;
+  color: neutrals.$cedar-text-primary;
 }
 
 .picker {
-  border: 1px solid #d0d7dc;
+  border: 1px solid neutrals.$cedar-border-rule;
   border-radius: 4px;
   padding: 1rem;
 }
@@ -42,9 +45,10 @@
 
 input {
   padding: 0.5rem;
-  border: 1px solid #b0bac1;
+  border: 1px solid neutrals.$cedar-border-control;
   border-radius: 3px;
   font: inherit;
+  color: inherit;
 
   &:focus {
     outline: 2px solid tokens.$cee-color-primary;
@@ -66,7 +70,7 @@ button {
   display: flex;
   gap: 1.5rem;
   margin-top: 1rem;
-  border-bottom: 1px solid #d0d7dc;
+  border-bottom: 1px solid neutrals.$cedar-border-rule;
 }
 
 .tab {
@@ -76,6 +80,6 @@ button {
 }
 
 .placeholder {
-  color: #5f6368;
+  color: neutrals.$cedar-text-muted;
   font-size: tokens.$cee-font-size-small;
 }

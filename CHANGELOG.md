@@ -20,3 +20,5 @@ Nothing released yet.
   brand palettes in `_cee-tokens.scss`, and Roboto at three weights embedded as font
   faces. A `FontRegistrar` component registers them in the document, because browsers
   ignore `@font-face` declared inside a shadow root.
+- `_cedar-neutrals.scss`, the surfaces, borders and text colours CEE renders but does
+  not collect into a palette, gathered here with each value's source recorded.
