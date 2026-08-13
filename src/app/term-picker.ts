@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, linkedSignal, output } from '@angular/core';
+import { FontRegistrar } from './font-registrar/font-registrar';
 
 /** The tag the host page uses, and the component's own selector. */
 export const TERM_PICKER_TAG = 'cedar-term-picker';
@@ -20,6 +21,7 @@ export type SearchKind = (typeof SEARCH_KINDS)[number];
  */
 @Component({
   selector: TERM_PICKER_TAG,
+  imports: [FontRegistrar],
   templateUrl: './term-picker.html',
   styleUrl: './term-picker.scss',
   encapsulation: ViewEncapsulation.ShadowDom,

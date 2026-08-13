@@ -16,3 +16,7 @@ Nothing released yet.
   builder and a GitHub Actions gate.
 - A placeholder component carrying the element boundary and nothing else — a `query`
   input, a `cancelled` output, a search box and the four tab names, over no search.
+- CEDAR's design values, copied from the CEDAR Embeddable Editor: the type scale and
+  brand palettes in `_cee-tokens.scss`, and Roboto at three weights embedded as font
+  faces. A `FontRegistrar` component registers them in the document, because browsers
+  ignore `@font-face` declared inside a shadow root.

@@ -1,11 +1,16 @@
-/*
-  Placeholder styling, enough to show that shadow DOM is doing its job and no more.
-  The theming surface — which CSS custom properties the host may set — is undecided,
-  so nothing here should be treated as the beginning of one.
-*/
+// CEDAR's design values, copied from CEE — see _cee-tokens.scss.
+//
+// What the tokens cover is the type scale, the two brand palettes and a few
+// resolved colours. They carry no neutral surface, border or muted-text colour and
+// no spacing scale; in CEE those live per-component in styles-own.scss. The
+// neutrals below are therefore local and provisional, and are the part of this
+// stylesheet that still needs a decision rather than a copy.
+@use '../cee-tokens' as tokens;
+
 :host {
   display: block;
-  font-family: system-ui, sans-serif;
+  font-family: tokens.$cee-font-family;
+  font-size: tokens.$cee-font-size;
   color: #202124;
 }
 
@@ -29,9 +34,10 @@
 }
 
 .label {
-  font-size: 0.75rem;
+  font-size: tokens.$cee-font-size-small;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  color: tokens.$cee-color-component-title;
 }
 
 input {
@@ -39,6 +45,21 @@ input {
   border: 1px solid #b0bac1;
   border-radius: 3px;
   font: inherit;
+
+  &:focus {
+    outline: 2px solid tokens.$cee-color-primary;
+    outline-offset: 1px;
+  }
+}
+
+button {
+  font: inherit;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid tokens.$cee-color-primary;
+  border-radius: 3px;
+  background: tokens.$cee-color-primary;
+  color: tokens.$cee-color-on-primary;
+  cursor: pointer;
 }
 
 .tabs {
@@ -50,9 +71,11 @@ input {
 
 .tab {
   padding-bottom: 0.5rem;
+  font-weight: 500;
+  color: tokens.$cee-color-component-title;
 }
 
 .placeholder {
   color: #5f6368;
-  font-size: 0.875rem;
+  font-size: tokens.$cee-font-size-small;
 }
