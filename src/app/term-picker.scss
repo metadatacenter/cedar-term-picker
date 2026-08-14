@@ -1,11 +1,10 @@
-// CEDAR's design values. The brand and type scale are copied from CEE; the
-// neutrals are gathered from what CEE renders — see the header of each file.
+// CEDAR's design values. The brand and type scale are copied from CEE; the neutrals are gathered
+// from what CEE renders — see the header of each file.
 @use '../cee-tokens' as tokens;
 @use '../cedar-neutrals' as neutrals;
 
-// The host rules CEE sets on its own element, for the same reason: a component
-// dropped into someone else's page should not inherit their box model, and should
-// fit the width it is given rather than assume one.
+// The host rules CEE sets on its own element, for the same reason: a component dropped into someone
+// else's page should not inherit their box model, and should fit the width it is given.
 :host {
   display: block;
   box-sizing: border-box;
@@ -17,10 +16,17 @@
   color: neutrals.$cedar-text-primary;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
 .picker {
   border: 1px solid neutrals.$cedar-border-rule;
   border-radius: 4px;
   padding: 1rem;
+  background: #fff;
 }
 
 .bar {
@@ -34,6 +40,7 @@
   flex-direction: column;
   gap: 0.25rem;
   flex: 1;
+  min-width: 0;
 }
 
 .label {
@@ -49,6 +56,7 @@ input {
   border-radius: 3px;
   font: inherit;
   color: inherit;
+  min-width: 0;
 
   &:focus {
     outline: 2px solid tokens.$cee-color-primary;
@@ -58,28 +66,181 @@ input {
 
 button {
   font: inherit;
-  padding: 0.5rem 0.75rem;
+  font-size: tokens.$cee-font-size-small;
+  padding: 0.35rem 0.7rem;
   border: 1px solid tokens.$cee-color-primary;
   border-radius: 3px;
   background: tokens.$cee-color-primary;
   color: tokens.$cee-color-on-primary;
   cursor: pointer;
+  white-space: nowrap;
+
+  &.ghost {
+    background: transparent;
+    color: tokens.$cee-color-primary;
+  }
 }
 
 .tabs {
   display: flex;
-  gap: 1.5rem;
+  align-items: center;
+  gap: 0.25rem;
   margin-top: 1rem;
   border-bottom: 1px solid neutrals.$cedar-border-rule;
 }
 
 .tab {
-  padding-bottom: 0.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: neutrals.$cedar-text-muted;
+  font-size: tokens.$cee-font-size;
+  padding: 0.4rem 0.6rem;
+
+  &.active {
+    color: tokens.$cee-color-component-title;
+    border-bottom-color: tokens.$cee-color-primary;
+    font-weight: 500;
+  }
+}
+
+.badge {
+  margin-left: 0.35rem;
+  font-size: tokens.$cee-font-size-small;
+  color: neutrals.$cedar-text-muted;
+}
+
+.working {
+  margin-left: auto;
+  font-size: tokens.$cee-font-size-small;
+  color: neutrals.$cedar-text-muted;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.2rem;
+  border-bottom: 1px solid neutrals.$cedar-border-rule-light;
+
+  &.group {
+    display: block;
+    padding: 0;
+  }
+}
+
+.rowhead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  text-align: left;
+  padding: 0.6rem 0.2rem;
+  font-size: tokens.$cee-font-size;
+}
+
+.twist {
+  color: neutrals.$cedar-text-muted;
+  width: 0.8em;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+  display: block;
+}
+
+.title {
+  font-size: tokens.$cee-font-size-lead;
   font-weight: 500;
+
+  &.obsolete {
+    color: neutrals.$cedar-text-muted;
+  }
+}
+
+.who {
+  margin-left: 0.4rem;
+  font-size: tokens.$cee-font-size-small;
   color: tokens.$cee-color-component-title;
 }
 
-.placeholder {
+.dim {
+  color: neutrals.$cedar-text-muted;
+}
+
+.sub,
+.meta {
+  display: block;
+  font-size: tokens.$cee-font-size-small;
+  color: neutrals.$cedar-text-muted;
+  margin-top: 0.15rem;
+}
+
+.path {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip {
+  display: inline-block;
+  background: neutrals.$cedar-surface-tinted;
+  color: tokens.$cee-color-component-title;
+  font-size: tokens.$cee-font-size-small;
+  padding: 0.05rem 0.4rem;
+  border-radius: 3px;
+  margin-right: 0.35rem;
+
+  &.warn {
+    background: #fff3cd;
+    color: tokens.$cee-color-warning;
+  }
+}
+
+.count {
+  text-align: right;
+  white-space: nowrap;
+
+  b {
+    font-size: tokens.$cee-font-size-heading;
+    font-weight: 500;
+  }
+}
+
+.children {
+  background: neutrals.$cedar-surface-panel;
+  padding: 0.2rem 0.5rem 0.4rem 2rem;
+}
+
+.child {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid neutrals.$cedar-border-rule-light;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.notice {
+  background: neutrals.$cedar-surface-panel;
+  border-left: 3px solid tokens.$cee-color-warning;
   color: neutrals.$cedar-text-muted;
   font-size: tokens.$cee-font-size-small;
+  padding: 0.5rem 0.6rem;
+  margin: 0.75rem 0 0;
+}
+
+.empty {
+  color: neutrals.$cedar-text-muted;
+  font-size: tokens.$cee-font-size-small;
+  padding: 1rem 0.2rem;
 }

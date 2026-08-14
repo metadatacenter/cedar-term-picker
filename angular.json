@@ -63,7 +63,8 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "options": {
-            "port": 4500
+            "port": 4500,
+            "proxyConfig": "proxy.conf.json"
           },
           "configurations": {
             "production": {
@@ -84,7 +85,10 @@
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
-            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
+            ]
           }
         }
       }

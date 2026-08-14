@@ -3,17 +3,159 @@
 <section class="picker">
   <header class="bar">
     <label class="search">
-      <span class="label">Search</span>
-      <input type="search" placeholder="Search for a term" [value]="text()" (input)="onInput($event)" />
+      <span class="label">Find a constraint for this field</span>
+      <input
+        type="search"
+        placeholder="Search for a term, a branch, a vocabulary or a value set"
+        [value]="text()"
+        (input)="onInput($event)"
+      />
     </label>
-    <button type="button" (click)="onCancel()">Close</button>
+    <button type="button" class="ghost" (click)="onCancel()">Close</button>
   </header>
 
   <nav class="tabs">
-    @for (kind of kinds; track kind) {
-      <span class="tab">{{ kind }}</span>
+    @for (tab of tabs; track tab) {
+      <button
+        type="button"
+        class="tab"
+        [class.active]="activeTab() === tab"
+        (click)="activeTab.set(tab)"
+      >
+        {{ tabLabels[tab] }}
+        @if (counts()[tab]; as count) {
+          <span class="badge">{{ count }}</span>
+        }
+      </button>
+    }
+    @if (searching()) {
+      <span class="working">searching…</span>
     }
   </nav>
 
-  <p class="placeholder">No search is wired up yet. The current query is "{{ text() }}".</p>
+  @if (error(); as message) {
+    <p class="notice">{{ message }}</p>
+  }
+
+  @for (source of unavailable(); track source.sourceAcronym) {
+    <p class="notice">
+      {{ source.sourceAcronym }} was not searched — {{ source.reason }}. Its terms are absent from
+      these results rather than missing from the vocabulary.
+    </p>
+  }
+
+  @switch (activeTab()) {
+    @case ('class') {
+      @for (group of labelGroups(); track group.label) {
+        <div class="row group" [class.open]="expanded() === group.label">
+          <button type="button" class="rowhead" (click)="toggle(group.label)">
+            <span class="twist">{{ expanded() === group.label ? '▾' : '▸' }}</span>
+            <span class="grow">
+              <span class="title" [class.obsolete]="group.hits[0].obsolete">{{ group.label }}</span>
+              @if (group.hits[0].obsolete) {
+                <span class="chip warn">obsolete</span>
+              }
+              <span class="sub">
+                @if (group.hits[0].matchedLabels?.length) {
+                  <span class="chip">matched {{ group.hits[0].matchedLabels![0].label }}
+                    @if (group.hits[0].matchedLabels![0].language) {
+                      · {{ group.hits[0].matchedLabels![0].language }}
+                    }
+                  </span>
+                }
+                in {{ group.hits.length }} {{ group.hits.length === 1 ? 'vocabulary' : 'vocabularies' }} on this page
+              </span>
+            </span>
+          </button>
+          @if (expanded() === group.label) {
+            <div class="children">
+              @for (hit of group.hits; track hit.termIri) {
+                <div class="child">
+                  <span class="grow">
+                    <span class="who">{{ hit.sourceAcronym }}</span>
+                    <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
+                    <span class="meta">
+                      {{ hit.descendantCount }} beneath · v{{ versionOf(hit.sourceAcronym) }}
+                      @if (hit.replacedBy) {
+                        · replaced by {{ hit.replacedBy.termLabel ?? hit.replacedBy.termIri }}
+                      }
+                    </span>
+                  </span>
+                  <button type="button" (click)="choose(hit)">Use</button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      } @empty {
+        <p class="empty">No terms match.</p>
+      }
+    }
+
+    @case ('branch') {
+      @for (hit of branches(); track hit.termBaseIri) {
+        <div class="row">
+          <span class="grow">
+            <span class="title">{{ hit.termBaseLabel }}</span>
+            <span class="who">{{ hit.sourceAcronym }}</span>
+            @if (tailOf(hit.path); as tail) {
+              <span class="meta path">{{ tail }}</span>
+            }
+            @if (labelsOf(hit.examples); as examples) {
+              <span class="sub">{{ examples }}…</span>
+            }
+          </span>
+          <span class="count">
+            <b>{{ hit.descendantCount.toLocaleString() }}</b>
+            <span class="meta">beneath</span>
+          </span>
+          <button type="button" (click)="choose(hit)">Use</button>
+        </div>
+      } @empty {
+        <p class="empty">No branches match. A branch is a term with something beneath it.</p>
+      }
+    }
+
+    @case ('ontology') {
+      @for (hit of ontologies(); track hit.sourceAcronym) {
+        <div class="row">
+          <span class="grow">
+            <span class="title">{{ sourceName(hit.sourceAcronym) }}</span>
+            <span class="who">{{ hit.sourceAcronym }}</span>
+            <span class="sub">
+              @if (hit.matchType === 'terms') {
+                {{ hit.matchCount?.toLocaleString() }} matching terms
+              } @else {
+                <span class="chip">named this</span>
+              }
+              · v{{ versionOf(hit.sourceAcronym) }}
+            </span>
+          </span>
+          <button type="button" (click)="choose(hit)">Use</button>
+        </div>
+      } @empty {
+        <p class="empty">No vocabulary is named this, and none of them matched terms.</p>
+      }
+    }
+
+    @case ('valueSet') {
+      @for (hit of valueSets(); track hit.termBaseIri) {
+        <div class="row">
+          <span class="grow">
+            <span class="title">{{ hit.termBaseLabel }}</span>
+            <span class="who">{{ hit.sourceAcronym }}</span>
+            <span class="sub">
+              {{ hit.termCount }} values
+              @if (labelsOf(hit.matchedTerms); as matched) {
+                — {{ matched }}
+              }
+            </span>
+          </span>
+          <button type="button" (click)="choose(hit)">Use</button>
+        </div>
+      } @empty {
+        <p class="empty">No value set matches.</p>
+      }
+    }
+  }
 </section>
