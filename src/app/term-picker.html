@@ -208,8 +208,13 @@
             <span class="who">{{ hit.sourceAcronym }}</span>
           </span>
           <span class="meta inline">
+            @if (hit.matchType !== 'terms') {
+              named ·
+            }
             @if (hit.matchCount) {
-              {{ hit.matchCount.toLocaleString() }} terms
+              {{ hit.matchCount.toLocaleString() }} terms inside
+            } @else {
+              no terms match
             }
           </span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
