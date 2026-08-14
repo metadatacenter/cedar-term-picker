@@ -245,6 +245,45 @@ mark {
   }
 }
 
+// Stepping back through releases. Muted until an author steps off latest, at which point the row is
+// carrying a decision and says so.
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  white-space: nowrap;
+
+  &.pinned .version {
+    background: neutrals.$cedar-surface-tinted;
+    color: tokens.$cee-color-component-title;
+    border-radius: 3px;
+    padding: 0 0.25rem;
+    font-weight: 500;
+  }
+}
+
+.version {
+  font-size: tokens.$cee-font-size-small;
+  color: neutrals.$cedar-text-muted;
+  min-width: 4.5rem;
+  text-align: center;
+}
+
+.step {
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: tokens.$cee-color-primary;
+  font-size: tokens.$cee-font-size-lead;
+  line-height: 1;
+  padding: 0 0.25rem;
+
+  &:disabled {
+    color: neutrals.$cedar-border-control;
+    cursor: default;
+  }
+}
+
 .notice {
   background: neutrals.$cedar-surface-panel;
   border-left: 3px solid tokens.$cee-color-warning;

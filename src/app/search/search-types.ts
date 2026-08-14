@@ -38,6 +38,8 @@ export interface SearchQuery {
   readonly lang?: string;
   readonly page?: number;
   readonly pageSize?: number;
+  /** Ask each source block for the versions it can be pinned to. Off unless a row is stepping. */
+  readonly includeVersions?: boolean;
 }
 
 export interface VersionInfo {
@@ -55,6 +57,10 @@ export interface SourceBlock {
   readonly served: 'local' | 'proxied' | 'unavailable';
   readonly pinnable: boolean;
   readonly version?: VersionInfo;
+  /** How many versions the store holds, so a row knows whether stepping back is possible. */
+  readonly versionCount?: number;
+  /** The versions themselves, newest first, when the request asked for them. */
+  readonly versions?: readonly VersionInfo[];
   readonly reason?: string;
 }
 
@@ -115,6 +121,15 @@ export interface ValueSetHit extends HitBase {
  * row that reads `termBaseIri` cannot be handed a class.
  */
 export type Hit = ClassHit | BranchHit | OntologyHit | ValueSetHit;
+
+/**
+ * What the picker emits: the entry the author chose, carrying the version they pinned.
+ *
+ * A hit is a constraint entry plus the evidence for choosing it, and this is the entry with the one
+ * thing the search could not know — which version the author settled on. Absent means latest, which
+ * freeze-on-publish resolves when the template is published.
+ */
+export type SelectedConstraint = Hit & { readonly version?: VersionInfo };
 
 export interface TypeResults {
   readonly totalCount: number;

@@ -131,6 +131,77 @@ describe('TermPicker', () => {
     expect(notice?.textContent).toContain('sourceUnknown');
   });
 
+  it('offers a stepper only where there is more than one version to step to', async () => {
+    client.response = {
+      ...client.response,
+      sources: [
+        { ...client.response.sources[0], versionCount: 3 },
+        { ...client.response.sources[1], versionCount: 1 },
+        client.response.sources[2],
+      ],
+      results: {
+        branch: {
+          totalCount: 2,
+          countCapped: false,
+          page: 1,
+          pageSize: 25,
+          collection: [
+            {
+              type: 'branch',
+              sourceSystem: 'bioportal',
+              sourceAcronym: 'NCIT',
+              termBaseIri: 'http://ncit/Melanoma',
+              termBaseLabel: 'Melanoma',
+              descendantCount: 321,
+              obsolete: false,
+            },
+            {
+              type: 'branch',
+              sourceSystem: 'bioportal',
+              sourceAcronym: 'DOID',
+              termBaseIri: 'http://doid/melanoma',
+              termBaseLabel: 'melanoma',
+              descendantCount: 31,
+              obsolete: false,
+            },
+          ],
+        },
+      },
+    };
+    const fixture = TestBed.createComponent(TermPicker);
+    fixture.componentRef.setInput('query', 'melanoma');
+    await fixture.whenStable();
+    await settle();
+    await fixture.whenStable();
+
+    shadow(fixture).querySelectorAll<HTMLButtonElement>('.tab')[1].click();
+    await fixture.whenStable();
+
+    // One version is nothing to step through, so that row shows the version and no controls.
+    expect(shadow(fixture).querySelectorAll('.stepper').length).toBe(1);
+    expect(shadow(fixture).querySelectorAll('.version').length).toBe(2);
+  });
+
+  it('emits no version while the author stays on latest', async () => {
+    const fixture = TestBed.createComponent(TermPicker);
+    fixture.componentRef.setInput('query', 'melanoma');
+    await fixture.whenStable();
+    await settle();
+    await fixture.whenStable();
+
+    let emitted: unknown = null;
+    fixture.componentInstance.selected.subscribe((constraint) => (emitted = constraint));
+    shadow(fixture).querySelector<HTMLButtonElement>('.rowhead')?.click();
+    await fixture.whenStable();
+    const use = [...shadow(fixture).querySelectorAll<HTMLButtonElement>('.child button')][0];
+    use?.click();
+
+    // Freeze-on-publish resolves an unpinned constraint at publish time, so latest keeps meaning
+    // latest until then. Writing today's version instead would silently pin it.
+    expect(emitted).not.toBeNull();
+    expect((emitted as { version?: unknown }).version).toBeUndefined();
+  });
+
   it('tells the host when the author closes without choosing', async () => {
     const fixture = TestBed.createComponent(TermPicker);
     await fixture.whenStable();

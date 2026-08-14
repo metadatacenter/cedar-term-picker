@@ -10,6 +10,7 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { FontRegistrar } from './font-registrar/font-registrar';
 import { TerminologyClient } from './search/terminology-client';
 import {
@@ -23,7 +24,9 @@ import {
   TAB_LABELS,
   TAB_ORDER,
   TermRef,
+  SelectedConstraint,
   ValueSetHit,
+  VersionInfo,
   isBranchHit,
   isClassHit,
   isOntologyHit,
@@ -54,7 +57,7 @@ export interface LabelGroup {
 
 @Component({
   selector: TERM_PICKER_TAG,
-  imports: [FontRegistrar],
+  imports: [FontRegistrar, NgTemplateOutlet],
   templateUrl: './term-picker.html',
   styleUrl: './term-picker.scss',
   encapsulation: ViewEncapsulation.ShadowDom,
@@ -67,7 +70,7 @@ export class TermPicker {
   readonly query = input('');
 
   /** The constraint the author chose, in the shape the template will store. */
-  readonly selected = output<Hit>();
+  readonly selected = output<SelectedConstraint>();
 
   /** Emitted when the author closes the picker without choosing anything. */
   readonly cancelled = output<void>();
@@ -78,6 +81,19 @@ export class TermPicker {
   protected readonly error = signal<string | null>(null);
   protected readonly searching = signal(false);
   protected readonly expanded = signal<string | null>(null);
+
+  /**
+   * The version an author has stepped an ontology to, keyed by acronym.
+   *
+   * Absent means latest, and absent is what a constraint records: freeze-on-publish resolves an
+   * unpinned constraint at publish time, so latest keeps meaning latest until the template is
+   * published. An entry appears only when the author steps off latest, which is the difference
+   * between accepting the default and choosing today's version.
+   */
+  private readonly pinned = signal<ReadonlyMap<string, VersionInfo>>(new Map());
+
+  /** Version histories, fetched once per ontology when a row first steps. */
+  private readonly histories = signal<ReadonlyMap<string, readonly VersionInfo[]>>(new Map());
 
   protected readonly tabs = TAB_ORDER;
   protected readonly tabLabels = TAB_LABELS;
@@ -202,9 +218,76 @@ export class TermPicker {
     return this.sourceOf(acronym)?.sourceName ?? acronym;
   }
 
+  /** What the row shows: the version stepped to, else the one that answered. */
   protected versionOf(acronym: string): string {
-    const version = this.sourceOf(acronym)?.version;
+    return TermPicker.nameOf(this.pinned().get(acronym) ?? this.sourceOf(acronym)?.version);
+  }
+
+  /**
+   * A version named the way an author recognises it.
+   *
+   * Never the content hash. The hash is what makes a pin reproducible and is meaningless to read;
+   * the declared version and the release date are what identify a release to a person.
+   */
+  private static nameOf(version: VersionInfo | undefined): string {
     return version?.declaredVersion ?? version?.effectiveDate?.slice(0, 10) ?? 'latest';
+  }
+
+  /** Whether this ontology has anything to step back to. */
+  protected steppable(acronym: string): boolean {
+    const source = this.sourceOf(acronym);
+    return source?.pinnable === true && (source.versionCount ?? 1) > 1;
+  }
+
+  protected isPinned(acronym: string): boolean {
+    return this.pinned().has(acronym);
+  }
+
+  /** Where this ontology sits in its history: 0 is current. */
+  private positionOf(acronym: string): number {
+    const history = this.histories().get(acronym);
+    const current = this.pinned().get(acronym);
+    if (!history || !current) {
+      return 0;
+    }
+    const at = history.findIndex((version) => version.id === current.id);
+    return at < 0 ? 0 : at;
+  }
+
+  /**
+   * Steps an ontology back through its releases, or forward again.
+   *
+   * The history is fetched on the first step rather than with the search: a corpus-wide query
+   * touches a hundred ontologies and an author steps one.
+   */
+  protected async step(acronym: string, by: 1 | -1): Promise<void> {
+    let history = this.histories().get(acronym);
+    if (!history) {
+      const response = await this.client.search({
+        query: this.text().trim(),
+        types: ['ontology'],
+        sources: [{ sourceAcronym: acronym }],
+        includeVersions: true,
+        pageSize: 1,
+      });
+      history = response.sources.find((s) => s.sourceAcronym === acronym)?.versions ?? [];
+      this.histories.update((map) => new Map(map).set(acronym, history ?? []));
+    }
+    if (history.length === 0) {
+      return;
+    }
+    const next = Math.min(Math.max(this.positionOf(acronym) + by, 0), history.length - 1);
+    this.pinned.update((map) => {
+      const updated = new Map(map);
+      // Stepping back to current unpins rather than pinning to today's version. Writing nothing is
+      // what keeps "latest" meaning latest until the template is published.
+      if (next === 0) {
+        updated.delete(acronym);
+      } else {
+        updated.set(acronym, history[next]);
+      }
+      return updated;
+    });
   }
 
   /** The last steps of a branch's path: the root never disambiguates, the parents do. */
@@ -248,8 +331,15 @@ export class TermPicker {
     this.expanded.update((open) => (open === label ? null : label));
   }
 
+  /**
+   * Emits the constraint, carrying a version only when the author stepped off latest.
+   *
+   * A class is never versioned: it has no snapshot of its own, so a version on it would name
+   * something that does not exist.
+   */
   protected choose(hit: Hit): void {
-    this.selected.emit(hit);
+    const version = hit.type === 'class' ? undefined : this.pinned().get(hit.sourceAcronym);
+    this.selected.emit(version === undefined ? hit : { ...hit, version });
   }
 
   protected onCancel(): void {
