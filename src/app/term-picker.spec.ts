@@ -177,6 +177,14 @@ describe('TermPicker', () => {
     shadow(fixture).querySelectorAll<HTMLButtonElement>('.tab')[1].click();
     await fixture.whenStable();
 
+    // Both branches carry the same label, so they fold into one row and the ontologies sit inside it.
+    const rows = shadow(fixture).querySelectorAll('.rowhead');
+    expect(rows.length).toBe(1);
+    expect(rows[0].textContent).toContain('2 ontologies');
+
+    rows[0].dispatchEvent(new Event('click'));
+    await fixture.whenStable();
+
     // One version is nothing to step through, so that row shows the version and no controls.
     expect(shadow(fixture).querySelectorAll('.stepper').length).toBe(1);
     expect(shadow(fixture).querySelectorAll('.version').length).toBe(2);

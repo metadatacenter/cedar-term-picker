@@ -47,11 +47,17 @@ const DEBOUNCE_MS = 250;
  * directly. The count is exact rather than a property of the page: the terms results are paged by
  * distinct label and carry every hit of the labels on the page, so a fold here sees the whole group.
  */
-/** One branch label within one ontology, and the positions the ontology gives it. */
+/**
+ * One branch label, and every place the corpus offers it.
+ *
+ * Folded across ontologies as well as within one, so "melanoma" is a row rather than a hundred.
+ * A position is an ontology plus a parent: a hundred ontologies each name melanoma, and RH-MESH
+ * names it four times over at different points in its tree, so the count of positions and the count
+ * of ontologies are not the same number and the row says both when they differ.
+ */
 export interface BranchGroup {
-  readonly key: string;
   readonly label: string;
-  readonly acronym: string;
+  readonly ontologyCount: number;
   readonly hits: readonly BranchHit[];
 }
 
@@ -208,19 +214,19 @@ export class TermPicker {
   });
 
   /**
-   * Branches, folded per ontology.
+   * Branches, folded by label.
    *
-   * A branch's label repeats within one vocabulary, not only across them: a thesaurus can materialise
-   * a concept once per position in its hierarchy, and RH-MESH does it 11,528 times — four "melanoma"
-   * branches, two of which agree on parent and descendant count and so are indistinguishable on a
-   * row. Folding by ontology and label puts the positions inside one row, where their parents tell
-   * them apart, which is also what makes IRAEO's fifteen "Disease" classes one row rather than
-   * fifteen.
+   * The same fold the terms tab uses, for the same reason and then one more. A common label repeats
+   * across ontologies — a hundred of them name melanoma — and it repeats *within* one, because a
+   * thesaurus can materialise a concept once per position in its hierarchy: RH-MESH does that 11,528
+   * times, and its four "melanoma" branches include two that agree on parent and on descendant count
+   * and so cannot be told apart at all. One row per label, opening onto the ontologies and the
+   * positions each gives it.
    */
   protected readonly branchGroups = computed<readonly BranchGroup[]>(() => {
     const groups = new Map<string, BranchHit[]>();
     for (const hit of this.hitsOf('branch').filter(isBranchHit)) {
-      const key = `${hit.sourceAcronym}\u0000${hit.termBaseLabel.toLocaleLowerCase()}`;
+      const key = hit.termBaseLabel.toLocaleLowerCase();
       const group = groups.get(key);
       if (group) {
         group.push(hit);
@@ -229,9 +235,8 @@ export class TermPicker {
       }
     }
     return [...groups.values()].map((hits) => ({
-      key: `${hits[0].sourceAcronym}\u0000${hits[0].termBaseLabel.toLocaleLowerCase()}`,
       label: hits[0].termBaseLabel,
-      acronym: hits[0].sourceAcronym,
+      ontologyCount: new Set(hits.map((hit) => hit.sourceAcronym)).size,
       hits,
     }));
   });
