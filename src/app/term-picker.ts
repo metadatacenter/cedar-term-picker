@@ -47,6 +47,14 @@ const DEBOUNCE_MS = 250;
  * directly. The count is exact rather than a property of the page: the terms results are paged by
  * distinct label and carry every hit of the labels on the page, so a fold here sees the whole group.
  */
+/** One branch label within one ontology, and the positions the ontology gives it. */
+export interface BranchGroup {
+  readonly key: string;
+  readonly label: string;
+  readonly acronym: string;
+  readonly hits: readonly BranchHit[];
+}
+
 export interface LabelGroup {
   /** What the row is titled: the term's label, or the name that matched when the label is a code. */
   readonly label: string;
@@ -150,7 +158,9 @@ export class TermPicker {
       if (!type) {
         continue;
       }
-      const collapsed = kind === 'class' ? type.distinctLabelCount : undefined;
+      // Terms and branches both fold, so both badges count distinct labels rather than hits. The
+      // hit count saturates on any query worth typing and says the same thing every time.
+      const collapsed = type.distinctLabelCount;
       const value = collapsed ?? type.totalCount;
       const capped = collapsed === undefined ? type.countCapped : type.distinctLabelCountCapped;
       counts[kind] = capped ? `${value.toLocaleString()}+` : value.toLocaleString();
@@ -197,7 +207,34 @@ export class TermPicker {
     });
   });
 
-  protected readonly branches = computed(() => this.hitsOf('branch').filter(isBranchHit));
+  /**
+   * Branches, folded per ontology.
+   *
+   * A branch's label repeats within one vocabulary, not only across them: a thesaurus can materialise
+   * a concept once per position in its hierarchy, and RH-MESH does it 11,528 times — four "melanoma"
+   * branches, two of which agree on parent and descendant count and so are indistinguishable on a
+   * row. Folding by ontology and label puts the positions inside one row, where their parents tell
+   * them apart, which is also what makes IRAEO's fifteen "Disease" classes one row rather than
+   * fifteen.
+   */
+  protected readonly branchGroups = computed<readonly BranchGroup[]>(() => {
+    const groups = new Map<string, BranchHit[]>();
+    for (const hit of this.hitsOf('branch').filter(isBranchHit)) {
+      const key = `${hit.sourceAcronym}\u0000${hit.termBaseLabel.toLocaleLowerCase()}`;
+      const group = groups.get(key);
+      if (group) {
+        group.push(hit);
+      } else {
+        groups.set(key, [hit]);
+      }
+    }
+    return [...groups.values()].map((hits) => ({
+      key: `${hits[0].sourceAcronym}\u0000${hits[0].termBaseLabel.toLocaleLowerCase()}`,
+      label: hits[0].termBaseLabel,
+      acronym: hits[0].sourceAcronym,
+      hits,
+    }));
+  });
   protected readonly ontologies = computed(() => this.hitsOf('ontology').filter(isOntologyHit));
   protected readonly valueSets = computed(() => this.hitsOf('valueSet').filter(isValueSetHit));
 
@@ -314,6 +351,14 @@ export class TermPicker {
     }
     const end = at + this.text().trim().length;
     return [name.slice(0, at), name.slice(at, end), name.slice(end)];
+  }
+
+  /** The range a folded branch covers, so the row says what it holds without listing its positions. */
+  protected spanOf(hits: readonly BranchHit[]): string {
+    const counts = hits.map((hit) => hit.descendantCount);
+    const low = Math.min(...counts);
+    const high = Math.max(...counts);
+    return low === high ? low.toLocaleString() : `${low.toLocaleString()}–${high.toLocaleString()}`;
   }
 
   protected labelsOf(refs: readonly TermRef[] | undefined, limit = 4): string {
