@@ -293,6 +293,14 @@ mark {
   margin: 0.75rem 0 0;
 }
 
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0 0.1rem;
+}
+
 .empty {
   color: neutrals.$cedar-text-muted;
   font-size: tokens.$cee-font-size-small;

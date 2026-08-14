@@ -39,6 +39,9 @@ export const TERM_PICKER_TAG = 'cedar-term-picker';
 /** How long the author stops typing before a search runs. */
 const DEBOUNCE_MS = 250;
 
+/** Labels per page for the folding tabs, rows per page for the rest. */
+const PAGE_SIZE = 25;
+
 /**
  * One label, and the ontologies that offer it.
  *
@@ -97,6 +100,16 @@ export class TermPicker {
   protected readonly expanded = signal<string | null>(null);
 
   /**
+   * Which page each tab is showing.
+   *
+   * Per tab rather than one for the picker: the tabs count different things and an author reading
+   * page three of the terms has not asked to be on page three of the ontologies. Paging fetches
+   * that one type rather than repeating the search, which is also why a later page's sources have
+   * to be merged into the envelope — a row on page three names an ontology page one never did.
+   */
+  protected readonly pages = signal<Readonly<Partial<Record<SearchKind, number>>>>({});
+
+  /**
    * The version an author has stepped an ontology to, keyed by acronym.
    *
    * Absent means latest, and absent is what a constraint records: freeze-on-publish resolves an
@@ -136,8 +149,10 @@ export class TermPicker {
     this.inFlight = controller;
     this.searching.set(true);
     try {
-      const response = await this.client.search({ query, pageSize: 25 }, controller.signal);
+      const response = await this.client.search({ query, pageSize: PAGE_SIZE }, controller.signal);
       this.response.set(response);
+      this.pages.set({});
+      this.expanded.set(null);
       this.error.set(null);
     } catch (failure: unknown) {
       if (controller.signal.aborted) {
@@ -250,6 +265,64 @@ export class TermPicker {
 
   private hitsOf(kind: SearchKind): readonly Hit[] {
     return this.response()?.results[kind]?.collection ?? [];
+  }
+
+  protected pageOf(kind: SearchKind): number {
+    return this.pages()[kind] ?? 1;
+  }
+
+  /** How many pages a tab has, or 0 when it fits on one. */
+  protected pageCount(kind: SearchKind): number {
+    const results = this.response()?.results[kind];
+    if (!results) {
+      return 0;
+    }
+    // Terms and branches count distinct labels, because that is what a page of them holds.
+    const count = results.distinctLabelCount ?? results.totalCount;
+    const pages = Math.ceil(count / (results.pageSize || PAGE_SIZE));
+    return pages > 1 ? pages : 0;
+  }
+
+  /** Whether the last page is a floor rather than the end, because counting stopped at the cap. */
+  protected pageCountCapped(kind: SearchKind): boolean {
+    const results = this.response()?.results[kind];
+    return (
+      (results?.distinctLabelCount === undefined ? results?.countCapped : results.distinctLabelCountCapped) === true
+    );
+  }
+
+  /** Moves one tab to another page, fetching that type alone. */
+  protected async goTo(kind: SearchKind, page: number): Promise<void> {
+    const current = this.response();
+    const query = this.text().trim();
+    if (!current || page < 1 || query.length === 0) {
+      return;
+    }
+    this.searching.set(true);
+    try {
+      const next = await this.client.search({ query, types: [kind], page, pageSize: PAGE_SIZE });
+      const results = next.results[kind];
+      if (!results) {
+        return;
+      }
+      // A later page names ontologies the first did not, and a row reads its source from the
+      // envelope, so the blocks accumulate rather than being replaced.
+      const sources = new Map(current.sources.map((source) => [source.sourceAcronym, source]));
+      for (const source of next.sources) {
+        sources.set(source.sourceAcronym, source);
+      }
+      this.response.set({
+        ...current,
+        sources: [...sources.values()],
+        results: { ...current.results, [kind]: results },
+      });
+      this.pages.update((pages) => ({ ...pages, [kind]: page }));
+      this.expanded.set(null);
+    } catch (failure: unknown) {
+      this.error.set(failure instanceof Error ? failure.message : 'The search failed.');
+    } finally {
+      this.searching.set(false);
+    }
   }
 
   protected sourceOf(acronym: string): SourceBlock | undefined {

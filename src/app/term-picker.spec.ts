@@ -210,6 +210,67 @@ describe('TermPicker', () => {
     expect((emitted as { version?: unknown }).version).toBeUndefined();
   });
 
+  it('pages one tab without moving the others, and keeps the sources it learns', async () => {
+    const fixture = TestBed.createComponent(TermPicker);
+    fixture.componentRef.setInput('query', 'melanoma');
+    await fixture.whenStable();
+    await settle();
+    await fixture.whenStable();
+
+    // Page two names an ontology page one never did; a row reads its name from the envelope, so the
+    // blocks have to accumulate rather than be replaced.
+    client.response = {
+      ...client.response,
+      sources: [
+        {
+          sourceSystem: 'bioportal',
+          sourceAcronym: 'LATER',
+          sourceName: 'An Ontology From Page Two',
+          served: 'local',
+          pinnable: true,
+        },
+      ],
+      results: {
+        class: {
+          totalCount: 5439,
+          countCapped: false,
+          distinctLabelCount: 2552,
+          distinctLabelCountCapped: false,
+          page: 2,
+          pageSize: 25,
+          collection: [
+            {
+              type: 'class',
+              sourceSystem: 'bioportal',
+              sourceAcronym: 'LATER',
+              termIri: 'http://later/melanoma',
+              termType: 'class',
+              termLabel: 'Intraocular melanoma',
+              obsolete: false,
+              hasChildren: false,
+              descendantCount: 0,
+            },
+          ],
+        },
+      },
+    };
+
+    const next = [...shadow(fixture).querySelectorAll<HTMLButtonElement>('.pager button')].find((b) =>
+      (b.textContent ?? '').includes('Next'),
+    );
+    next?.click();
+    await fixture.whenStable();
+    await fixture.whenStable();
+
+    // Only the terms were asked for.
+    expect(client.lastQuery?.types).toEqual(['class']);
+    expect(client.lastQuery?.page).toBe(2);
+
+    shadow(fixture).querySelector<HTMLButtonElement>('.rowhead')?.click();
+    await fixture.whenStable();
+    expect(shadow(fixture).querySelector('.child')?.textContent).toContain('An Ontology From Page Two');
+  });
+
   it('tells the host when the author closes without choosing', async () => {
     const fixture = TestBed.createComponent(TermPicker);
     await fixture.whenStable();

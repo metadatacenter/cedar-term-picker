@@ -200,4 +200,25 @@
       }
     }
   }
+
+  @if (pageCount(activeTab()); as pages) {
+    <nav class="pager">
+      <button
+        type="button"
+        class="ghost"
+        [disabled]="pageOf(activeTab()) <= 1"
+        (click)="goTo(activeTab(), pageOf(activeTab()) - 1)"
+      >‹ Previous</button>
+      <span class="meta inline">
+        page {{ pageOf(activeTab()) }} of {{ pages.toLocaleString()
+        }}@if (pageCountCapped(activeTab())) {+}
+      </span>
+      <button
+        type="button"
+        class="ghost"
+        [disabled]="pageOf(activeTab()) >= pages && !pageCountCapped(activeTab())"
+        (click)="goTo(activeTab(), pageOf(activeTab()) + 1)"
+      >Next ›</button>
+    </nav>
+  }
 </section>
