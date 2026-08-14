@@ -48,38 +48,38 @@
     @case ('class') {
       @for (group of labelGroups(); track group.label) {
         <div class="row group" [class.open]="expanded() === group.label">
-          <button type="button" class="rowhead" (click)="toggle(group.label)">
+          <button type="button" class="rowhead oneline" (click)="toggle(group.label)">
             <span class="twist">{{ expanded() === group.label ? '▾' : '▸' }}</span>
-            <span class="grow">
+            <span class="grow ellipsis">
               <span class="title" [class.obsolete]="group.hits[0].obsolete">{{ group.label }}</span>
               @if (group.hits[0].obsolete) {
                 <span class="chip warn">obsolete</span>
               }
-              <span class="sub">
-                @if (group.hits[0].matchedLabels?.length) {
-                  <span class="chip">matched {{ group.hits[0].matchedLabels![0].label }}
-                    @if (group.hits[0].matchedLabels![0].language) {
-                      · {{ group.hits[0].matchedLabels![0].language }}
-                    }
-                  </span>
-                }
-                in {{ group.hits.length }} {{ group.hits.length === 1 ? 'vocabulary' : 'vocabularies' }}
-              </span>
+              @if (group.hits[0].matchedLabels?.length) {
+                <span class="chip">matched {{ group.hits[0].matchedLabels![0].label
+                  }}@if (group.hits[0].matchedLabels![0].language) { · {{
+                  group.hits[0].matchedLabels![0].language }}}</span>
+              }
+            </span>
+            <span class="meta inline">
+              in {{ group.hits.length }} {{ group.hits.length === 1 ? 'ontology' : 'ontologies' }}
             </span>
           </button>
           @if (expanded() === group.label) {
             <div class="children">
               @for (hit of group.hits; track hit.termIri) {
-                <div class="child">
-                  <span class="grow">
+                <div class="child oneline">
+                  <span class="grow ellipsis">
                     <span class="who">{{ hit.sourceAcronym }}</span>
                     <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
-                    <span class="meta">
-                      {{ hit.descendantCount }} beneath · v{{ versionOf(hit.sourceAcronym) }}
-                      @if (hit.replacedBy) {
+                    @if (hit.replacedBy) {
+                      <span class="meta inline dim">
                         · replaced by {{ hit.replacedBy.termLabel ?? hit.replacedBy.termIri }}
-                      }
-                    </span>
+                      </span>
+                    }
+                  </span>
+                  <span class="meta inline">
+                    {{ hit.descendantCount }} beneath · v{{ versionOf(hit.sourceAcronym) }}
                   </span>
                   <button type="button" (click)="choose(hit)">Use</button>
                 </div>

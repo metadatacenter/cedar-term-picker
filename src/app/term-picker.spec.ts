@@ -95,7 +95,7 @@ describe('TermPicker', () => {
     expect(tabs).toEqual(TAB_ORDER.map((kind) => (kind === 'valueSet' ? 'value' : tabsLabel(kind))));
   });
 
-  it('collapses identical labels into one row, counting the vocabularies that offer it', async () => {
+  it('collapses identical labels into one row, counting the ontologies that offer it', async () => {
     const fixture = TestBed.createComponent(TermPicker);
     fixture.componentRef.setInput('query', 'melanoma');
     await fixture.whenStable();
@@ -104,7 +104,7 @@ describe('TermPicker', () => {
 
     const rows = [...shadow(fixture).querySelectorAll('.rowhead')];
     expect(rows.length).toBe(1);
-    expect(rows[0].textContent).toContain('2 vocabularies');
+    expect(rows[0].textContent).toContain('2 ontologies');
   });
 
   it('shows the collapsed count on the terms tab, not the hit count', async () => {

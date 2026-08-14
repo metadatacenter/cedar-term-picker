@@ -25,7 +25,7 @@
 .picker {
   border: 1px solid neutrals.$cedar-border-rule;
   border-radius: 4px;
-  padding: 1rem;
+  padding: 0.75rem;
   background: #fff;
 }
 
@@ -85,7 +85,7 @@ button {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  margin-top: 1rem;
+  margin-top: 0.75rem;
   border-bottom: 1px solid neutrals.$cedar-border-rule;
 }
 
@@ -121,7 +121,7 @@ button {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.6rem 0.2rem;
+  padding: 0.35rem 0.2rem;
   border-bottom: 1px solid neutrals.$cedar-border-rule-light;
 
   &.group {
@@ -140,7 +140,7 @@ button {
   border-radius: 0;
   color: inherit;
   text-align: left;
-  padding: 0.6rem 0.2rem;
+  padding: 0.35rem 0.2rem;
   font-size: tokens.$cee-font-size;
 }
 
@@ -230,14 +230,14 @@ mark {
 
 .children {
   background: neutrals.$cedar-surface-panel;
-  padding: 0.2rem 0.5rem 0.4rem 2rem;
+  padding: 0.1rem 0.5rem 0.2rem 1.6rem;
 }
 
 .child {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.45rem 0;
+  padding: 0.3rem 0;
   border-bottom: 1px solid neutrals.$cedar-border-rule-light;
 
   &:last-child {
