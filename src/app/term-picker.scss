@@ -81,6 +81,25 @@ button {
   }
 }
 
+.narrowing {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+}
+
+.chip.removable {
+  border: none;
+  cursor: pointer;
+  padding: 0.1rem 0.45rem;
+
+  .x {
+    color: neutrals.$cedar-text-muted;
+    margin-left: 0.15rem;
+  }
+}
+
 .tabs {
   display: flex;
   align-items: center;

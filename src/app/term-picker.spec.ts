@@ -271,6 +271,29 @@ describe('TermPicker', () => {
     expect(shadow(fixture).querySelector('.child')?.textContent).toContain('An Ontology From Page Two');
   });
 
+  it('narrows every tab at once, and re-asks from page one', async () => {
+    const fixture = TestBed.createComponent(TermPicker);
+    fixture.componentRef.setInput('query', 'melanoma');
+    await fixture.whenStable();
+    await settle();
+    await fixture.whenStable();
+
+    fixture.componentInstance['toggleNarrowing']('NCIT');
+    await settle();
+    await fixture.whenStable();
+
+    // One filter, carried on the request rather than applied to the rows that came back.
+    expect(client.lastQuery?.sources).toEqual([{ sourceAcronym: 'NCIT' }]);
+    expect(client.lastQuery?.page).toBeUndefined();
+    expect(shadow(fixture).querySelector('.narrowing')?.textContent).toContain('NCIT');
+
+    fixture.componentInstance['clearNarrowing']();
+    await settle();
+    await fixture.whenStable();
+    expect(client.lastQuery?.sources).toBeUndefined();
+    expect(shadow(fixture).querySelector('.narrowing')).toBeNull();
+  });
+
   it('tells the host when the author closes without choosing', async () => {
     const fixture = TestBed.createComponent(TermPicker);
     await fixture.whenStable();

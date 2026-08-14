@@ -37,6 +37,18 @@
     <button type="button" class="ghost" (click)="onCancel()">Close</button>
   </header>
 
+  @if (narrowedTo().length > 0) {
+    <div class="narrowing">
+      <span class="meta inline">Searching only</span>
+      @for (acronym of narrowedTo(); track acronym) {
+        <button type="button" class="chip removable" (click)="toggleNarrowing(acronym)">
+          {{ acronym }} <span class="x">×</span>
+        </button>
+      }
+      <button type="button" class="ghost" (click)="clearNarrowing()">Search everything</button>
+    </div>
+  }
+
   <nav class="tabs">
     @for (tab of tabs; track tab) {
       <button
@@ -177,6 +189,12 @@
             }
           </span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
+          <button
+            type="button"
+            class="ghost"
+            [title]="'Search only ' + hit.sourceAcronym"
+            (click)="toggleNarrowing(hit.sourceAcronym)"
+          >{{ isNarrowedTo(hit.sourceAcronym) ? 'Searching' : 'Only this' }}</button>
           <button type="button" (click)="choose(hit)">Use</button>
         </div>
       } @empty {

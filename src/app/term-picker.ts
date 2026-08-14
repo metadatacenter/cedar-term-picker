@@ -20,6 +20,7 @@ import {
   OntologyHit,
   SearchKind,
   SearchResponse,
+  SourceSelector,
   SourceBlock,
   TAB_LABELS,
   TAB_ORDER,
@@ -110,6 +111,16 @@ export class TermPicker {
   protected readonly pages = signal<Readonly<Partial<Record<SearchKind, number>>>>({});
 
   /**
+   * The ontologies the search is narrowed to, in the order the author added them.
+   *
+   * One filter for every tab rather than one per tab: an author who has decided the field belongs
+   * to NCIT has decided it for the terms and the branches alike. Narrowing does not change the kind
+   * of search — the server keeps the same index, matching and paging — so the results an author was
+   * reading do not shift underneath them, they only get shorter.
+   */
+  protected readonly narrowedTo = signal<readonly string[]>([]);
+
+  /**
    * The version an author has stepped an ontology to, keyed by acronym.
    *
    * Absent means latest, and absent is what a constraint records: freeze-on-publish resolves an
@@ -149,7 +160,10 @@ export class TermPicker {
     this.inFlight = controller;
     this.searching.set(true);
     try {
-      const response = await this.client.search({ query, pageSize: PAGE_SIZE }, controller.signal);
+      const response = await this.client.search(
+        { query, pageSize: PAGE_SIZE, sources: this.sourceSelectors() },
+        controller.signal,
+      );
       this.response.set(response);
       this.pages.set({});
       this.expanded.set(null);
@@ -267,6 +281,35 @@ export class TermPicker {
     return this.response()?.results[kind]?.collection ?? [];
   }
 
+  private sourceSelectors(): readonly SourceSelector[] | undefined {
+    const acronyms = this.narrowedTo();
+    return acronyms.length === 0 ? undefined : acronyms.map((sourceAcronym) => ({ sourceAcronym }));
+  }
+
+  /** Adds an ontology to the filter, or removes it if it is already there. */
+  protected toggleNarrowing(acronym: string): void {
+    this.narrowedTo.update((current) =>
+      current.includes(acronym) ? current.filter((a) => a !== acronym) : [...current, acronym],
+    );
+    void this.rerun();
+  }
+
+  protected clearNarrowing(): void {
+    this.narrowedTo.set([]);
+    void this.rerun();
+  }
+
+  protected isNarrowedTo(acronym: string): boolean {
+    return this.narrowedTo().includes(acronym);
+  }
+
+  /** Re-runs the current query from page one, which a changed filter is a new question for. */
+  private async rerun(): Promise<void> {
+    this.pages.set({});
+    this.expanded.set(null);
+    await this.run(this.text().trim());
+  }
+
   protected pageOf(kind: SearchKind): number {
     return this.pages()[kind] ?? 1;
   }
@@ -300,7 +343,13 @@ export class TermPicker {
     }
     this.searching.set(true);
     try {
-      const next = await this.client.search({ query, types: [kind], page, pageSize: PAGE_SIZE });
+      const next = await this.client.search({
+        query,
+        types: [kind],
+        page,
+        pageSize: PAGE_SIZE,
+        sources: this.sourceSelectors(),
+      });
       const results = next.results[kind];
       if (!results) {
         return;
