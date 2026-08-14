@@ -45,7 +45,10 @@ const DEBOUNCE_MS = 250;
  * distinct label and carry every hit of the labels on the page, so a fold here sees the whole group.
  */
 export interface LabelGroup {
+  /** What the row is titled: the term's label, or the name that matched when the label is a code. */
   readonly label: string;
+  /** The label the ontology gave, when it is a code and the title came from a matched name. */
+  readonly code?: string;
   readonly hits: readonly ClassHit[];
 }
 
@@ -139,6 +142,18 @@ export class TermPicker {
     return counts;
   });
 
+  /**
+   * Whether a label is a bare code rather than a name.
+   *
+   * Some ontologies put an identifier where the name belongs and keep every human phrasing as a
+   * synonym — OCHV, the consumer health vocabulary, labels a concept 6188 and records "HIV disease",
+   * "HIV infection" and "disease HIV" beneath it; 27,758 of its terms are numbered this way, and
+   * DDSS and DRON have 667,569 each. Showing the author 6188 is showing them nothing.
+   */
+  private static isCode(label: string): boolean {
+    return label.length > 0 && !/\p{L}/u.test(label);
+  }
+
   /** Terms, collapsed by label, in the order the server ranked them. */
   protected readonly labelGroups = computed<readonly LabelGroup[]>(() => {
     const hits = this.hitsOf('class').filter(isClassHit);
@@ -152,7 +167,18 @@ export class TermPicker {
         groups.set(key, [hit]);
       }
     }
-    return [...groups.values()].map((members) => ({ label: members[0].termLabel, hits: members }));
+    return [...groups.values()].map((members) => {
+      const first = members[0];
+      // A code is not a name. When the ontology gave one, lead with the name that actually matched
+      // and keep the code beside it, so the row says what the author searched for.
+      const matched = first.matchedLabels?.[0]?.label;
+      const coded = TermPicker.isCode(first.termLabel) && matched !== undefined;
+      return {
+        label: coded ? matched : first.termLabel,
+        code: coded ? first.termLabel : undefined,
+        hits: members,
+      };
+    });
   });
 
   protected readonly branches = computed(() => this.hitsOf('branch').filter(isBranchHit));

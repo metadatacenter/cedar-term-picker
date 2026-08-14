@@ -52,10 +52,13 @@
             <span class="twist">{{ expanded() === group.label ? '▾' : '▸' }}</span>
             <span class="grow ellipsis">
               <span class="title" [class.obsolete]="group.hits[0].obsolete">{{ group.label }}</span>
+              @if (group.code) {
+                <span class="who">{{ group.code }}</span>
+              }
               @if (group.hits[0].obsolete) {
                 <span class="chip warn">obsolete</span>
               }
-              @if (group.hits[0].matchedLabels?.length) {
+              @if (!group.code && group.hits[0].matchedLabels?.length) {
                 <span class="chip">matched {{ group.hits[0].matchedLabels![0].label
                   }}@if (group.hits[0].matchedLabels![0].language) { · {{
                   group.hits[0].matchedLabels![0].language }}}</span>
