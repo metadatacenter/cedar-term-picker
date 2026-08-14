@@ -67,7 +67,10 @@ input {
 button {
   font: inherit;
   font-size: tokens.$cee-font-size-small;
-  padding: 0.35rem 0.7rem;
+  // Sized so a row carrying buttons is the same height as a row without: the ontology rows stood a
+  // third taller than the folded term rows, which is the vertical creep this component keeps
+  // attracting.
+  padding: 0.2rem 0.6rem;
   border: 1px solid tokens.$cee-color-primary;
   border-radius: 3px;
   background: tokens.$cee-color-primary;
@@ -228,7 +231,7 @@ button {
 }
 
 .oneline {
-  padding: 0.4rem 0.2rem;
+  padding: 0.25rem 0.2rem;
 }
 
 .ellipsis {

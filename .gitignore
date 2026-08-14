@@ -53,3 +53,8 @@ Thumbs.db
 /cedar-development
 /cedar-embeddable-editor
 /cedar-template-editor
+
+# Playwright's own output, written beside the browser tests.
+/browser/node_modules
+/browser/test-results
+/browser/playwright-report

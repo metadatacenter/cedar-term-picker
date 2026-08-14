@@ -16,7 +16,9 @@
     "lint": "ng lint",
     "typecheck": "tsc -p tsconfig.eslint.json --noEmit",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
-    "test:ci": "npm run lint && npm run typecheck && npm test && npm run build:production"
+    "test:ci": "npm run lint && npm run typecheck && npm test && npm run build:production && npm run test:browser:prebuilt",
+    "test:browser": "npm run build:production && npm --prefix browser test",
+    "test:browser:prebuilt": "npm --prefix browser test"
   },
   "dependencies": {
     "@angular/common": "^22.1.0",

@@ -30,12 +30,21 @@ jobs:
         with:
           node-version: 24.19.0
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            browser/package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
-      # Lint, typecheck, unit tests, then the production build — the build last, so a
-      # failure that a cheaper check could have caught is reported by that check.
+      - name: Install the browser test dependencies
+        run: |
+          npm --prefix browser ci
+          ./browser/node_modules/.bin/playwright install --with-deps chromium
+
+      # Lint, typecheck, unit tests, the production build, then the browser tests against that
+      # build — each stage more expensive than the last, so a failure a cheaper check could have
+      # caught is reported by that check.
       - name: Run the gate
         run: npm run test:ci
 
