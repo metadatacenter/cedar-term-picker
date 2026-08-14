@@ -23,10 +23,14 @@ shadow DOM so a host page's stylesheet cannot reach inside it.
 
 ## Status
 
-Scaffolded, not built. The Angular 22 project stands up, the gate is green, and
-the element registers and exchanges an input and an event with its host — but
-the component itself renders a search box and four tab names over no search at
-all. Nothing reads from the terminology server yet.
+It searches. One query answers all four tabs against the CEDAR terminology
+server's version-aware search, folding repeated labels into a row apiece,
+ranking ontologies by what they hold, narrowing to the ones an author names,
+paging through the rest, and stepping a constraint back through an ontology's
+releases.
+
+It is not embedded anywhere yet. The component runs in its own development
+host, and putting it in the Template Designer is later work.
 
 Planned work, and the decisions already taken, are tracked in
 [TERM-PICKER-ROADMAP.md](https://github.com/metadatacenter/cedar-development/blob/develop/ops/TERM-PICKER-ROADMAP.md).
