@@ -118,18 +118,17 @@
 
     @case ('ontology') {
       @for (hit of ontologies(); track hit.sourceAcronym) {
-        <div class="row">
-          <span class="grow">
-            <span class="title">{{ sourceName(hit.sourceAcronym) }}</span>
+        <div class="row oneline">
+          <span class="grow ellipsis">
+            @let parts = splitName(hit.sourceAcronym);
+            <span class="title">{{ parts[0] }}<mark>{{ parts[1] }}</mark>{{ parts[2] }}</span>
             <span class="who">{{ hit.sourceAcronym }}</span>
-            <span class="sub">
-              @if (hit.matchType === 'terms') {
-                {{ hit.matchCount?.toLocaleString() }} matching terms
-              } @else {
-                <span class="chip">named this</span>
-              }
-              · v{{ versionOf(hit.sourceAcronym) }}
-            </span>
+          </span>
+          <span class="meta inline">
+            @if (hit.matchCount) {
+              {{ hit.matchCount.toLocaleString() }} terms
+            }
+            · v{{ versionOf(hit.sourceAcronym) }}
           </span>
           <button type="button" (click)="choose(hit)">Use</button>
         </div>

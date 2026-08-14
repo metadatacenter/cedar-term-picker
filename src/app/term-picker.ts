@@ -191,6 +191,23 @@ export class TermPicker {
     return (path.length > steps ? '… ‹ ' : '') + tail.reverse().join(' ‹ ');
   }
 
+  /**
+   * A name split around the part the query matched, so the row can mark it.
+   *
+   * The mark replaces a chip saying "named this". A chip said the same words on every row it
+   * appeared on, which is a line of vertical space carrying no information; showing which characters
+   * matched says it in the name itself.
+   */
+  protected splitName(acronym: string): readonly [string, string, string] {
+    const name = this.sourceName(acronym);
+    const at = name.toLocaleLowerCase().indexOf(this.text().trim().toLocaleLowerCase());
+    if (at < 0 || this.text().trim().length === 0) {
+      return [name, '', ''];
+    }
+    const end = at + this.text().trim().length;
+    return [name.slice(0, at), name.slice(at, end), name.slice(end)];
+  }
+
   protected labelsOf(refs: readonly TermRef[] | undefined, limit = 4): string {
     return (refs ?? [])
       .slice(0, limit)
