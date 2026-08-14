@@ -184,6 +184,9 @@ button {
   text-overflow: ellipsis;
 }
 
+// Every result row is one line: title and acronym on the left, the facts that distinguish it on
+// the right. A number is a number — sizing the descendant count at heading scale made a branch row
+// three times the height of an ontology row to carry no more meaning.
 .meta.inline {
   display: inline;
   white-space: nowrap;
@@ -222,16 +225,6 @@ mark {
   &.warn {
     background: #fff3cd;
     color: tokens.$cee-color-warning;
-  }
-}
-
-.count {
-  text-align: right;
-  white-space: nowrap;
-
-  b {
-    font-size: tokens.$cee-font-size-heading;
-    font-weight: 500;
   }
 }
 

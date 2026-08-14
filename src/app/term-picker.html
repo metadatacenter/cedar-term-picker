@@ -94,20 +94,16 @@
 
     @case ('branch') {
       @for (hit of branches(); track hit.termBaseIri) {
-        <div class="row">
-          <span class="grow">
+        <div class="row oneline">
+          <span class="grow ellipsis">
             <span class="title">{{ hit.termBaseLabel }}</span>
             <span class="who">{{ hit.sourceAcronym }}</span>
             @if (tailOf(hit.path); as tail) {
-              <span class="meta path">{{ tail }}</span>
-            }
-            @if (labelsOf(hit.examples); as examples) {
-              <span class="sub">{{ examples }}…</span>
+              <span class="meta inline dim"> · {{ tail }}</span>
             }
           </span>
-          <span class="count">
-            <b>{{ hit.descendantCount.toLocaleString() }}</b>
-            <span class="meta">beneath</span>
+          <span class="meta inline">
+            {{ hit.descendantCount.toLocaleString() }} beneath · v{{ versionOf(hit.sourceAcronym) }}
           </span>
           <button type="button" (click)="choose(hit)">Use</button>
         </div>
@@ -139,17 +135,15 @@
 
     @case ('valueSet') {
       @for (hit of valueSets(); track hit.termBaseIri) {
-        <div class="row">
-          <span class="grow">
+        <div class="row oneline">
+          <span class="grow ellipsis">
             <span class="title">{{ hit.termBaseLabel }}</span>
             <span class="who">{{ hit.sourceAcronym }}</span>
-            <span class="sub">
-              {{ hit.termCount }} values
-              @if (labelsOf(hit.matchedTerms); as matched) {
-                — {{ matched }}
-              }
-            </span>
+            @if (labelsOf(hit.matchedTerms); as matched) {
+              <span class="meta inline dim"> · {{ matched }}</span>
+            }
           </span>
+          <span class="meta inline">{{ hit.termCount }} values</span>
           <button type="button" (click)="choose(hit)">Use</button>
         </div>
       } @empty {
