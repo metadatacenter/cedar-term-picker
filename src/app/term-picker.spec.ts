@@ -291,7 +291,9 @@ describe('TermPicker', () => {
     await settle();
     await fixture.whenStable();
     expect(client.lastQuery?.sources).toBeUndefined();
-    expect(shadow(fixture).querySelector('.narrowing')).toBeNull();
+    // The bar stays — it carries the way back in — but the chips go with the filter.
+    expect(shadow(fixture).querySelectorAll('.chip.removable').length).toBe(0);
+    expect(shadow(fixture).querySelector('.narrowing')?.textContent).toContain('every ontology');
   });
 
   it('tells the host when the author closes without choosing', async () => {

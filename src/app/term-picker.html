@@ -37,8 +37,8 @@
     <button type="button" class="ghost" (click)="onCancel()">Close</button>
   </header>
 
-  @if (narrowedTo().length > 0) {
-    <div class="narrowing">
+  <div class="narrowing">
+    @if (narrowedTo().length > 0) {
       <span class="meta inline">Searching only</span>
       @for (acronym of narrowedTo(); track acronym) {
         <button type="button" class="chip removable" (click)="toggleNarrowing(acronym)">
@@ -46,6 +46,30 @@
         </button>
       }
       <button type="button" class="ghost" (click)="clearNarrowing()">Search everything</button>
+    } @else {
+      <span class="meta inline">Searching every ontology</span>
+    }
+    <button type="button" class="ghost" (click)="openNarrowing()">
+      {{ choosingNarrowing() ? 'Done' : 'Narrow to…' }}
+    </button>
+  </div>
+
+  @if (choosingNarrowing()) {
+    <div class="candidates">
+      @for (candidate of candidates(); track candidate.sourceAcronym) {
+        <button
+          type="button"
+          class="candidate"
+          [class.on]="isNarrowedTo(candidate.sourceAcronym)"
+          (click)="toggleNarrowing(candidate.sourceAcronym)"
+        >
+          <span class="who">{{ candidate.sourceAcronym }}</span>
+          <span class="dim ellipsis">{{ sourceNameIfDistinct(candidate.sourceAcronym) }}</span>
+          <span class="meta inline">{{ candidate.matchCount?.toLocaleString() }}</span>
+        </button>
+      } @empty {
+        <p class="empty">Nothing to narrow to — search for something first.</p>
+      }
     </div>
   }
 

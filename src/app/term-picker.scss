@@ -100,6 +100,40 @@ button {
   }
 }
 
+.candidates {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.15rem 0.5rem;
+  max-height: 11rem;
+  overflow-y: auto;
+  margin-top: 0.4rem;
+  padding: 0.35rem;
+  background: neutrals.$cedar-surface-panel;
+  border-radius: 3px;
+}
+
+.candidate {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  color: inherit;
+  text-align: left;
+  padding: 0.2rem 0.3rem;
+  min-width: 0;
+
+  &.on {
+    background: neutrals.$cedar-surface-tinted;
+    font-weight: 500;
+  }
+
+  .meta.inline {
+    margin-left: auto;
+  }
+}
+
 .tabs {
   display: flex;
   align-items: center;

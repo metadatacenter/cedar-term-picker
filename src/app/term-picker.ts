@@ -65,6 +65,15 @@ export interface BranchGroup {
   readonly hits: readonly BranchHit[];
 }
 
+/** Later pages and side queries name sources the first response did not, so blocks accumulate. */
+function mergeSources(current: readonly SourceBlock[], incoming: readonly SourceBlock[]): readonly SourceBlock[] {
+  const merged = new Map(current.map((source) => [source.sourceAcronym, source]));
+  for (const source of incoming) {
+    merged.set(source.sourceAcronym, source);
+  }
+  return [...merged.values()];
+}
+
 export interface LabelGroup {
   /** What the row is titled: the term's label, or the name that matched when the label is a code. */
   readonly label: string;
@@ -120,6 +129,10 @@ export class TermPicker {
    */
   protected readonly narrowedTo = signal<readonly string[]>([]);
 
+  /** The narrowing panel's candidates, ranked by matching terms rather than by name. */
+  protected readonly candidates = signal<readonly OntologyHit[]>([]);
+  protected readonly choosingNarrowing = signal(false);
+
   /**
    * The version an author has stepped an ontology to, keyed by acronym.
    *
@@ -147,7 +160,7 @@ export class TermPicker {
     });
   }
 
-  private async run(query: string): Promise<void> {
+  private async run(query: string, keepCandidates = false): Promise<void> {
     // Cancel rather than let a slower earlier query land on top of a faster later one.
     this.inFlight?.abort();
     if (query.length === 0) {
@@ -165,6 +178,12 @@ export class TermPicker {
         controller.signal,
       );
       this.response.set(response);
+      // The candidates rank against the query, so a new query invalidates them — but changing the
+      // filter re-runs the same query, and clearing them there would empty the panel the author is
+      // choosing from.
+      if (!keepCandidates) {
+        this.candidates.set([]);
+      }
       this.pages.set({});
       this.expanded.set(null);
       this.error.set(null);
@@ -307,7 +326,36 @@ export class TermPicker {
   private async rerun(): Promise<void> {
     this.pages.set({});
     this.expanded.set(null);
-    await this.run(this.text().trim());
+    await this.run(this.text().trim(), true);
+  }
+
+  /**
+   * Opens the narrowing panel, fetching the ontologies ranked by how much of the query they hold.
+   *
+   * A different order from the ontologies tab, because it answers a different question. That tab
+   * leads with a vocabulary named after the query — right for "is there an ontology about this",
+   * wrong for "where are the terms". For melanoma the tab leads with MELO, aptly named and holding
+   * 38 terms, while the useful thing to narrow to is NCIT with 950.
+   */
+  protected async openNarrowing(): Promise<void> {
+    this.choosingNarrowing.update((open) => !open);
+    if (!this.choosingNarrowing() || this.candidates().length > 0) {
+      return;
+    }
+    const query = this.text().trim();
+    if (query.length === 0) {
+      return;
+    }
+    const response = await this.client.search({
+      query,
+      types: ['ontology'],
+      ontologyOrder: 'matches',
+      pageSize: 40,
+    });
+    this.candidates.set((response.results.ontology?.collection ?? []).filter(isOntologyHit));
+    this.response.update((current) =>
+      current === null ? current : { ...current, sources: mergeSources(current.sources, response.sources) },
+    );
   }
 
   protected pageOf(kind: SearchKind): number {
@@ -356,13 +404,9 @@ export class TermPicker {
       }
       // A later page names ontologies the first did not, and a row reads its source from the
       // envelope, so the blocks accumulate rather than being replaced.
-      const sources = new Map(current.sources.map((source) => [source.sourceAcronym, source]));
-      for (const source of next.sources) {
-        sources.set(source.sourceAcronym, source);
-      }
       this.response.set({
         ...current,
-        sources: [...sources.values()],
+        sources: mergeSources(current.sources, next.sources),
         results: { ...current.results, [kind]: results },
       });
       this.pages.update((pages) => ({ ...pages, [kind]: page }));
@@ -380,6 +424,12 @@ export class TermPicker {
 
   protected sourceName(acronym: string): string {
     return this.sourceOf(acronym)?.sourceName ?? acronym;
+  }
+
+  /** The name only when it says more than the acronym, so a row never reads "BERO BERO". */
+  protected sourceNameIfDistinct(acronym: string): string {
+    const name = this.sourceOf(acronym)?.sourceName;
+    return name === undefined || name === acronym ? '' : name;
   }
 
   /** What the row shows: the version stepped to, else the one that answered. */

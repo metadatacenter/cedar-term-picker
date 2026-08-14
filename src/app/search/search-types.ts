@@ -40,6 +40,11 @@ export interface SearchQuery {
   readonly pageSize?: number;
   /** Ask each source block for the versions it can be pinned to. Off unless a row is stepping. */
   readonly includeVersions?: boolean;
+  /**
+   * How to order the ontology results: `relevance` (the default) leads with a vocabulary named
+   * after the query; `matches` ignores names and ranks by how many terms each matched.
+   */
+  readonly ontologyOrder?: 'relevance' | 'matches';
 }
 
 export interface VersionInfo {
