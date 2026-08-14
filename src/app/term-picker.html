@@ -74,7 +74,9 @@
           <button type="button" class="rowhead oneline" (click)="toggle(group.label)">
             <span class="twist">{{ expanded() === group.label ? '▾' : '▸' }}</span>
             <span class="grow ellipsis">
-              <span class="title" [class.obsolete]="group.hits[0].obsolete">{{ group.label }}</span>
+              <span class="title" [class.obsolete]="group.hits[0].obsolete" [title]="group.label">{{
+                elide(group.label)
+              }}</span>
               @if (group.code) {
                 <span class="who">{{ group.code }}</span>
               }
@@ -82,7 +84,8 @@
                 <span class="chip warn">obsolete</span>
               }
               @if (!group.code && group.hits[0].matchedLabels?.length) {
-                <span class="chip">matched {{ group.hits[0].matchedLabels![0].label
+                <span class="chip" [title]="group.hits[0].matchedLabels![0].label">matched {{
+                  elide(group.hits[0].matchedLabels![0].label, 64, 20)
                   }}@if (group.hits[0].matchedLabels![0].language) { · {{
                   group.hits[0].matchedLabels![0].language }}}</span>
               }
@@ -124,7 +127,7 @@
           <button type="button" class="rowhead oneline" (click)="toggle(group.label)">
             <span class="twist">{{ expanded() === group.label ? '▾' : '▸' }}</span>
             <span class="grow ellipsis">
-              <span class="title">{{ group.label }}</span>
+              <span class="title" [title]="group.label">{{ elide(group.label) }}</span>
             </span>
             <span class="meta inline">
               in {{ group.ontologyCount }} {{ group.ontologyCount === 1 ? 'ontology' : 'ontologies' }}
@@ -185,7 +188,7 @@
       @for (hit of valueSets(); track hit.termBaseIri) {
         <div class="row oneline">
           <span class="grow ellipsis">
-            <span class="title">{{ hit.termBaseLabel }}</span>
+            <span class="title" [title]="hit.termBaseLabel">{{ elide(hit.termBaseLabel) }}</span>
             <span class="who">{{ hit.sourceAcronym }}</span>
             @if (labelsOf(hit.matchedTerms); as matched) {
               <span class="meta inline dim"> · {{ matched }}</span>

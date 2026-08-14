@@ -439,6 +439,23 @@ export class TermPicker {
     return low === high ? low.toLocaleString() : `${low.toLocaleString()}–${high.toLocaleString()}`;
   }
 
+  /**
+   * Shortens a long label from the middle, keeping both ends.
+   *
+   * Some vocabularies put a whole question in the label and its axis codes after it — LOINC has
+   * "Have you been diagnosed with melanoma in the past - skin cancer, arising in melanocytes, skin
+   * cells that make skin pigment:Find:Pt:^Patient:Ord:PhenX". Cutting the end throws away the codes
+   * that say what kind of thing it is, and the two ends together identify it where either alone does
+   * not. The full text stays in the row's title, so nothing is lost, only folded.
+   */
+  protected elide(text: string | undefined, max = 96, tail = 28): string {
+    // A value set's name is optional in the contract, so this takes what the contract gives.
+    if (text === undefined || text.length <= max) {
+      return text ?? '';
+    }
+    return `${text.slice(0, max - tail - 1).trimEnd()}…${text.slice(-tail).trimStart()}`;
+  }
+
   protected labelsOf(refs: readonly TermRef[] | undefined, limit = 4): string {
     return (refs ?? [])
       .slice(0, limit)
