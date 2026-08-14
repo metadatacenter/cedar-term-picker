@@ -39,11 +39,10 @@ const DEBOUNCE_MS = 250;
 /**
  * One label, and the vocabularies that offer it.
  *
- * A query for a common term returns the same string from a dozen vocabularies, so the flat list is
+ * A query for a common term returns the same string from a hundred vocabularies, so the flat list is
  * one word repeated. The author's question at that point is which vocabulary, and collapsing asks it
- * directly. Grouped over the page only, which the row says: the server counts distinct labels across
- * the whole match but does not group them, so a page cannot know how many vocabularies a label has
- * outside it.
+ * directly. The count is exact rather than a property of the page: the terms results are paged by
+ * distinct label and carry every hit of the labels on the page, so a fold here sees the whole group.
  */
 export interface LabelGroup {
   readonly label: string;
