@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  HostListener,
   ViewEncapsulation,
   computed,
   effect,
@@ -101,6 +102,15 @@ export class TermPicker {
 
   /** Emitted when the author closes the picker without choosing anything. */
   readonly cancelled = output<void>();
+
+  /** Escape leaves the picker, which a modal host will expect and an inline one does no harm by. */
+  @HostListener('keydown', ['$event'])
+  protected onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      this.cancelled.emit();
+    }
+  }
 
   protected readonly text = linkedSignal(() => this.query());
   protected readonly activeTab = signal<SearchKind>('class');

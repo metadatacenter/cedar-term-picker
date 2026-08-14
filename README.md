@@ -31,6 +31,37 @@ all. Nothing reads from the terminology server yet.
 Planned work, and the decisions already taken, are tracked in
 [TERM-PICKER-ROADMAP.md](https://github.com/metadatacenter/cedar-development/blob/develop/ops/TERM-PICKER-ROADMAP.md).
 
+## Theming
+
+A host may set these ten custom properties on the element, and they are the whole surface:
+
+```css
+cedar-term-picker {
+  --ctp-color-primary: #0f7686;      /* buttons, the active tab, the focus ring */
+  --ctp-color-on-primary: #ffffff;   /* text on the primary */
+  --ctp-color-heading: #0b3938;      /* row titles and labels */
+  --ctp-color-text: rgba(0, 0, 0, 0.87);
+  --ctp-color-muted: #555555;        /* counts, versions, everything supporting */
+  --ctp-color-surface: #f5f5f5;      /* the panel behind expanded rows */
+  --ctp-color-border: #d7e0df;
+  --ctp-color-warning: #856404;      /* obsolete terms, sources that were not searched */
+  --ctp-font-family: 'CEE Roboto', 'Helvetica Neue', sans-serif;
+  --ctp-font-size: 14px;
+}
+```
+
+Rules in a host page take precedence over the component's own, so these are defaults rather than a
+floor. Two values are derived and not settable: the type scale moves with `--ctp-font-size`, so a
+larger base reads as a larger component rather than a broken one, and the tint behind chips and
+pinned versions is mixed from `--ctp-color-primary`, so re-pointing the brand does not leave it
+behind.
+
+Nothing else is host API. Row geometry, control padding, the radius of a chip and the meaning of a
+colour stay with the component: a host able to re-point them individually could make an obsolete
+term look like an ordinary one, which is the failure the contract exists to prevent. The CEDAR
+Embeddable Editor reaches the same rule from the other side — its Material internals are not host
+API either.
+
 ## Requirements
 
 Node 24.19.0, the version `.nvmrc` pins and CI runs. Angular 22 accepts

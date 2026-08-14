@@ -149,6 +149,73 @@ test('every result row is one line', async ({ page }) => {
   expect(Math.max(...heights) - Math.min(...heights)).toBeLessThan(8);
 });
 
+test('a host can re-point the contract, and nothing else', async ({ page }) => {
+  // Its own fixture: this needs a row carrying a chip, and the only matched label in MELANOMA
+  // belongs to the coded row, where the chip is deliberately suppressed.
+  await stubSearch(page, () => ({
+    ...MELANOMA,
+    results: {
+      ...MELANOMA.results,
+      class: results([classHit('NCIT', 'Melanoma', { matched: { label: 'malignant melanoma', language: 'en' } })], {
+        distinctLabelCount: 1,
+      }),
+    },
+  }));
+  await openPicker(page);
+  await page.addStyleTag({
+    content: `cedar-term-picker {
+      --ctp-color-primary: rgb(128, 0, 128);
+      --ctp-color-text: rgb(17, 17, 17);
+      --ctp-font-size: 16px;
+    }`,
+  });
+  await search(page, 'melanoma');
+
+  // Rules in the outer tree beat :host, so the component's values are defaults rather than a floor.
+  const picker = page.locator('cedar-term-picker');
+  await expect(picker).toHaveCSS('color', 'rgb(17, 17, 17)');
+  await expect(picker).toHaveCSS('font-size', '16px');
+
+  // The brand reaches what carries it, and the tint is derived from it rather than left behind.
+  await expect(page.locator('cedar-term-picker .tab.active')).toHaveCSS(
+    'border-bottom-color',
+    'rgb(128, 0, 128)',
+  );
+  const chip = await page
+    .locator('cedar-term-picker .chip')
+    .first()
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+  expect(chip).not.toBe('rgb(255, 255, 255)');
+
+  // The type scale moves with the base rather than being pinned beside it.
+  const small = await page
+    .locator('cedar-term-picker .badge')
+    .first()
+    .evaluate((element) => getComputedStyle(element).fontSize);
+  expect(small).toBe('14px');
+
+  // And what is not in the contract stays out of reach: a host cannot re-point the geometry.
+  await page.addStyleTag({ content: 'cedar-term-picker { --ctp-row-padding: 40px; }' });
+  const rowHeight = (await page.locator('cedar-term-picker .rowhead').first().boundingBox())!.height;
+  expect(rowHeight).toBeLessThan(40);
+});
+
+test('escape leaves the picker', async ({ page }) => {
+  await stubSearch(page, () => MELANOMA);
+  await openPicker(page);
+  const cancelled: number[] = [];
+  await page.exposeFunction('recordCancel', () => cancelled.push(1));
+  await page.evaluate(() =>
+    document
+      .querySelector('cedar-term-picker')!
+      .addEventListener('cancelled', () =>
+        (window as unknown as { recordCancel: () => void }).recordCancel(),
+      ),
+  );
+  await page.locator('cedar-term-picker input[type=search]').press('Escape');
+  expect(cancelled).toHaveLength(1);
+});
+
 test('a source that could not be searched is announced, not silently absent', async ({ page }) => {
   await stubSearch(page, () => MELANOMA);
   await openPicker(page);

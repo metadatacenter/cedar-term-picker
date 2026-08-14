@@ -3,17 +3,49 @@
 @use '../cee-tokens' as tokens;
 @use '../cedar-neutrals' as neutrals;
 
-// The host rules CEE sets on its own element, for the same reason: a component dropped into someone
-// else's page should not inherit their box model, and should fit the width it is given.
+// The host contract.
+//
+// These nine custom properties are what an embedder may set, and the list is short on purpose. A
+// host page setting one of them wins: rules in the outer tree take precedence over `:host`, so the
+// values below are defaults rather than a floor.
+//
+// What is deliberately not here is everything that would let a host break the component while
+// appearing to theme it — row padding, chip radius, the geometry of a control, the meaning of a
+// colour. The picker marks an obsolete term in the warning colour and a pinned version in the
+// tinted surface; a host that could re-point those individually could make an obsolete term look
+// ordinary. CEE reached the same rule from the other direction: its Material internals are not host
+// API. Adding a property here is a change to a public contract, not a tweak.
 :host {
+  --ctp-color-primary: #{tokens.$cee-color-primary};
+  --ctp-color-on-primary: #{tokens.$cee-color-on-primary};
+  --ctp-color-heading: #{tokens.$cee-color-component-title};
+  --ctp-color-text: #{neutrals.$cedar-text-primary};
+  --ctp-color-muted: #{neutrals.$cedar-text-muted};
+  --ctp-color-surface: #{neutrals.$cedar-surface-panel};
+  --ctp-color-border: #{neutrals.$cedar-border-rule};
+  --ctp-color-warning: #{tokens.$cee-color-warning};
+  --ctp-font-family: #{tokens.$cee-font-family};
+  --ctp-font-size: #{tokens.$cee-font-size};
+
+  // Derived, not settable. The type scale is CEDAR's — 14 for the body, 12 for what supports it,
+  // 15 for what leads — and it moves with the base a host sets rather than being pinned beside it,
+  // so `--ctp-font-size: 16px` reads as a larger component and not a broken one.
+  --ctp-font-size-small: calc(var(--ctp-font-size) - 2px);
+  --ctp-font-size-lead: calc(var(--ctp-font-size) + 1px);
+
+  // Derived from the brand, so a host that re-points the primary colour gets a tint that matches it
+  // rather than one left behind. A chip and a pinned version share this; the panel behind expanded
+  // rows is the neutral surface, and the two have to stay distinguishable.
+  --ctp-color-tint: color-mix(in srgb, var(--ctp-color-primary) 12%, white);
+
   display: block;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  font-family: tokens.$cee-font-family;
-  font-size: tokens.$cee-font-size;
+  font-family: var(--ctp-font-family);
+  font-size: var(--ctp-font-size);
   line-height: normal;
-  color: neutrals.$cedar-text-primary;
+  color: var(--ctp-color-text);
 }
 
 *,
@@ -23,7 +55,7 @@
 }
 
 .picker {
-  border: 1px solid neutrals.$cedar-border-rule;
+  border: 1px solid var(--ctp-color-border);
   border-radius: 4px;
   padding: 0.75rem;
   background: #fff;
@@ -44,43 +76,43 @@
 }
 
 .label {
-  font-size: tokens.$cee-font-size-small;
+  font-size: var(--ctp-font-size-small);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: tokens.$cee-color-component-title;
+  color: var(--ctp-color-heading);
 }
 
 input {
   padding: 0.5rem;
-  border: 1px solid neutrals.$cedar-border-control;
+  border: 1px solid var(--ctp-color-border);
   border-radius: 3px;
   font: inherit;
   color: inherit;
   min-width: 0;
 
   &:focus {
-    outline: 2px solid tokens.$cee-color-primary;
+    outline: 2px solid var(--ctp-color-primary);
     outline-offset: 1px;
   }
 }
 
 button {
   font: inherit;
-  font-size: tokens.$cee-font-size-small;
+  font-size: var(--ctp-font-size-small);
   // Sized so a row carrying buttons is the same height as a row without: the ontology rows stood a
   // third taller than the folded term rows, which is the vertical creep this component keeps
   // attracting.
   padding: 0.2rem 0.6rem;
-  border: 1px solid tokens.$cee-color-primary;
+  border: 1px solid var(--ctp-color-primary);
   border-radius: 3px;
-  background: tokens.$cee-color-primary;
-  color: tokens.$cee-color-on-primary;
+  background: var(--ctp-color-primary);
+  color: var(--ctp-color-on-primary);
   cursor: pointer;
   white-space: nowrap;
 
   &.ghost {
     background: transparent;
-    color: tokens.$cee-color-primary;
+    color: var(--ctp-color-primary);
   }
 }
 
@@ -98,7 +130,7 @@ button {
   padding: 0.1rem 0.45rem;
 
   .x {
-    color: neutrals.$cedar-text-muted;
+    color: var(--ctp-color-muted);
     margin-left: 0.15rem;
   }
 }
@@ -111,7 +143,7 @@ button {
   overflow-y: auto;
   margin-top: 0.4rem;
   padding: 0.35rem;
-  background: neutrals.$cedar-surface-panel;
+  background: var(--ctp-color-surface);
   border-radius: 3px;
 }
 
@@ -128,7 +160,7 @@ button {
   min-width: 0;
 
   &.on {
-    background: neutrals.$cedar-surface-tinted;
+    background: var(--ctp-color-tint);
     font-weight: 500;
   }
 
@@ -142,7 +174,7 @@ button {
   align-items: center;
   gap: 0.25rem;
   margin-top: 0.75rem;
-  border-bottom: 1px solid neutrals.$cedar-border-rule;
+  border-bottom: 1px solid var(--ctp-color-border);
 }
 
 .tab {
@@ -150,27 +182,27 @@ button {
   border: none;
   border-bottom: 2px solid transparent;
   border-radius: 0;
-  color: neutrals.$cedar-text-muted;
-  font-size: tokens.$cee-font-size;
+  color: var(--ctp-color-muted);
+  font-size: var(--ctp-font-size);
   padding: 0.4rem 0.6rem;
 
   &.active {
-    color: tokens.$cee-color-component-title;
-    border-bottom-color: tokens.$cee-color-primary;
+    color: var(--ctp-color-heading);
+    border-bottom-color: var(--ctp-color-primary);
     font-weight: 500;
   }
 }
 
 .badge {
   margin-left: 0.35rem;
-  font-size: tokens.$cee-font-size-small;
-  color: neutrals.$cedar-text-muted;
+  font-size: var(--ctp-font-size-small);
+  color: var(--ctp-color-muted);
 }
 
 .working {
   margin-left: auto;
-  font-size: tokens.$cee-font-size-small;
-  color: neutrals.$cedar-text-muted;
+  font-size: var(--ctp-font-size-small);
+  color: var(--ctp-color-muted);
 }
 
 .row {
@@ -178,7 +210,7 @@ button {
   align-items: center;
   gap: 0.75rem;
   padding: 0.35rem 0.2rem;
-  border-bottom: 1px solid neutrals.$cedar-border-rule-light;
+  border-bottom: 1px solid var(--ctp-color-border);
 
   &.group {
     display: block;
@@ -197,11 +229,11 @@ button {
   color: inherit;
   text-align: left;
   padding: 0.35rem 0.2rem;
-  font-size: tokens.$cee-font-size;
+  font-size: var(--ctp-font-size);
 }
 
 .twist {
-  color: neutrals.$cedar-text-muted;
+  color: var(--ctp-color-muted);
   width: 0.8em;
 }
 
@@ -212,22 +244,22 @@ button {
 }
 
 .title {
-  font-size: tokens.$cee-font-size-lead;
+  font-size: var(--ctp-font-size-lead);
   font-weight: 500;
 
   &.obsolete {
-    color: neutrals.$cedar-text-muted;
+    color: var(--ctp-color-muted);
   }
 }
 
 .who {
   margin-left: 0.4rem;
-  font-size: tokens.$cee-font-size-small;
-  color: tokens.$cee-color-component-title;
+  font-size: var(--ctp-font-size-small);
+  color: var(--ctp-color-heading);
 }
 
 .dim {
-  color: neutrals.$cedar-text-muted;
+  color: var(--ctp-color-muted);
 }
 
 .oneline {
@@ -250,7 +282,7 @@ button {
 }
 
 mark {
-  background: neutrals.$cedar-surface-tinted;
+  background: var(--ctp-color-tint);
   color: inherit;
   padding: 0 1px;
 }
@@ -258,8 +290,8 @@ mark {
 .sub,
 .meta {
   display: block;
-  font-size: tokens.$cee-font-size-small;
-  color: neutrals.$cedar-text-muted;
+  font-size: var(--ctp-font-size-small);
+  color: var(--ctp-color-muted);
   margin-top: 0.15rem;
 }
 
@@ -271,21 +303,21 @@ mark {
 
 .chip {
   display: inline-block;
-  background: neutrals.$cedar-surface-tinted;
-  color: tokens.$cee-color-component-title;
-  font-size: tokens.$cee-font-size-small;
+  background: var(--ctp-color-tint);
+  color: var(--ctp-color-heading);
+  font-size: var(--ctp-font-size-small);
   padding: 0.05rem 0.4rem;
   border-radius: 3px;
   margin-right: 0.35rem;
 
   &.warn {
     background: #fff3cd;
-    color: tokens.$cee-color-warning;
+    color: var(--ctp-color-warning);
   }
 }
 
 .children {
-  background: neutrals.$cedar-surface-panel;
+  background: var(--ctp-color-surface);
   padding: 0.1rem 0.5rem 0.2rem 1.6rem;
 }
 
@@ -294,7 +326,7 @@ mark {
   align-items: center;
   gap: 0.75rem;
   padding: 0.3rem 0;
-  border-bottom: 1px solid neutrals.$cedar-border-rule-light;
+  border-bottom: 1px solid var(--ctp-color-border);
 
   &:last-child {
     border-bottom: none;
@@ -310,8 +342,8 @@ mark {
   white-space: nowrap;
 
   &.pinned .version {
-    background: neutrals.$cedar-surface-tinted;
-    color: tokens.$cee-color-component-title;
+    background: var(--ctp-color-tint);
+    color: var(--ctp-color-heading);
     border-radius: 3px;
     padding: 0 0.25rem;
     font-weight: 500;
@@ -319,8 +351,8 @@ mark {
 }
 
 .version {
-  font-size: tokens.$cee-font-size-small;
-  color: neutrals.$cedar-text-muted;
+  font-size: var(--ctp-font-size-small);
+  color: var(--ctp-color-muted);
   min-width: 4.5rem;
   text-align: center;
 }
@@ -329,22 +361,22 @@ mark {
   background: transparent;
   border: none;
   border-radius: 2px;
-  color: tokens.$cee-color-primary;
-  font-size: tokens.$cee-font-size-lead;
+  color: var(--ctp-color-primary);
+  font-size: var(--ctp-font-size-lead);
   line-height: 1;
   padding: 0 0.25rem;
 
   &:disabled {
-    color: neutrals.$cedar-border-control;
+    color: var(--ctp-color-border);
     cursor: default;
   }
 }
 
 .notice {
-  background: neutrals.$cedar-surface-panel;
-  border-left: 3px solid tokens.$cee-color-warning;
-  color: neutrals.$cedar-text-muted;
-  font-size: tokens.$cee-font-size-small;
+  background: var(--ctp-color-surface);
+  border-left: 3px solid var(--ctp-color-warning);
+  color: var(--ctp-color-muted);
+  font-size: var(--ctp-font-size-small);
   padding: 0.5rem 0.6rem;
   margin: 0.75rem 0 0;
 }
@@ -358,7 +390,7 @@ mark {
 }
 
 .empty {
-  color: neutrals.$cedar-text-muted;
-  font-size: tokens.$cee-font-size-small;
+  color: var(--ctp-color-muted);
+  font-size: var(--ctp-font-size-small);
   padding: 1rem 0.2rem;
 }
