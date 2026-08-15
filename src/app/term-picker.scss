@@ -218,6 +218,35 @@ button {
   }
 }
 
+// A row an author can choose. Clicking marks it, and the mark is the whole affordance: with the
+// buttons gone there is nothing else on the row to say it answers to a click, so the tint has to
+// be visible at a glance and the cursor has to change before one.
+.pick {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--ctp-color-surface);
+  }
+
+  &.marked,
+  &.marked:hover {
+    background: var(--ctp-color-tint);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ctp-color-primary);
+    outline-offset: -2px;
+  }
+}
+
+// How many releases the ontology has, next to the one on the row. Shown only where an author can
+// reach the others, so it reads as an invitation to step rather than as a fact about the corpus.
+.of {
+  color: var(--ctp-color-muted);
+  font-size: var(--ctp-font-size-small);
+  white-space: nowrap;
+}
+
 .rowhead {
   display: flex;
   align-items: center;

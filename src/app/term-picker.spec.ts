@@ -201,8 +201,10 @@ describe('TermPicker', () => {
     fixture.componentInstance.selected.subscribe((constraint) => (emitted = constraint));
     shadow(fixture).querySelector<HTMLButtonElement>('.rowhead')?.click();
     await fixture.whenStable();
-    const use = [...shadow(fixture).querySelectorAll<HTMLButtonElement>('.child button')][0];
-    use?.click();
+    // A row is chosen by confirming it, not by a single click, so this is the double click.
+    shadow(fixture)
+      .querySelector<HTMLElement>('.child.pick')
+      ?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
 
     // Freeze-on-publish resolves an unpinned constraint at publish time, so latest keeps meaning
     // latest until then. Writing today's version instead would silently pin it.

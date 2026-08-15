@@ -244,6 +244,43 @@ test('a long label folds from the middle, keeping both ends', async ({ page }) =
   await expect(title).toHaveAttribute('title', long);
 });
 
+test('a click marks a row and a second act chooses it', async ({ page }) => {
+  await stubSearch(page, () => MELANOMA);
+  await openPicker(page);
+  await search(page, 'melanoma');
+  await page.locator('cedar-term-picker .tab').nth(2).click();
+
+  const chosen: unknown[] = [];
+  await page.exposeFunction('recordChoice', (constraint: unknown) => chosen.push(constraint));
+  await page.evaluate(() =>
+    document
+      .querySelector('cedar-term-picker')!
+      .addEventListener('selected', (event) =>
+        (window as unknown as { recordChoice: (c: unknown) => void }).recordChoice(
+          (event as CustomEvent).detail,
+        ),
+      ),
+  );
+
+  const rows = page.locator('cedar-term-picker .row.pick');
+  await rows.first().click();
+  await expect(rows.first()).toHaveClass(/marked/);
+  // A click is not a decision. Nothing has been emitted, and marking another row moves the mark.
+  expect(chosen).toHaveLength(0);
+  await rows.nth(1).click();
+  await expect(rows.first()).not.toHaveClass(/marked/);
+  await expect(rows.nth(1)).toHaveClass(/marked/);
+
+  await rows.nth(1).dblclick();
+  expect(chosen).toHaveLength(1);
+  expect((chosen[0] as { sourceAcronym: string }).sourceAcronym).toBe('NCIT');
+
+  // Enter reaches the same decision, because a double click has no keyboard equivalent.
+  await rows.first().focus();
+  await rows.first().press('Enter');
+  expect((chosen[1] as { sourceAcronym: string }).sourceAcronym).toBe('MELO');
+});
+
 test('a version that is prose is elided, not laid out', async ({ page }) => {
   // owl:versionInfo is free text. The longest one the catalog holds is 782 characters of prose,
   // and a row that lays it out is a row with no room for anything else.
@@ -374,13 +411,15 @@ test('stepping to an older release pins it, and stepping back to current does no
   const ncit = page.locator('cedar-term-picker .child', { hasText: 'NCIT' });
   await ncit.locator('.step').first().click();
   await expect(ncit.locator('.version')).toHaveText('26.06e');
+  // The row says how many releases there are, which is the only thing on it inviting a step.
+  await expect(ncit.locator('.of')).toHaveText('of 3');
 
-  await ncit.locator('button', { hasText: 'Use' }).click();
+  await ncit.dblclick();
   expect((chosen[0] as { version?: { declaredVersion: string } }).version?.declaredVersion).toBe('26.06e');
 
   // Forward to current unpins: latest keeps meaning latest until publishing resolves it.
   await ncit.locator('.step').nth(1).click();
   await expect(ncit.locator('.version')).toHaveText('26.07d');
-  await ncit.locator('button', { hasText: 'Use' }).click();
+  await ncit.dblclick();
   expect((chosen[1] as { version?: unknown }).version).toBeUndefined();
 });

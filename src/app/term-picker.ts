@@ -120,6 +120,15 @@ export class TermPicker {
   protected readonly expanded = signal<string | null>(null);
 
   /**
+   * The row an author has clicked.
+   *
+   * Choosing a constraint is two acts rather than one: a click marks a row, a second confirms it.
+   * A single click that emitted would make every mis-aimed click a decision, and the rows are one
+   * line tall and adjacent.
+   */
+  protected readonly marked = signal<string | null>(null);
+
+  /**
    * Which page each tab is showing.
    *
    * Per tab rather than one for the picker: the tabs count different things and an author reading
@@ -596,6 +605,32 @@ export class TermPicker {
    * A class is never versioned: it has no snapshot of its own, so a version on it would name
    * something that does not exist.
    */
+  /** Identifies a row across the four kinds, which have no one identifier between them. */
+  protected keyOf(hit: Hit): string {
+    if (hit.type === 'ontology') {
+      return `ontology:${hit.sourceAcronym}`;
+    }
+    if (hit.type === 'class') {
+      return `class:${hit.sourceAcronym}:${hit.termIri}`;
+    }
+    return `${hit.type}:${hit.sourceAcronym}:${hit.termBaseIri}`;
+  }
+
+  protected isMarked(hit: Hit): boolean {
+    return this.marked() === this.keyOf(hit);
+  }
+
+  protected mark(hit: Hit): void {
+    this.marked.set(this.keyOf(hit));
+  }
+
+  /** How many releases this ontology has, when it has more than the one on the row. */
+  protected versionCount(acronym: string): number | undefined {
+    const source = this.sourceOf(acronym);
+    const count = source?.versionCount ?? 1;
+    return source?.pinnable === true && count > 1 ? count : undefined;
+  }
+
   protected choose(hit: Hit): void {
     const version = hit.type === 'class' ? undefined : this.pinned().get(hit.sourceAcronym);
     this.selected.emit(version === undefined ? hit : { ...hit, version });

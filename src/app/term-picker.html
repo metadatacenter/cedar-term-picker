@@ -10,6 +10,7 @@
         (click)="step(acronym, 1); $event.stopPropagation()"
       >‹</button>
       <span class="version" [title]="'Version ' + versionOf(acronym)">{{ elide(versionOf(acronym), 20, 8) }}</span>
+      <span class="of">of {{ versionCount(acronym) }}</span>
       <button
         type="button"
         class="step"
@@ -133,7 +134,14 @@
           @if (expanded() === group.label) {
             <div class="children">
               @for (hit of group.hits; track hit.termIri) {
-                <div class="child oneline">
+<div
+                  class="child oneline pick"
+                  tabindex="0"
+                  [class.marked]="isMarked(hit)"
+                  (click)="mark(hit)"
+                  (dblclick)="choose(hit)"
+                  (keydown.enter)="choose(hit)"
+                >
                   <span class="grow ellipsis">
                     <span class="who">{{ hit.sourceAcronym }}</span>
                     <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
@@ -146,7 +154,6 @@
                   <span class="meta inline" [title]="'Version ' + versionOf(hit.sourceAcronym)">
                     {{ hit.descendantCount }} beneath · {{ elide(versionOf(hit.sourceAcronym), 20, 8) }}
                   </span>
-                  <button type="button" (click)="choose(hit)">Use</button>
                 </div>
               }
             </div>
@@ -176,7 +183,14 @@
           @if (expanded() === group.label) {
             <div class="children">
               @for (hit of group.hits; track hit.termBaseIri) {
-                <div class="child oneline">
+<div
+                  class="child oneline pick"
+                  tabindex="0"
+                  [class.marked]="isMarked(hit)"
+                  (click)="mark(hit)"
+                  (dblclick)="choose(hit)"
+                  (keydown.enter)="choose(hit)"
+                >
                   <span class="grow ellipsis">
                     <span class="who">{{ hit.sourceAcronym }}</span>
                     <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
@@ -188,7 +202,6 @@
                     {{ hit.descendantCount.toLocaleString() }} beneath
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
-                  <button type="button" (click)="choose(hit)">Use</button>
                 </div>
               }
             </div>
@@ -201,7 +214,14 @@
 
     @case ('ontology') {
       @for (hit of ontologies(); track hit.sourceAcronym) {
-        <div class="row oneline">
+<div
+          class="row oneline pick"
+          tabindex="0"
+          [class.marked]="isMarked(hit)"
+          (click)="mark(hit)"
+          (dblclick)="choose(hit)"
+          (keydown.enter)="choose(hit)"
+        >
           <span class="grow ellipsis">
             @let parts = splitName(hit.sourceAcronym);
             <span class="title">{{ parts[0] }}<mark>{{ parts[1] }}</mark>{{ parts[2] }}</span>
@@ -218,13 +238,6 @@
             }
           </span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
-          <button
-            type="button"
-            class="ghost"
-            [title]="'Search only ' + hit.sourceAcronym"
-            (click)="toggleNarrowing(hit.sourceAcronym)"
-          >{{ isNarrowedTo(hit.sourceAcronym) ? 'Narrowed' : 'Narrow to this' }}</button>
-          <button type="button" (click)="choose(hit)">Use</button>
         </div>
       } @empty {
         <p class="empty">No vocabulary is named this, and none of them matched terms.</p>
@@ -233,7 +246,14 @@
 
     @case ('valueSet') {
       @for (hit of valueSets(); track hit.termBaseIri) {
-        <div class="row oneline">
+<div
+          class="row oneline pick"
+          tabindex="0"
+          [class.marked]="isMarked(hit)"
+          (click)="mark(hit)"
+          (dblclick)="choose(hit)"
+          (keydown.enter)="choose(hit)"
+        >
           <span class="grow ellipsis">
             <span class="title" [title]="hit.termBaseLabel">{{ elide(hit.termBaseLabel) }}</span>
             <span class="who">{{ hit.sourceAcronym }}</span>
@@ -243,7 +263,6 @@
           </span>
           <span class="meta inline">{{ hit.termCount }} values</span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
-          <button type="button" (click)="choose(hit)">Use</button>
         </div>
       } @empty {
         <p class="empty">No value set matches.</p>
