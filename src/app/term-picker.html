@@ -32,17 +32,15 @@
       IRI is here in full, beside the things that say whether it is the right concept.
     -->
     <dl class="detail">
-      @if (hit.type === 'ontology') {
-        <dt>Ontology IRI</dt>
-        <dd class="iri" [title]="sourceIriOf(hit)">{{ sourceIriOf(hit) }}</dd>
-      } @else {
-        <dt>{{ hit.type === 'valueSet' ? 'Value set IRI' : 'Term IRI' }}</dt>
-        <dd class="iri" [title]="termIriOf(hit)">{{ termIriOf(hit) }}</dd>
+      @if (hit.type === 'ontology' || hit.type === 'valueSet') {
+        <dt>{{ hit.type === 'ontology' ? 'Ontology IRI' : 'Value set IRI' }}</dt>
+        <dd class="iri" [title]="termIriOf(hit)">{{
+          hit.type === 'ontology' ? sourceIriOf(hit) : termIriOf(hit)
+        }}</dd>
       }
 
       @if (hit.type === 'class' || hit.type === 'branch') {
-        <dt>Where it sits</dt>
-        <dd>
+        <dd class="wide">
           @if (hierarchyOf(hit)) {
             <ol class="tree">
               @for (row of treeRows(hit); track row.key) {
@@ -78,6 +76,9 @@
                   }
                   @if (row.open && row.hidden > 0) {
                     <span class="meta inline">· {{ row.hidden.toLocaleString() }} more not shown</span>
+                  }
+                  @if (row.depth === 0) {
+                    <span class="meta inline">· top of {{ row.acronym }}</span>
                   }
                 </li>
               }

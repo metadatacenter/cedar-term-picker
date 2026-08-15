@@ -274,9 +274,7 @@ test('a marked term shows what it is offering', async ({ page }) => {
   await expect(page.locator('cedar-term-picker .detail')).toHaveCount(0);
   await ncit.click();
 
-  // The IRI in full: it is the value a template records, and the rest of the row is shorthand.
   const detail = page.locator('cedar-term-picker .detail');
-  await expect(detail.locator('.iri').first()).toHaveText('http://ncit/Melanoma');
   // The chain above the term and what hangs below it, which is what tells one "Melanoma" from
   // another when the label alone cannot.
   const tree = detail.locator('.tree .node');
@@ -302,9 +300,13 @@ test('a marked term shows what it is offering', async ({ page }) => {
   await expect(detail).toContainText('Also called');
   await expect(detail).toContainText('Cutaneous melanoma');
 
+  // The chain reaches a base and says so, so a short chain reads as complete rather than cut off.
+  await expect(detail.locator('.tree .node').first()).toContainText('top of NCIT');
+
   // One at a time: marking another row moves the panel with the mark.
   await page.locator('cedar-term-picker .child', { hasText: 'DOID' }).click();
-  await expect(detail.locator('.iri').first()).toHaveText('http://doid/melanoma');
+  await expect(detail.locator('.tree .node.self')).toContainText('Melanoma');
+  await expect(page.locator('cedar-term-picker .detail')).toHaveCount(1);
 });
 
 test('a click marks a row and a second act chooses it', async ({ page }) => {

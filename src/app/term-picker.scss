@@ -337,6 +337,12 @@ button {
     overflow-wrap: anywhere;
   }
 
+  // The tree has no term to define, so it takes the whole width rather than sitting in the value
+  // column with an empty label beside it.
+  .wide {
+    grid-column: 1 / -1;
+  }
+
   // Where the term sits, drawn as the ontology draws it, and walkable from there. The indent is the
   // structure; the spine is the chain the search landed on, and everything else is what an author
   // opened to see beside it.
