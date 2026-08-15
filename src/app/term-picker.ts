@@ -570,14 +570,22 @@ export class TermPicker {
    * appeared on, which is a line of vertical space carrying no information; showing which characters
    * matched says it in the name itself.
    */
+  /** The acronym around the query, so an ontology found by its acronym shows why. */
+  protected splitAcronym(acronym: string): readonly [string, string, string] {
+    return TermPicker.split(acronym, this.text().trim());
+  }
+
   protected splitName(acronym: string): readonly [string, string, string] {
-    const name = this.sourceName(acronym);
-    const at = name.toLocaleLowerCase().indexOf(this.text().trim().toLocaleLowerCase());
-    if (at < 0 || this.text().trim().length === 0) {
-      return [name, '', ''];
+    return TermPicker.split(this.sourceName(acronym), this.text().trim());
+  }
+
+  /** A string cut around the query: before, the match itself, after. */
+  private static split(text: string, query: string): readonly [string, string, string] {
+    const at = text.toLocaleLowerCase().indexOf(query.toLocaleLowerCase());
+    if (at < 0 || query.length === 0) {
+      return [text, '', ''];
     }
-    const end = at + this.text().trim().length;
-    return [name.slice(0, at), name.slice(at, end), name.slice(end)];
+    return [text.slice(0, at), text.slice(at, at + query.length), text.slice(at + query.length)];
   }
 
   /** The range a folded branch covers, so the row says what it holds without listing its positions. */

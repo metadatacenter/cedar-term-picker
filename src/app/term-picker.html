@@ -18,7 +18,7 @@
       [attr.aria-expanded]="isHistoryOpen(acronym)"
       [title]="'Show all ' + count + ' releases of ' + acronym"
       (click)="openHistory(acronym); $event.stopPropagation()"
-    >of {{ count }}<span class="caret">{{ isHistoryOpen(acronym) ? '⌃' : '⌄' }}</span></button>
+    >of {{ count }}<span class="caret">{{ isHistoryOpen(acronym) ? '▴' : '▾' }}</span></button>
   } @else {
     <span class="of"></span>
   }
@@ -283,15 +283,14 @@
         >
           <span class="grow ellipsis">
             @let parts = splitName(hit.sourceAcronym);
-            <span class="title">{{ parts[0] }}<mark>{{ parts[1] }}</mark>{{ parts[2] }}</span>
-            <span class="who">{{ hit.sourceAcronym }}</span>
+            <span class="title">{{ parts[0] }}@if (parts[1]) {<mark>{{ parts[1] }}</mark>}{{
+              parts[2] }}</span>
+            @let who = splitAcronym(hit.sourceAcronym);
+            <span class="who">{{ who[0] }}@if (who[1]) {<mark>{{ who[1] }}</mark>}{{ who[2] }}</span>
           </span>
           <span class="meta inline">
-            @if (hit.matchType !== 'terms') {
-              named ·
-            }
             @if (hit.matchCount) {
-              {{ hit.matchCount.toLocaleString() }} terms
+              {{ hit.matchCount.toLocaleString() }} {{ hit.matchCount === 1 ? 'term' : 'terms' }}
             } @else {
               no terms match
             }

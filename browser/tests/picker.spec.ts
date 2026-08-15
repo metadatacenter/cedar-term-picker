@@ -24,6 +24,7 @@ const MELANOMA = {
     source('NCIT', { name: 'National Cancer Institute Thesaurus', versionCount: 3, declaredVersion: '26.07d' }),
     source('DOID', { name: 'Human Disease Ontology', versionCount: 15, declaredVersion: '2026-06-30' }),
     source('OCHV', { name: 'Ontology of Consumer Health Vocabulary', versionCount: 1 }),
+    source('MELO', { name: 'Melanoma Ontology' }),
     source('GONE', { served: 'unavailable', reason: 'sourceUnknown' }),
   ],
   results: {
@@ -113,16 +114,18 @@ test('branches fold across and within ontologies, and open onto their parents', 
   await expect(children.nth(1)).toContainText('Nevi and Melanomas');
 });
 
-test('an ontology row says whether it is named for the query or holds its terms', async ({ page }) => {
+test('an ontology row shows what the query matched, or nothing but its count', async ({ page }) => {
   await stubSearch(page, () => MELANOMA);
   await openPicker(page);
   await search(page, 'melanoma');
   await page.locator('cedar-term-picker .tab').nth(2).click();
 
+  // A vocabulary named for the query says so by marking the part of the name that matched. NCIT is
+  // here because its terms matched, and its count is the whole of the reason.
   const rows = page.locator('cedar-term-picker .row.oneline');
-  await expect(rows.filter({ hasText: 'MELO' })).toContainText('named');
+  await expect(rows.filter({ hasText: 'MELO' }).locator('mark')).toHaveText('Melanoma');
   await expect(rows.filter({ hasText: 'NCIT' })).toContainText('950 terms');
-  await expect(rows.filter({ hasText: 'NCIT' })).not.toContainText('named');
+  await expect(rows.filter({ hasText: 'NCIT' }).locator('mark')).toHaveCount(0);
 });
 
 test('every result row is one line', async ({ page }) => {

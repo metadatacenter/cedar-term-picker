@@ -290,7 +290,8 @@ button {
 // The caret carries the affordance. Without it the count reads as another muted figure beside the
 // version, and an author has no reason to click the one thing on the row that opens.
 .caret {
-  padding-left: 0.15rem;
+  padding-left: 0.2rem;
+  font-size: 0.75em;
 }
 
 // The full history, under the row that opened it. Scrolls rather than growing: DOID has fifteen
