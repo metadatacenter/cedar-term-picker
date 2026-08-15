@@ -88,13 +88,21 @@
   // Clear of the corner the dismiss now occupies.
   padding-right: 1.6rem;
 
-  .phrase {
+  .phrase,
+  .about {
     margin: 0;
-    // Sits on the input's baseline opposite it, rather than floating clear of its own caption.
-    padding: 0.45rem 0 0.5rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  // Sits on the input's baseline opposite it, rather than floating clear of its own caption.
+  .phrase {
+    padding: 0.45rem 0 0;
+  }
+
+  .about {
+    padding: 0.1rem 0 0.35rem;
   }
 
   strong {

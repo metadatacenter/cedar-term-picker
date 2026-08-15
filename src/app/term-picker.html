@@ -199,18 +199,25 @@
           @if (chosen.kind) {
             {{ chosen.kind }}
           }
-          <strong [title]="chosen.what">{{ elide(chosen.what, 44, 14) }}</strong>
+          <strong [title]="chosen.what">{{ elide(chosen.what, 72, 20) }}</strong>
+        </p>
+        <!--
+          The source and the release, under the term rather than beside it. Together they are the
+          constraint, and a term long enough to need eliding was pushing them off the line.
+
+          "latest" rather than the release latest currently resolves to: an unpinned constraint
+          records no version at all and freeze-on-publish resolves it at publish time, so naming
+          today's release would describe something the template will not say. A pinned one records
+          all three of declared version, effective date and content hash, so all three are here —
+          less whichever of the three the store never had, which is why a release that declares no
+          version does not print its date twice.
+        -->
+        <p class="about">
           <span class="who">{{ chosen.acronym }}</span>
-          <!--
-            "latest" rather than the release latest currently resolves to: an unpinned constraint
-            records no version at all and freeze-on-publish resolves it at publish time, so naming
-            today's release would describe something the template will not say. A pinned one records
-            all three of declared version, effective date and content hash, so all three are here.
-          -->
           <span class="meta inline">
             @if (chosen.pinned) {
               · {{ elide(chosen.version, 20, 8) }}
-              @if (chosen.effectiveDate) {
+              @if (chosen.effectiveDate && chosen.effectiveDate !== chosen.version) {
                 · {{ chosen.effectiveDate }}
               }
               @if (chosen.id) {
