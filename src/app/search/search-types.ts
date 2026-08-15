@@ -97,6 +97,8 @@ export interface ClassHit extends HitBase {
   readonly descendantCount: number;
   /** The chain from a root down to the class, which is what separates one "Disease" from another. */
   readonly path?: readonly TermRef[];
+  /** Every other name the source records for it: synonyms, other languages, alternative labels. */
+  readonly names?: readonly MatchedLabel[];
 }
 
 export interface BranchHit extends HitBase {
@@ -107,6 +109,7 @@ export interface BranchHit extends HitBase {
   readonly obsolete: boolean;
   readonly path?: readonly TermRef[];
   readonly examples?: readonly TermRef[];
+  readonly names?: readonly MatchedLabel[];
 }
 
 export interface OntologyHit extends HitBase {

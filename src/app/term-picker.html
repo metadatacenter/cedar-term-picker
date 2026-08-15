@@ -32,8 +32,11 @@
       IRI is here in full, beside the things that say whether it is the right concept.
     -->
     <dl class="detail">
-      @if (hit.type !== 'ontology') {
-        <dt>{{ hit.type === 'valueSet' ? 'Value set' : 'Term' }}</dt>
+      @if (hit.type === 'ontology') {
+        <dt>Ontology IRI</dt>
+        <dd class="iri" [title]="sourceIriOf(hit)">{{ sourceIriOf(hit) }}</dd>
+      } @else {
+        <dt>{{ hit.type === 'valueSet' ? 'Value set IRI' : 'Term IRI' }}</dt>
         <dd class="iri" [title]="termIriOf(hit)">{{ termIriOf(hit) }}</dd>
       }
 
@@ -51,13 +54,15 @@
         </dd>
       }
 
-      @if (hit.type === 'class' || hit.type === 'branch') {
-        <dt>Beneath it</dt>
+      @if (namesOf(hit); as names) {
+        <dt>Also called</dt>
         <dd>
-          @if (descendantsOf(hit); as beneath) {
-            {{ beneath }} — the branches tab offers this subtree as one constraint
-          } @else {
-            nothing; this term is a leaf
+          @for (name of names; track name.label) {
+            <span class="chip">{{ elide(name.label, 44, 12) }}@if (name.language) { · {{
+              name.language }}}</span>
+          }
+          @if (moreNames(hit); as more) {
+            <span class="meta inline">and {{ more }} more</span>
           }
         </dd>
       }
@@ -73,13 +78,6 @@
         </dd>
       }
 
-      <dt>Ontology</dt>
-      <dd>{{ sourceAcronym(hit) }} · {{ sourceName(sourceAcronym(hit)) }} · {{ versionOf(sourceAcronym(hit)) }}</dd>
-
-      @if (sourceIriOf(hit); as iri) {
-        <dt>Ontology IRI</dt>
-        <dd class="iri" [title]="iri">{{ iri }}</dd>
-      }
     </dl>
   }
 </ng-template>

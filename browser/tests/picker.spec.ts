@@ -30,7 +30,11 @@ const MELANOMA = {
   results: {
     class: results(
       [
-        classHit('NCIT', 'Melanoma', { descendantCount: 321, under: 'Melanocytic Neoplasm' }),
+        classHit('NCIT', 'Melanoma', {
+          descendantCount: 321,
+          under: 'Melanocytic Neoplasm',
+          names: [{ label: 'Cutaneous melanoma' }, { label: 'mélanome', language: 'fr' }],
+        }),
         classHit('DOID', 'melanoma', { descendantCount: 31 }),
         classHit('OCHV', '6188', { matched: { label: 'HIV disease', language: 'en' } }),
       ],
@@ -261,11 +265,9 @@ test('a marked term shows what it is offering', async ({ page }) => {
   const detail = page.locator('cedar-term-picker .detail');
   await expect(detail.locator('.iri').first()).toHaveText('http://ncit/Melanoma');
   await expect(detail).toContainText('Melanocytic Neoplasm');
-  await expect(detail).toContainText('321 concepts');
-  await expect(detail).toContainText('National Cancer Institute Thesaurus');
-  // Both IRIs: the term's is what a class constraint records, the ontology's what an ontology
-  // constraint records, and a row that names neither leaves an author guessing at both.
-  await expect(detail.locator('.iri').nth(1)).toHaveText('http://ncit.example/ncit.owl');
+  // The other names it goes by, which is what says whether the concept is the one meant.
+  await expect(detail).toContainText('Also called');
+  await expect(detail).toContainText('Cutaneous melanoma');
 
   // One at a time: marking another row moves the panel with the mark.
   await page.locator('cedar-term-picker .child', { hasText: 'DOID' }).click();

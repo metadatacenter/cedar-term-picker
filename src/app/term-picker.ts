@@ -20,6 +20,7 @@ import {
   BranchHit,
   ClassHit,
   Hit,
+  MatchedLabel,
   OntologyHit,
   SearchKind,
   SearchResponse,
@@ -45,6 +46,9 @@ const DEBOUNCE_MS = 250;
 
 /** Labels per page for the folding tabs, rows per page for the rest. */
 const PAGE_SIZE = 25;
+
+/** How many of a term's other names a panel shows before saying how many are left. */
+const NAME_LIMIT = 8;
 
 /**
  * One label, and the ontologies that offer it.
@@ -729,6 +733,23 @@ export class TermPicker {
       return '';
     }
     return `${count.toLocaleString()} ${count === 1 ? 'concept' : 'concepts'}`;
+  }
+
+  /**
+   * The other names a term goes by, capped at what a panel can hold.
+   *
+   * Capped because a source decides what a synonym is, and some decide oddly: BPT records
+   * "Description: …" and "Link: https://…" as exact synonyms of Melanoma, twenty-one names in all.
+   * The cap keeps a well-behaved term readable without hiding that the odd one has more.
+   */
+  protected namesOf(hit: Hit): readonly MatchedLabel[] | undefined {
+    const names = hit.type === 'class' || hit.type === 'branch' ? hit.names : undefined;
+    return names?.length ? names.slice(0, NAME_LIMIT) : undefined;
+  }
+
+  protected moreNames(hit: Hit): number {
+    const names = hit.type === 'class' || hit.type === 'branch' ? hit.names : undefined;
+    return Math.max((names?.length ?? 0) - NAME_LIMIT, 0);
   }
 
   protected isMarked(hit: Hit): boolean {
