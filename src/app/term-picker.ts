@@ -704,6 +704,11 @@ export class TermPicker {
     return hit.type === 'ontology' ? hit.sourceAcronym : hit.termBaseIri;
   }
 
+  /** The ontology's own IRI, which is what an ontology constraint records in place of a term. */
+  protected sourceIriOf(hit: Hit): string {
+    return this.sourceOf(hit.sourceAcronym)?.sourceIri ?? '';
+  }
+
   protected sourceAcronym(hit: Hit): string {
     return hit.sourceAcronym;
   }

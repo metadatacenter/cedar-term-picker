@@ -55,6 +55,7 @@ export interface SearchBody {
 
 interface SourceOptions {
   readonly name?: string;
+  readonly iri?: string;
   readonly versionCount?: number;
   readonly declaredVersion?: string;
   readonly served?: 'local' | 'proxied' | 'unavailable';
@@ -67,6 +68,7 @@ export function source(acronym: string, options: SourceOptions = {}): object {
     sourceSystem: 'bioportal',
     sourceAcronym: acronym,
     sourceName: options.name,
+    sourceIri: options.iri,
     served: options.served ?? 'local',
     pinnable: (options.served ?? 'local') === 'local',
     version: options.declaredVersion ? { id: 'hash', declaredVersion: options.declaredVersion } : undefined,

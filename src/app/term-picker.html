@@ -32,8 +32,10 @@
       IRI is here in full, beside the things that say whether it is the right concept.
     -->
     <dl class="detail">
-      <dt>Term</dt>
-      <dd class="iri" [title]="termIriOf(hit)">{{ termIriOf(hit) }}</dd>
+      @if (hit.type !== 'ontology') {
+        <dt>{{ hit.type === 'valueSet' ? 'Value set' : 'Term' }}</dt>
+        <dd class="iri" [title]="termIriOf(hit)">{{ termIriOf(hit) }}</dd>
+      }
 
       @if (fullPathOf(hit); as chain) {
         <dt>Under</dt>
@@ -49,14 +51,16 @@
         </dd>
       }
 
-      <dt>Beneath it</dt>
-      <dd>
-        @if (descendantsOf(hit); as beneath) {
-          {{ beneath }} — the branches tab offers this subtree as one constraint
-        } @else {
-          nothing; this term is a leaf
-        }
-      </dd>
+      @if (hit.type === 'class' || hit.type === 'branch') {
+        <dt>Beneath it</dt>
+        <dd>
+          @if (descendantsOf(hit); as beneath) {
+            {{ beneath }} — the branches tab offers this subtree as one constraint
+          } @else {
+            nothing; this term is a leaf
+          }
+        </dd>
+      }
 
       @if (hit.obsolete) {
         <dt>Deprecated</dt>
@@ -69,8 +73,13 @@
         </dd>
       }
 
-      <dt>From</dt>
+      <dt>Ontology</dt>
       <dd>{{ sourceAcronym(hit) }} · {{ sourceName(sourceAcronym(hit)) }} · {{ versionOf(sourceAcronym(hit)) }}</dd>
+
+      @if (sourceIriOf(hit); as iri) {
+        <dt>Ontology IRI</dt>
+        <dd class="iri" [title]="iri">{{ iri }}</dd>
+      }
     </dl>
   }
 </ng-template>
@@ -352,6 +361,7 @@
           </span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
         </div>
+          <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
           <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
       } @empty {
         <p class="empty">No vocabulary is named this, and none of them matched terms.</p>
@@ -378,6 +388,7 @@
           <span class="meta inline">{{ hit.termCount }} values</span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
         </div>
+          <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
           <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
       } @empty {
         <p class="empty">No value set matches.</p>

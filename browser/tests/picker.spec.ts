@@ -21,7 +21,7 @@ import {
 
 const MELANOMA = {
   sources: [
-    source('NCIT', { name: 'National Cancer Institute Thesaurus', versionCount: 3, declaredVersion: '26.07d' }),
+    source('NCIT', { name: 'National Cancer Institute Thesaurus', versionCount: 3, declaredVersion: '26.07d', iri: 'http://ncit.example/ncit.owl' }),
     source('DOID', { name: 'Human Disease Ontology', versionCount: 15, declaredVersion: '2026-06-30' }),
     source('OCHV', { name: 'Ontology of Consumer Health Vocabulary', versionCount: 1 }),
     source('MELO', { name: 'Melanoma Ontology' }),
@@ -259,14 +259,17 @@ test('a marked term shows what it is offering', async ({ page }) => {
 
   // The IRI in full: it is the value a template records, and the rest of the row is shorthand.
   const detail = page.locator('cedar-term-picker .detail');
-  await expect(detail.locator('.iri')).toHaveText('http://ncit/Melanoma');
+  await expect(detail.locator('.iri').first()).toHaveText('http://ncit/Melanoma');
   await expect(detail).toContainText('Melanocytic Neoplasm');
   await expect(detail).toContainText('321 concepts');
   await expect(detail).toContainText('National Cancer Institute Thesaurus');
+  // Both IRIs: the term's is what a class constraint records, the ontology's what an ontology
+  // constraint records, and a row that names neither leaves an author guessing at both.
+  await expect(detail.locator('.iri').nth(1)).toHaveText('http://ncit.example/ncit.owl');
 
   // One at a time: marking another row moves the panel with the mark.
   await page.locator('cedar-term-picker .child', { hasText: 'DOID' }).click();
-  await expect(detail.locator('.iri')).toHaveText('http://doid/melanoma');
+  await expect(detail.locator('.iri').first()).toHaveText('http://doid/melanoma');
 });
 
 test('a click marks a row and a second act chooses it', async ({ page }) => {
