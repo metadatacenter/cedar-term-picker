@@ -339,8 +339,8 @@
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
                 </div>
-                <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
                 <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
+                <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
               }
             </div>
           }
@@ -386,8 +386,8 @@
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
                 </div>
-                <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
                 <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
+                <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
               }
             </div>
           }
@@ -423,8 +423,8 @@
           </span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
         </div>
-          <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
           <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
+          <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
       } @empty {
         <p class="empty">No vocabulary is named this, and none of them matched terms.</p>
       }
@@ -450,8 +450,8 @@
           <span class="meta inline">{{ hit.termCount }} values</span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
         </div>
-          <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
           <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
+          <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
       } @empty {
         <p class="empty">No value set matches.</p>
       }

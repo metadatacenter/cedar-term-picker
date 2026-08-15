@@ -40,8 +40,16 @@ export class TerminologyClient {
    * asks this of one. Returns null when the store does not hold the term, which is an answer rather
    * than a failure — a proxied source has no hierarchy to give.
    */
-  async hierarchy(sourceAcronym: string, termIri: string, signal?: AbortSignal): Promise<Hierarchy | null> {
+  async hierarchy(
+    sourceAcronym: string,
+    termIri: string,
+    versionId?: string,
+    signal?: AbortSignal,
+  ): Promise<Hierarchy | null> {
     const query = new URLSearchParams({ sourceAcronym, termIri });
+    if (versionId) {
+      query.set('versionId', versionId);
+    }
     const response = await fetch(`${this.endpoint}/hierarchy?${query}`, { signal });
     if (response.status === 404) {
       return null;

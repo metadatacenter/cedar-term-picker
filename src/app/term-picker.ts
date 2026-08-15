@@ -806,13 +806,15 @@ export class TermPicker {
    * this of the one they marked. Held once fetched, so re-marking a row costs nothing.
    */
   private async readHierarchy(hit: ClassHit | BranchHit): Promise<void> {
-    const key = this.keyOf(hit);
+    // Keyed by release as well as by term: a hierarchy belongs to a release, so stepping an
+    // ontology back asks again rather than redrawing the shape the current one happens to have.
+    const key = `${this.keyOf(hit)}\u0000${this.pinned().get(hit.sourceAcronym)?.id ?? ''}`;
     if (this.hierarchies().has(key)) {
       return;
     }
     const iri = this.termIriOf(hit);
     try {
-      const found = await this.client.hierarchy(hit.sourceAcronym, iri);
+      const found = await this.client.hierarchy(hit.sourceAcronym, iri, this.pinned().get(hit.sourceAcronym)?.id);
       this.hierarchies.update((held) => new Map(held).set(key, found));
       // The term itself opens, since what is under it is the first thing an author looks at. Its
       // ancestors stay closed: opening one shows what else is beside the path, which is a question
@@ -821,6 +823,7 @@ export class TermPicker {
         this.openNodes.update((nodes) => new Set(nodes).add(TermPicker.nodeKey(hit.sourceAcronym, iri)));
         this.nodes.update((held) => new Map(held).set(TermPicker.nodeKey(hit.sourceAcronym, iri), found));
       }
+      return;
     } catch {
       // A hierarchy is context, not the answer. Failing to read it leaves the panel without it
       // rather than replacing the results with an error the author cannot act on.
@@ -829,7 +832,7 @@ export class TermPicker {
   }
 
   protected hierarchyOf(hit: Hit): Hierarchy | null | undefined {
-    return this.hierarchies().get(this.keyOf(hit));
+    return this.hierarchies().get(`${this.keyOf(hit)}\u0000${this.pinned().get(hit.sourceAcronym)?.id ?? ''}`);
   }
 
   /** Keys a node of the tree. The same pair that addresses a term anywhere else. */
@@ -861,7 +864,7 @@ export class TermPicker {
     });
     if (!open && !this.nodes().has(key)) {
       try {
-        const found = await this.client.hierarchy(acronym, iri);
+        const found = await this.client.hierarchy(acronym, iri, this.pinned().get(acronym)?.id);
         this.nodes.update((held) => new Map(held).set(key, found));
       } catch {
         this.nodes.update((held) => new Map(held).set(key, null));
