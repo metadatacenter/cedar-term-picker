@@ -620,6 +620,12 @@ export class TermPicker {
       }
       return updated;
     });
+    // The tree is of a release, so changing the release asks again. Without this the panel looks
+    // for a hierarchy under a key nothing has fetched and waits for a read that was never started.
+    const marked = this.marked();
+    if (marked !== null && (marked.type === 'class' || marked.type === 'branch')) {
+      void this.readHierarchy(marked);
+    }
   }
 
   /** Enough of a content hash to tell two releases apart, with the whole of it on hover. */
@@ -820,8 +826,8 @@ export class TermPicker {
       // ancestors stay closed: opening one shows what else is beside the path, which is a question
       // asked of one ancestor at a time and not of all of them at once.
       if (found) {
-        this.openNodes.update((nodes) => new Set(nodes).add(TermPicker.nodeKey(hit.sourceAcronym, iri)));
-        this.nodes.update((held) => new Map(held).set(TermPicker.nodeKey(hit.sourceAcronym, iri), found));
+        this.openNodes.update((nodes) => new Set(nodes).add(this.nodeKey(hit.sourceAcronym, iri)));
+        this.nodes.update((held) => new Map(held).set(this.nodeKey(hit.sourceAcronym, iri), found));
       }
       return;
     } catch {
@@ -835,13 +841,19 @@ export class TermPicker {
     return this.hierarchies().get(`${this.keyOf(hit)}\u0000${this.pinned().get(hit.sourceAcronym)?.id ?? ''}`);
   }
 
-  /** Keys a node of the tree. The same pair that addresses a term anywhere else. */
-  private static nodeKey(acronym: string, iri: string): string {
-    return `${acronym}\u0000${iri}`;
+  /**
+   * Keys a node of the tree: the pair that addresses a term, and the release it was read at.
+   *
+   * The release belongs in the key for the same reason it belongs in the request — a term's
+   * children differ between two of them, and a node opened before a step would otherwise be
+   * redrawn from what the other release holds.
+   */
+  private nodeKey(acronym: string, iri: string): string {
+    return `${acronym}\u0000${iri}\u0000${this.pinned().get(acronym)?.id ?? ''}`;
   }
 
   protected isNodeOpen(acronym: string, iri: string): boolean {
-    return this.openNodes().has(TermPicker.nodeKey(acronym, iri));
+    return this.openNodes().has(this.nodeKey(acronym, iri));
   }
 
   /**
@@ -851,7 +863,7 @@ export class TermPicker {
    * hundreds of thousands of concepts, and an author opens the handful on their way down.
    */
   protected async toggleNode(acronym: string, iri: string): Promise<void> {
-    const key = TermPicker.nodeKey(acronym, iri);
+    const key = this.nodeKey(acronym, iri);
     const open = this.openNodes().has(key);
     this.openNodes.update((nodes) => {
       const next = new Set(nodes);
@@ -892,7 +904,7 @@ export class TermPicker {
     // draw before the node is opened: reading the node to learn whether it can be opened would make
     // a closed tree fetch every branch of itself.
     const walk = (iri: string, label: string, depth: number, onSpine: boolean, known?: HierarchyChild): void => {
-      const key = TermPicker.nodeKey(acronym, iri);
+      const key = this.nodeKey(acronym, iri);
       const held = iri === tree.termIri ? tree : this.nodes().get(key);
       const children = held === undefined ? undefined : (held?.children ?? []);
       const open = this.isNodeOpen(acronym, iri);

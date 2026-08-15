@@ -494,6 +494,14 @@ test('the release count opens the whole history, and choosing from it pins', asy
         }
       : MELANOMA,
   );
+  // The hierarchy is asked for per release, so the stub answers whichever one is requested.
+  await stubHierarchy(page, (query) => ({
+    sourceAcronym: query.get('sourceAcronym'),
+    termIri: query.get('termIri'),
+    termLabel: `Melanoma at ${query.get('versionId') ?? 'latest'}`,
+    childCount: 0,
+    descendantCount: 0,
+  }));
   await openPicker(page);
   await search(page, 'melanoma');
   await page.locator('cedar-term-picker .tab').nth(1).click();
@@ -512,6 +520,8 @@ test('the release count opens the whole history, and choosing from it pins', asy
       ),
   );
 
+  // Mark the row first: the panel belongs to a marked row, and the release list opens beside it.
+  await page.locator('cedar-term-picker .child', { hasText: 'NCIT' }).click();
   await page.locator('cedar-term-picker button.of', { hasText: 'of 3' }).click();
   const releases = page.locator('cedar-term-picker .release');
   await expect(releases).toHaveCount(3);
@@ -530,6 +540,12 @@ test('the release count opens the whole history, and choosing from it pins', asy
   await expect(releases.nth(1)).not.toHaveClass(/on/);
   await releases.nth(1).click();
   await expect(releases.nth(1)).toHaveClass(/on/);
+  // The tree is of a release, so stepping to another one reads it again rather than waiting for a
+  // read that was never started.
+  // Read again at the release chosen, rather than waiting on a read that was never started.
+  await expect(page.locator('cedar-term-picker .tree .node.self')).toContainText(
+    'Melanoma at hash-b-0123456789abcdef',
+  );
   await expect(
     page.locator('cedar-term-picker .child', { hasText: 'NCIT' }).locator('.version'),
   ).toHaveText('26.06e');
