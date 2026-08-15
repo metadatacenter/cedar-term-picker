@@ -238,7 +238,6 @@
                 {{ group.hits.length }} branches in
               }
               {{ group.ontologyCount }} {{ group.ontologyCount === 1 ? 'ontology' : 'ontologies' }}
-              · {{ spanOf(group.hits) }} descendants each
             </span>
           </button>
           @if (expanded() === group.label) {

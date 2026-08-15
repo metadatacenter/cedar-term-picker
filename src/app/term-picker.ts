@@ -645,19 +645,6 @@ export class TermPicker {
   }
 
   /** The range a folded branch covers, so the row says what it holds without listing its positions. */
-  /**
-   * The range of descendant counts across a fold, not their total.
-   *
-   * Adding them would count the same concepts many times over — the branches in a fold are the same
-   * idea drawn by different ontologies, and their contents overlap heavily. The range says the one
-   * thing an author choosing between them needs: how differently these ontologies scope it.
-   */
-  protected spanOf(hits: readonly BranchHit[]): string {
-    const counts = hits.map((hit) => hit.descendantCount);
-    const low = Math.min(...counts);
-    const high = Math.max(...counts);
-    return low === high ? low.toLocaleString() : `${low.toLocaleString()}–${high.toLocaleString()}`;
-  }
 
   /**
    * Shortens a long label from the middle, keeping both ends.
