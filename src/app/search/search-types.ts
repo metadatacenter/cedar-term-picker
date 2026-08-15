@@ -216,6 +216,8 @@ export interface TreeRow {
   readonly descendantCount: number;
   /** Children the server held back, since a node can have hundreds. */
   readonly hidden: number;
+  /** In a scoped tree: whether this node is one of the query's matches or a step on the way to one. */
+  readonly match?: boolean;
 }
 
 /** What a marked row would put on the field, said in a phrase. */

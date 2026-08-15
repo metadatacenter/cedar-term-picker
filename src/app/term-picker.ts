@@ -292,6 +292,100 @@ export class TermPicker {
     return label.length > 0 && !/\p{L}/u.test(label);
   }
 
+  /**
+   * The page's terms drawn as the ontology's own tree, for a search narrowed to one of them.
+   *
+   * Folding by label is what a corpus-wide search needs, because one label is offered by two
+   * hundred vocabularies; inside a single ontology it says nothing, and a flat list of matches
+   * hides the one thing that ontology is for. So the rows become a tree.
+   *
+   * Built from the matches' own chains rather than by walking down from the roots: a scoped search
+   * returns each hit's whole ancestry, so the union of those chains is a tree rooted by
+   * construction — no call for the roots, and no search for where in them the matches are.
+   */
+  protected readonly scopedTree = computed<readonly TreeRow[]>(() => {
+    const only = this.narrowedTo();
+    if (only.length !== 1) {
+      return [];
+    }
+    const acronym = only[0];
+    const labels = new Map<string, string>();
+    const children = new Map<string, Set<string>>();
+    const parents = new Map<string, string>();
+    const matches = new Set<string>();
+    for (const hit of this.hitsOf('class').filter(isClassHit)) {
+      const chain = [
+        ...(hit.path ?? []).map((step) => ({ iri: step.termIri, label: step.termLabel ?? step.termIri })),
+        { iri: hit.termIri, label: hit.termLabel },
+      ];
+      matches.add(hit.termIri);
+      chain.forEach((step, depth) => {
+        labels.set(step.iri, step.label);
+        if (depth === 0) {
+          return;
+        }
+        const parent = chain[depth - 1].iri;
+        parents.set(step.iri, parent);
+        const held = children.get(parent) ?? new Set<string>();
+        held.add(step.iri);
+        children.set(parent, held);
+      });
+    }
+    const byLabel = (a: string, b: string): number => (labels.get(a) ?? '').localeCompare(labels.get(b) ?? '');
+    const rows: TreeRow[] = [];
+    const walk = (iri: string, depth: number): void => {
+      rows.push({
+        key: `${acronym}\u0000${iri}`,
+        acronym,
+        iri,
+        label: labels.get(iri) ?? iri,
+        depth,
+        self: false,
+        onSpine: true,
+        open: true,
+        loading: false,
+        hasChildren: false,
+        descendantCount: 0,
+        hidden: 0,
+        match: matches.has(iri),
+      });
+      [...(children.get(iri) ?? [])].sort(byLabel).forEach((child) => walk(child, depth + 1));
+    };
+    [...labels.keys()]
+      .filter((iri) => !parents.has(iri))
+      .sort(byLabel)
+      .forEach((root) => walk(root, 0));
+    return rows;
+  });
+
+  /** Whether the terms tab is showing one ontology's tree rather than labels folded across many. */
+  protected isScoped(): boolean {
+    return this.narrowedTo().length === 1;
+  }
+
+  /** Picks a term from the scoped tree, which has no hit of its own to take a system from. */
+  protected pickScoped(row: TreeRow): void {
+    this.picked.set({
+      type: 'class',
+      sourceSystem: 'bioportal',
+      sourceAcronym: row.acronym,
+      termIri: row.iri,
+      termType: 'class',
+      termLabel: row.label,
+      obsolete: false,
+      hasChildren: false,
+      descendantCount: 0,
+    });
+  }
+
+  protected chooseScoped(row: TreeRow): void {
+    this.pickScoped(row);
+    const picked = this.picked();
+    if (picked !== null) {
+      this.choose(picked);
+    }
+  }
+
   /** Terms, collapsed by label, in the order the server ranked them. */
   protected readonly labelGroups = computed<readonly LabelGroup[]>(() => {
     const hits = this.hitsOf('class').filter(isClassHit);

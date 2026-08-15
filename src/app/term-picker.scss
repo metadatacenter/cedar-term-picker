@@ -360,6 +360,87 @@ button {
 
 // What the marked row is offering, under the row itself. A definition list rather than a table:
 // the fields are few, they are labelled, and half of them are absent on any given term.
+// Where the term sits, drawn as the ontology draws it, and walkable from there. The indent is the
+// structure; the spine is the chain the search landed on, and everything else is what an author
+// opened to see beside it.
+.tree {
+  list-style: none;
+  margin: 0.1rem 0 0.2rem;
+  padding: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ctp-color-border) transparent;
+}
+
+.node {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  color: var(--ctp-color-muted);
+  white-space: nowrap;
+
+  &.spine {
+    color: var(--ctp-color-text);
+  }
+
+  &.self > .term {
+    color: var(--ctp-color-heading);
+    font-weight: 500;
+  }
+
+  // The term the bar is describing. The tint alone: a bar down its edge is the mark a row and a
+  // release carry, and inside a tree it read as another level of indent rather than as emphasis.
+  &.picked > .term {
+    background: var(--ctp-color-tint);
+    color: var(--ctp-color-heading);
+  }
+
+  > .twist {
+    flex: 0 0 1.1em;
+    background: transparent;
+    border: none;
+    border-radius: 2px;
+    padding: 0;
+    color: var(--ctp-color-primary);
+    font-size: 0.85em;
+    text-align: center;
+  }
+
+  // Not `.label`: the search field's caption owns that class and uppercases it.
+  > .term {
+    flex: 0 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: transparent;
+    border: none;
+    border-radius: 2px;
+    padding: 0 0.15rem;
+    color: inherit;
+    font-size: inherit;
+    text-align: left;
+
+    &:hover {
+      background: var(--ctp-color-tint);
+    }
+  }
+}
+
+// One ontology's tree, standing in for the folded rows. It takes the whole width of the results
+// grid and scrolls with it rather than inside a box of its own.
+.tree.scoped {
+  grid-column: 1 / -1;
+  max-height: none;
+  padding: 0.35rem 0.2rem;
+
+  // A match, as against a step on the way to one. The ancestors are context; without the
+  // distinction a tree of two hundred rows says nothing about which of them the query found.
+  .term.hit {
+    color: var(--ctp-color-heading);
+    font-weight: 500;
+  }
+}
+
 .detail {
   grid-column: 1 / -1;
   display: grid;
@@ -387,72 +468,6 @@ button {
   // column with an empty label beside it.
   .wide {
     grid-column: 1 / -1;
-  }
-
-  // Where the term sits, drawn as the ontology draws it, and walkable from there. The indent is the
-  // structure; the spine is the chain the search landed on, and everything else is what an author
-  // opened to see beside it.
-  .tree {
-    list-style: none;
-    margin: 0.1rem 0 0.2rem;
-    padding: 0;
-    max-height: 14rem;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--ctp-color-border) transparent;
-  }
-
-  .node {
-    display: flex;
-    align-items: baseline;
-    gap: 0.2rem;
-    color: var(--ctp-color-muted);
-    white-space: nowrap;
-
-    &.spine {
-      color: var(--ctp-color-text);
-    }
-
-    &.self > .term {
-      color: var(--ctp-color-heading);
-      font-weight: 500;
-    }
-
-    // The term the bar is describing. The tint alone: a bar down its edge is the mark a row and a
-    // release carry, and inside a tree it read as another level of indent rather than as emphasis.
-    &.picked > .term {
-      background: var(--ctp-color-tint);
-      color: var(--ctp-color-heading);
-    }
-
-    > .twist {
-      flex: 0 0 1.1em;
-      background: transparent;
-      border: none;
-      border-radius: 2px;
-      padding: 0;
-      color: var(--ctp-color-primary);
-      font-size: 0.85em;
-      text-align: center;
-    }
-
-    // Not `.label`: the search field's caption owns that class and uppercases it.
-    > .term {
-      flex: 0 1 auto;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      background: transparent;
-      border: none;
-      border-radius: 2px;
-      padding: 0 0.15rem;
-      color: inherit;
-      font-size: inherit;
-      text-align: left;
-
-      &:hover {
-        background: var(--ctp-color-tint);
-      }
-    }
   }
 
   // The IRI is the value a template records, so it is shown whole and set apart from the prose.
