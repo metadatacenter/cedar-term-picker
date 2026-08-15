@@ -203,6 +203,9 @@
                   <span class="grow ellipsis">
                     <span class="who">{{ hit.sourceAcronym }}</span>
                     <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
+                    @if (tailOf(hit.path); as tail) {
+                      <span class="meta inline dim under" [title]="tail">&nbsp;· under {{ tail }}</span>
+                    }
                     @if (hit.replacedBy) {
                       <span class="meta inline dim">
                         · replaced by {{ hit.replacedBy.termLabel ?? hit.replacedBy.termIri }}
@@ -253,7 +256,7 @@
                     <span class="who">{{ hit.sourceAcronym }}</span>
                     <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
                     @if (tailOf(hit.path); as tail) {
-                      <span class="meta inline dim"> · under {{ tail }}</span>
+                      <span class="meta inline dim under" [title]="tail">&nbsp;· under {{ tail }}</span>
                     }
                   </span>
                   <span class="meta inline">

@@ -447,6 +447,38 @@ button {
   text-overflow: ellipsis;
 }
 
+// A child row names its ontology and says where in that ontology the term sits. One ellipsis over
+// the pair cut from the right, which took the parent — and the parent is the whole reason the row
+// is distinguishable: ACESO merges three vocabularies and labels a class "Disease" in each. So the
+// two are laid out as a row of their own and the ontology name gives way first, its acronym having
+// already identified it.
+.child .grow {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+
+  .who {
+    flex: 0 0 auto;
+  }
+
+  .dim,
+  .under {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // The name gives way first and by far: it is the part the acronym beside it already identified,
+  // and the parent is the part that tells two rows of one ontology apart.
+  .dim {
+    flex: 0 8 auto;
+  }
+
+  .under {
+    flex: 0 1 auto;
+  }
+}
+
 // Every result row is one line: title and acronym on the left, the facts that distinguish it on
 // the right. A number is a number — sizing the descendant count at heading scale made a branch row
 // three times the height of an ontology row to carry no more meaning.

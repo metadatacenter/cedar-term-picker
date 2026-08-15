@@ -95,6 +95,8 @@ export interface ClassHit extends HitBase {
   readonly replacedBy?: TermRef;
   readonly hasChildren: boolean;
   readonly descendantCount: number;
+  /** The chain from a root down to the class, which is what separates one "Disease" from another. */
+  readonly path?: readonly TermRef[];
 }
 
 export interface BranchHit extends HitBase {
