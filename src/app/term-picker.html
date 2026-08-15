@@ -9,7 +9,7 @@
         title="Step back one release"
         (click)="step(acronym, 1); $event.stopPropagation()"
       >‹</button>
-      <span class="version">v{{ versionOf(acronym) }}</span>
+      <span class="version" [title]="'Version ' + versionOf(acronym)">{{ versionOf(acronym) }}</span>
       <button
         type="button"
         class="step"
@@ -19,7 +19,7 @@
       >›</button>
     </span>
   } @else {
-    <span class="version">v{{ versionOf(acronym) }}</span>
+    <span class="version" [title]="'Version ' + versionOf(acronym)">{{ versionOf(acronym) }}</span>
   }
 </ng-template>
 
@@ -144,7 +144,7 @@
                     }
                   </span>
                   <span class="meta inline">
-                    {{ hit.descendantCount }} beneath · v{{ versionOf(hit.sourceAcronym) }}
+                    {{ hit.descendantCount }} beneath · {{ versionOf(hit.sourceAcronym) }}
                   </span>
                   <button type="button" (click)="choose(hit)">Use</button>
                 </div>
@@ -223,7 +223,7 @@
             class="ghost"
             [title]="'Search only ' + hit.sourceAcronym"
             (click)="toggleNarrowing(hit.sourceAcronym)"
-          >{{ isNarrowedTo(hit.sourceAcronym) ? 'Searching' : 'Only this' }}</button>
+          >{{ isNarrowedTo(hit.sourceAcronym) ? 'Narrowed' : 'Narrow to this' }}</button>
           <button type="button" (click)="choose(hit)">Use</button>
         </div>
       } @empty {

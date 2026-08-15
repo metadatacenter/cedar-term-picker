@@ -452,6 +452,10 @@ export class TermPicker {
    *
    * Never the content hash. The hash is what makes a pin reproducible and is meaningless to read;
    * the declared version and the release date are what identify a release to a person.
+   *
+   * Shown as the ontology declares it, with nothing prepended. A synthesised `v` reads as part of
+   * the version and is wrong about it as often as not: the catalog holds `V2`, `v1.0.0`, `2026-07-06`
+   * and `latest`, which a prefix turns into `vV2`, `vv1.0.0` and `vlatest`.
    */
   private static nameOf(version: VersionInfo | undefined): string {
     return version?.declaredVersion ?? version?.effectiveDate?.slice(0, 10) ?? 'latest';

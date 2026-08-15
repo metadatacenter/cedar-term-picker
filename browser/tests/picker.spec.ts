@@ -347,14 +347,14 @@ test('stepping to an older release pins it, and stepping back to current does no
 
   const ncit = page.locator('cedar-term-picker .child', { hasText: 'NCIT' });
   await ncit.locator('.step').first().click();
-  await expect(ncit.locator('.version')).toHaveText('v26.06e');
+  await expect(ncit.locator('.version')).toHaveText('26.06e');
 
   await ncit.locator('button', { hasText: 'Use' }).click();
   expect((chosen[0] as { version?: { declaredVersion: string } }).version?.declaredVersion).toBe('26.06e');
 
   // Forward to current unpins: latest keeps meaning latest until publishing resolves it.
   await ncit.locator('.step').nth(1).click();
-  await expect(ncit.locator('.version')).toHaveText('v26.07d');
+  await expect(ncit.locator('.version')).toHaveText('26.07d');
   await ncit.locator('button', { hasText: 'Use' }).click();
   expect((chosen[1] as { version?: unknown }).version).toBeUndefined();
 });
