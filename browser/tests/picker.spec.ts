@@ -340,7 +340,7 @@ test('narrowing ranks by matching terms and survives being used', async ({ page 
   expect(narrowed.sources).toEqual([{ sourceAcronym: 'NCIT' }]);
 });
 
-test('paging asks for one type and keeps the ontologies it learns', async ({ page }) => {
+test('the list fills itself, asks for one type, and keeps the ontologies it learns', async ({ page }) => {
   const recorded = await stubSearch(page, (body) =>
     body.page === 2
       ? {
@@ -358,18 +358,26 @@ test('paging asks for one type and keeps the ontologies it learns', async ({ pag
   await openPicker(page);
   await search(page, 'melanoma');
 
-  await page.locator('cedar-term-picker .pager button', { hasText: 'Next' }).click();
-  await expect(
-    page.locator('cedar-term-picker .rowhead', { hasText: 'Intraocular melanoma' }),
-  ).toBeVisible();
+  // Scrolling asks for more, and a first page too short to scroll asks on its own — otherwise a
+  // tab whose page one does not fill the box could never reach page two.
+  const arrived = page.locator('cedar-term-picker .rowhead', { hasText: 'Intraocular melanoma' });
+  await expect(arrived).toBeVisible();
+
+  // Appended once. The list keeps asking until a page comes back short, and a page appended to
+  // itself would be the failure that hides.
+  expect(await page.locator('cedar-term-picker .rowhead').count()).toBe(3);
+  expect(await arrived.count()).toBe(1);
 
   const asked = recorded.bodies.at(-1) as { types?: string[]; page?: number };
   expect(asked.types).toEqual(['class']);
   expect(asked.page).toBe(2);
 
   // A row reads its ontology's name from the envelope, and page two names one page one did not.
-  await page.locator('cedar-term-picker .rowhead').first().click();
+  await arrived.click();
   await expect(page.locator('cedar-term-picker .child').first()).toContainText('An Ontology From Page Two');
+
+  // A short page is the end of the list, and the list says so rather than asking again.
+  await expect(page.locator('cedar-term-picker .tail')).toContainText('no more matches');
 });
 
 test('the release count opens the whole history, and choosing from it pins', async ({ page }) => {

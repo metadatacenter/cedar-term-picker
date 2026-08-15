@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   HostListener,
   ViewEncapsulation,
   computed,
@@ -10,6 +11,7 @@ import {
   linkedSignal,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FontRegistrar } from './font-registrar/font-registrar';
@@ -138,6 +140,12 @@ export class TermPicker {
    */
   protected readonly pages = signal<Readonly<Partial<Record<SearchKind, number>>>>({});
 
+  /** Tabs whose last page came back short, which is the only signal that a list has ended. */
+  private readonly exhausted = signal<Readonly<Partial<Record<SearchKind, boolean>>>>({});
+
+  /** The scrolling list, which the top-up measures against its own box. */
+  private readonly list = viewChild<ElementRef<HTMLElement>>('list');
+
   /**
    * The ontologies the search is narrowed to, in the order the author added them.
    *
@@ -207,7 +215,9 @@ export class TermPicker {
         this.candidates.set([]);
       }
       this.pages.set({});
+      this.exhausted.set({});
       this.expanded.set(null);
+      this.topUp(this.activeTab());
       this.error.set(null);
     } catch (failure: unknown) {
       if (controller.signal.aborted) {
@@ -384,33 +394,63 @@ export class TermPicker {
     return this.pages()[kind] ?? 1;
   }
 
-  /** How many pages a tab has, or 0 when it fits on one. */
-  protected pageCount(kind: SearchKind): number {
-    const results = this.response()?.results[kind];
-    if (!results) {
-      return 0;
+  /** Whether every match this tab has is already on screen. */
+  protected isExhausted(kind: SearchKind): boolean {
+    return this.exhausted()[kind] === true;
+  }
+
+  /**
+   * Asks for the next page when the list is scrolled near its end.
+   *
+   * The threshold is a screenful rather than the last pixel, so the rows arrive before an author
+   * reaches the gap they would otherwise fill.
+   */
+  /** Switches tabs, and fills the new one if its first page does not reach the bottom of the box. */
+  protected showTab(kind: SearchKind): void {
+    this.activeTab.set(kind);
+    this.topUp(kind);
+  }
+
+  protected onScroll(event: Event): void {
+    const list = event.target as HTMLElement;
+    const remaining = list.scrollHeight - list.scrollTop - list.clientHeight;
+    if (remaining < list.clientHeight) {
+      void this.loadMore(this.activeTab());
     }
-    // Terms and branches count distinct labels, because that is what a page of them holds.
-    const count = results.distinctLabelCount ?? results.totalCount;
-    const pages = Math.ceil(count / (results.pageSize || PAGE_SIZE));
-    return pages > 1 ? pages : 0;
   }
 
-  /** Whether the last page is a floor rather than the end, because counting stopped at the cap. */
-  protected pageCountCapped(kind: SearchKind): boolean {
-    const results = this.response()?.results[kind];
-    return (
-      (results?.distinctLabelCount === undefined ? results?.countCapped : results.distinctLabelCountCapped) === true
-    );
+  /**
+   * Fetches on until the list is long enough to scroll.
+   *
+   * Scrolling is what asks for more, so a page that does not fill the box leaves an author with no
+   * way to ask: a tab whose first page is short of a screenful would end there while the tab badge
+   * counted thousands. Bounded by the same short-page test that ends the list.
+   */
+  private topUp(kind: SearchKind): void {
+    setTimeout(() => {
+      const list = this.list()?.nativeElement;
+      // A box of no height is one that has not been laid out — a test environment, or a picker in a
+      // hidden container. There is nothing to fill, and treating it as unfilled fetches for ever.
+      if (list && list.clientHeight > 0 && list.scrollHeight <= list.clientHeight && !this.isExhausted(kind)) {
+        void this.loadMore(kind);
+      }
+    });
   }
 
-  /** Moves one tab to another page, fetching that type alone. */
-  protected async goTo(kind: SearchKind, page: number): Promise<void> {
+  /**
+   * Appends the next page of one tab.
+   *
+   * A page rather than everything, because a common query matches ten thousand distinct labels and
+   * an author reads the first twenty. The end is a short page, not a count: `totalCount` stops at
+   * the cap and cannot say where the list runs out.
+   */
+  protected async loadMore(kind: SearchKind): Promise<void> {
     const current = this.response();
     const query = this.text().trim();
-    if (!current || page < 1 || query.length === 0) {
+    if (!current || query.length === 0 || this.searching() || this.isExhausted(kind)) {
       return;
     }
+    const page = this.pageOf(kind) + 1;
     this.searching.set(true);
     try {
       const next = await this.client.search({
@@ -421,22 +461,31 @@ export class TermPicker {
         sources: this.sourceSelectors(),
       });
       const results = next.results[kind];
-      if (!results) {
+      const arrived = results?.collection ?? [];
+      if (arrived.length < PAGE_SIZE) {
+        this.exhausted.update((done) => ({ ...done, [kind]: true }));
+      }
+      if (!results || arrived.length === 0) {
         return;
       }
+      const held = current.results[kind];
       // A later page names ontologies the first did not, and a row reads its source from the
-      // envelope, so the blocks accumulate rather than being replaced.
+      // envelope, so the blocks accumulate rather than being replaced. So do the hits: the list is
+      // one list an author scrolls, not a page that replaces the page before it.
       this.response.set({
         ...current,
         sources: mergeSources(current.sources, next.sources),
-        results: { ...current.results, [kind]: results },
+        results: {
+          ...current.results,
+          [kind]: { ...results, collection: [...(held?.collection ?? []), ...arrived] },
+        },
       });
       this.pages.update((pages) => ({ ...pages, [kind]: page }));
-      this.expanded.set(null);
     } catch (failure: unknown) {
       this.error.set(failure instanceof Error ? failure.message : 'The search failed.');
     } finally {
       this.searching.set(false);
+      this.topUp(kind);
     }
   }
 

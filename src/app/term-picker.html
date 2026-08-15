@@ -137,7 +137,7 @@
         type="button"
         class="tab"
         [class.active]="activeTab() === tab"
-        (click)="activeTab.set(tab)"
+        (click)="showTab(tab)"
       >
         {{ tabLabels[tab] }}
         @if (counts()[tab]; as count) {
@@ -161,7 +161,7 @@
     </p>
   }
 
-  <div class="results">
+  <div class="results" #list (scroll)="onScroll($event)">
   @switch (activeTab()) {
     @case ('class') {
       @for (group of labelGroups(); track group.label) {
@@ -331,24 +331,11 @@
   }
   </div>
 
-  @if (pageCount(activeTab()); as pages) {
-    <nav class="pager">
-      <button
-        type="button"
-        class="ghost"
-        [disabled]="pageOf(activeTab()) <= 1"
-        (click)="goTo(activeTab(), pageOf(activeTab()) - 1)"
-      >‹ Previous</button>
-      <span class="meta inline">
-        page {{ pageOf(activeTab()) }} of {{ pages.toLocaleString()
-        }}@if (pageCountCapped(activeTab())) {+}
-      </span>
-      <button
-        type="button"
-        class="ghost"
-        [disabled]="pageOf(activeTab()) >= pages && !pageCountCapped(activeTab())"
-        (click)="goTo(activeTab(), pageOf(activeTab()) + 1)"
-      >Next ›</button>
-    </nav>
-  }
+  <p class="tail">
+    @if (searching()) {
+      reading more…
+    } @else if (isExhausted(activeTab()) && pageOf(activeTab()) > 1) {
+      no more matches
+    }
+  </p>
 </section>

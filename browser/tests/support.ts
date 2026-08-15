@@ -22,9 +22,26 @@ export async function stubSearch(
   await page.route('**/search', async (route: Route) => {
     const body = route.request().postDataJSON() as SearchBody;
     recorded.bodies.push(body);
-    await route.fulfill({ json: reply(body) as object });
+    await route.fulfill({ json: answer(reply(body), body) as object });
   });
   return recorded;
+}
+
+/**
+ * A stub answers the page it was asked for, or it answers nothing.
+ *
+ * The picker appends what comes back and keeps asking until a page arrives short, so a stub that
+ * returns its one fixture for every page would have the list append that fixture to itself. A
+ * response whose results are not marked with the page requested is not an answer to that request.
+ */
+function answer(replied: unknown, body: SearchBody): unknown {
+  const asked = body.page ?? 1;
+  if (asked === 1) {
+    return replied;
+  }
+  const results = (replied as { results?: Record<string, { page?: number }> } | undefined)?.results ?? {};
+  const matches = Object.values(results).some((result) => (result.page ?? 1) === asked);
+  return matches ? replied : { sources: [], results: {} };
 }
 
 export interface SearchBody {

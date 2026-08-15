@@ -213,6 +213,24 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content max-content max-content;
   column-gap: 0.75rem;
+
+  // The list scrolls and grows as it is scrolled, rather than paging. A common query matches ten
+  // thousand distinct labels; page numbers over a count that stops at a cap said "400+" and asked
+  // an author to navigate a list nobody knows the length of.
+  max-height: 60vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ctp-color-border) transparent;
+}
+
+// What the bottom of the list is doing: fetching, finished, or neither.
+.tail {
+  margin: 0;
+  padding: 0.4rem 0.2rem 0;
+  min-height: 1.6rem;
+  color: var(--ctp-color-muted);
+  font-size: var(--ctp-font-size-small);
+  text-align: center;
 }
 
 .row {
@@ -533,13 +551,7 @@ mark {
   margin: 0.75rem 0 0;
 }
 
-.pager {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0 0.1rem;
-}
+
 
 .empty {
   color: var(--ctp-color-muted);

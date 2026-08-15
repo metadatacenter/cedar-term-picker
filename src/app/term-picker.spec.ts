@@ -212,7 +212,7 @@ describe('TermPicker', () => {
     expect((emitted as { version?: unknown }).version).toBeUndefined();
   });
 
-  it('pages one tab without moving the others, and keeps the sources it learns', async () => {
+  it('appends the next page of one tab, and keeps the sources it learns', async () => {
     const fixture = TestBed.createComponent(TermPicker);
     fixture.componentRef.setInput('query', 'melanoma');
     await fixture.whenStable();
@@ -257,10 +257,12 @@ describe('TermPicker', () => {
       },
     };
 
-    const next = [...shadow(fixture).querySelectorAll<HTMLButtonElement>('.pager button')].find((b) =>
-      (b.textContent ?? '').includes('Next'),
-    );
-    next?.click();
+    // Scrolling the list to its end is what asks for more, so this is that scroll.
+    const list = shadow(fixture).querySelector<HTMLElement>('.results')!;
+    Object.defineProperty(list, 'scrollHeight', { value: 1000, configurable: true });
+    Object.defineProperty(list, 'clientHeight', { value: 400, configurable: true });
+    list.scrollTop = 600;
+    list.dispatchEvent(new Event('scroll'));
     await fixture.whenStable();
     await fixture.whenStable();
 
@@ -268,7 +270,12 @@ describe('TermPicker', () => {
     expect(client.lastQuery?.types).toEqual(['class']);
     expect(client.lastQuery?.page).toBe(2);
 
-    shadow(fixture).querySelector<HTMLButtonElement>('.rowhead')?.click();
+    // The page arrived under the rows already there rather than replacing them.
+    const rows = shadow(fixture).querySelectorAll('.rowhead');
+    expect(rows.length).toBeGreaterThan(1);
+    expect(rows[rows.length - 1].textContent).toContain('Intraocular melanoma');
+
+    shadow(fixture).querySelectorAll<HTMLButtonElement>('.rowhead')[rows.length - 1].click();
     await fixture.whenStable();
     expect(shadow(fixture).querySelector('.child')?.textContent).toContain('An Ontology From Page Two');
   });
