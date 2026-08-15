@@ -179,3 +179,22 @@ export function isOntologyHit(hit: Hit): hit is OntologyHit {
 export function isValueSetHit(hit: Hit): hit is ValueSetHit {
   return hit.type === 'valueSet';
 }
+
+/** Where a term sits in its ontology: the chain above it, and what hangs directly below. */
+export interface Hierarchy {
+  readonly sourceAcronym: string;
+  readonly termIri: string;
+  readonly termLabel: string;
+  /** Root first, ending at the term's parent. Absent where the term is a root of its ontology. */
+  readonly path?: readonly TermRef[];
+  readonly children?: readonly HierarchyChild[];
+  readonly childCount: number;
+  readonly descendantCount: number;
+}
+
+export interface HierarchyChild {
+  readonly termIri: string;
+  readonly termLabel: string;
+  readonly hasChildren: boolean;
+  readonly descendantCount: number;
+}

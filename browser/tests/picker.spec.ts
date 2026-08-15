@@ -7,6 +7,7 @@ import {
   results,
   search,
   source,
+  stubHierarchy,
   stubSearch,
 } from './support';
 
@@ -253,6 +254,18 @@ test('a long label folds from the middle, keeping both ends', async ({ page }) =
 
 test('a marked term shows what it is offering', async ({ page }) => {
   await stubSearch(page, () => MELANOMA);
+  await stubHierarchy(page, (query) => ({
+    sourceAcronym: query.get('sourceAcronym'),
+    termIri: query.get('termIri'),
+    termLabel: 'Melanoma',
+    path: [
+      { termIri: 'http://ncit/Neoplasm', termLabel: 'Neoplasm' },
+      { termIri: 'http://ncit/Melanocytic', termLabel: 'Melanocytic Neoplasm' },
+    ],
+    children: [{ termIri: 'http://ncit/Amelanotic', termLabel: 'Amelanotic Melanoma', hasChildren: false, descendantCount: 0 }],
+    childCount: 4,
+    descendantCount: 321,
+  }));
   await openPicker(page);
   await search(page, 'melanoma');
   await page.locator('cedar-term-picker .rowhead').first().click();
@@ -264,7 +277,12 @@ test('a marked term shows what it is offering', async ({ page }) => {
   // The IRI in full: it is the value a template records, and the rest of the row is shorthand.
   const detail = page.locator('cedar-term-picker .detail');
   await expect(detail.locator('.iri').first()).toHaveText('http://ncit/Melanoma');
-  await expect(detail).toContainText('Melanocytic Neoplasm');
+  // The chain above the term and what hangs below it, which is what tells one "Melanoma" from
+  // another when the label alone cannot.
+  await expect(detail.locator('.tree .up')).toHaveText(['Neoplasm', 'Melanocytic Neoplasm']);
+  await expect(detail.locator('.tree .self')).toHaveText('Melanoma');
+  await expect(detail.locator('.tree .down')).toContainText('Amelanotic Melanoma');
+  await expect(detail).toContainText('3 more directly below');
   // The other names it goes by, which is what says whether the concept is the one meant.
   await expect(detail).toContainText('Also called');
   await expect(detail).toContainText('Cutaneous melanoma');

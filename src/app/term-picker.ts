@@ -19,6 +19,7 @@ import { TerminologyClient } from './search/terminology-client';
 import {
   BranchHit,
   ClassHit,
+  Hierarchy,
   Hit,
   MatchedLabel,
   OntologyHit,
@@ -176,6 +177,9 @@ export class TermPicker {
 
   /** Version histories, fetched once per ontology when a row first steps. */
   private readonly histories = signal<ReadonlyMap<string, readonly VersionInfo[]>>(new Map());
+
+  /** Where each marked term sits, once read. A held null is a term the store does not hold. */
+  private readonly hierarchies = signal<ReadonlyMap<string, Hierarchy | null>>(new Map());
 
   /** The ontology whose release history is open beneath its row. One at a time. */
   protected readonly historyFor = signal<string | null>(null);
@@ -758,6 +762,35 @@ export class TermPicker {
 
   protected mark(hit: Hit): void {
     this.marked.set(this.keyOf(hit));
+    if (hit.type === 'class' || hit.type === 'branch') {
+      void this.readHierarchy(hit);
+    }
+  }
+
+  /**
+   * Fetches where a term sits, once per term.
+   *
+   * Its own call rather than part of the search: a page is twenty-five terms and an author asks
+   * this of the one they marked. Held once fetched, so re-marking a row costs nothing.
+   */
+  private async readHierarchy(hit: ClassHit | BranchHit): Promise<void> {
+    const key = this.keyOf(hit);
+    if (this.hierarchies().has(key)) {
+      return;
+    }
+    const iri = this.termIriOf(hit);
+    try {
+      const found = await this.client.hierarchy(hit.sourceAcronym, iri);
+      this.hierarchies.update((held) => new Map(held).set(key, found));
+    } catch {
+      // A hierarchy is context, not the answer. Failing to read it leaves the panel without it
+      // rather than replacing the results with an error the author cannot act on.
+      this.hierarchies.update((held) => new Map(held).set(key, null));
+    }
+  }
+
+  protected hierarchyOf(hit: Hit): Hierarchy | null | undefined {
+    return this.hierarchies().get(this.keyOf(hit));
   }
 
   /** How many releases this ontology has, when it has more than the one on the row. */

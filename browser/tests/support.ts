@@ -14,6 +14,24 @@ export interface Recorded {
 }
 
 /** Serves a response per request, choosing by what the component asked for. */
+/**
+ * Answers the hierarchy call, which the picker makes when a row is marked.
+ *
+ * Its own stub because it is its own endpoint: leaving it unrouted made a marked row report that
+ * the store holds no hierarchy, which is a real answer and not the one a test about marking means.
+ */
+export async function stubHierarchy(page: Page, reply: (query: URLSearchParams) => unknown): Promise<void> {
+  await page.route('**/search/hierarchy*', async (route: Route) => {
+    const query = new URL(route.request().url()).searchParams;
+    const body = reply(query);
+    if (body === null) {
+      await route.fulfill({ status: 404, json: { errorMessage: 'no such term' } });
+      return;
+    }
+    await route.fulfill({ json: body as object });
+  });
+}
+
 export async function stubSearch(
   page: Page,
   reply: (body: SearchBody) => unknown,

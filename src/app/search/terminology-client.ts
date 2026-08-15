@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { SearchQuery, SearchResponse } from './search-types';
+import { Hierarchy, SearchQuery, SearchResponse } from './search-types';
 
 /**
  * The picker's one call to the terminology server.
@@ -31,6 +31,26 @@ export class TerminologyClient {
       throw new Error(refusalMessage(body) ?? `The terminology server answered ${response.status}.`);
     }
     return body as SearchResponse;
+  }
+
+  /**
+   * Where one term sits in its ontology.
+   *
+   * Its own call rather than part of a search: a page of results is twenty-five terms and an author
+   * asks this of one. Returns null when the store does not hold the term, which is an answer rather
+   * than a failure — a proxied source has no hierarchy to give.
+   */
+  async hierarchy(sourceAcronym: string, termIri: string, signal?: AbortSignal): Promise<Hierarchy | null> {
+    const query = new URLSearchParams({ sourceAcronym, termIri });
+    const response = await fetch(`${this.endpoint}/hierarchy?${query}`, { signal });
+    if (response.status === 404) {
+      return null;
+    }
+    const body: unknown = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(refusalMessage(body) ?? `The terminology server answered ${response.status}.`);
+    }
+    return body as Hierarchy;
   }
 }
 

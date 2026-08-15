@@ -40,9 +40,38 @@
         <dd class="iri" [title]="termIriOf(hit)">{{ termIriOf(hit) }}</dd>
       }
 
-      @if (fullPathOf(hit); as chain) {
-        <dt>Under</dt>
-        <dd>{{ chain }}</dd>
+      @if (hit.type === 'class' || hit.type === 'branch') {
+        <dt>Where it sits</dt>
+        <dd>
+          @if (hierarchyOf(hit); as tree) {
+            <ol class="tree">
+              @for (step of tree.path ?? []; track step.termIri; let depth = $index) {
+                <li class="up" [style.padding-left.rem]="depth * 0.8">{{ step.termLabel ?? step.termIri }}</li>
+              }
+              <li class="self" [style.padding-left.rem]="(tree.path?.length ?? 0) * 0.8">
+                {{ tree.termLabel }}
+              </li>
+              @for (child of tree.children ?? []; track child.termIri) {
+                <li class="down" [style.padding-left.rem]="((tree.path?.length ?? 0) + 1) * 0.8">
+                  {{ child.termLabel }}
+                  @if (child.descendantCount) {
+                    <span class="meta inline">· {{ child.descendantCount.toLocaleString() }} beneath</span>
+                  }
+                </li>
+              }
+            </ol>
+            @if (tree.childCount > (tree.children?.length ?? 0)) {
+              <span class="meta inline">and {{ tree.childCount - (tree.children?.length ?? 0) }} more directly below</span>
+            }
+            @if (tree.childCount === 0 && !tree.path?.length) {
+              <span class="meta inline">a root of its ontology, with nothing below it</span>
+            }
+          } @else if (hierarchyOf(hit) === null) {
+            <span class="meta inline">the store holds no hierarchy for this term</span>
+          } @else {
+            <span class="meta inline">reading…</span>
+          }
+        </dd>
       }
 
       @if (hit.matchedLabels?.length) {
