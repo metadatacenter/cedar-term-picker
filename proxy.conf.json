@@ -1,6 +1,6 @@
 {
   "/search": {
-    "target": "http://localhost:29004",
+    "target": "http://localhost:9004",
     "secure": false,
     "changeOrigin": true
   }
