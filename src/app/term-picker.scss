@@ -322,17 +322,20 @@ button {
 // How many releases the ontology has, next to the one on the row. Shown only where an author can
 // reach the others, so it reads as an invitation rather than as a fact about the corpus — and it
 // is the way in, because stepping one release at a time never says which release you reached.
+// Laid out as a row so the caret sits on the count's centre line rather than on its baseline,
+// where a glyph with no ascender hangs low against the digits beside it.
 .of {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
   background: transparent;
   border: none;
   border-radius: 3px;
-  color: var(--ctp-color-muted);
+  color: var(--ctp-color-primary);
   font-size: var(--ctp-font-size-small);
   white-space: nowrap;
   padding: 0 0.2rem;
   text-align: left;
-
-  color: var(--ctp-color-primary);
 
   &:hover {
     background: var(--ctp-color-surface);
@@ -342,8 +345,8 @@ button {
 // The caret carries the affordance. Without it the count reads as another muted figure beside the
 // version, and an author has no reason to click the one thing on the row that opens.
 .caret {
-  padding-left: 0.2rem;
-  font-size: 0.75em;
+  font-size: 1.2em;
+  line-height: 1;
 }
 
 // What the marked row is offering, under the row itself. A definition list rather than a table:
