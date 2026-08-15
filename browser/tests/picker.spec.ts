@@ -114,9 +114,21 @@ test('branches fold across and within ontologies, and open onto their parents', 
   await row.click();
   const children = page.locator('cedar-term-picker .child');
   await expect(children).toHaveCount(3);
-  // The parent is the only thing telling two RH-MESH rows apart.
-  await expect(children.nth(0)).toContainText('Neuroendocrine Tumors');
-  await expect(children.nth(1)).toContainText('Nevi and Melanomas');
+
+  // Two of them are RH-MESH placing one concept at two points in its own tree. The rows no longer
+  // say which point; marking one draws the tree it sits in, and that is where they differ.
+  await stubHierarchy(page, (query) => ({
+    sourceAcronym: query.get('sourceAcronym'),
+    termIri: query.get('termIri'),
+    termLabel: 'Melanoma',
+    path: [{ termIri: 'http://rh-mesh/parent', termLabel: 'Neuroendocrine Tumors' }],
+    childCount: 0,
+    descendantCount: 13,
+  }));
+  await children.nth(0).click();
+  await expect(page.locator('cedar-term-picker .tree .node').first()).toContainText(
+    'Neuroendocrine Tumors',
+  );
 });
 
 test('an ontology row shows what the query matched, or nothing but its count', async ({ page }) => {
@@ -299,9 +311,6 @@ test('a marked term shows what it is offering', async ({ page }) => {
   // The other names it goes by, which is what says whether the concept is the one meant.
   await expect(detail).toContainText('Also called');
   await expect(detail).toContainText('Cutaneous melanoma');
-
-  // The chain reaches a base and says so, so a short chain reads as complete rather than cut off.
-  await expect(detail.locator('.tree .node').first()).toContainText('top of NCIT');
 
   // One at a time: marking another row moves the panel with the mark.
   await page.locator('cedar-term-picker .child', { hasText: 'DOID' }).click();

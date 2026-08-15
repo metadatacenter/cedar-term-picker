@@ -626,15 +626,6 @@ export class TermPicker {
     return id === undefined ? '' : id.slice(0, 12);
   }
 
-  /** The last steps of a branch's path: the root never disambiguates, the parents do. */
-  protected tailOf(path: readonly TermRef[] | undefined, steps = 3): string {
-    if (!path || path.length === 0) {
-      return '';
-    }
-    const tail = path.slice(-steps).map((step) => step.termLabel ?? '?');
-    return (path.length > steps ? '… ‹ ' : '') + tail.reverse().join(' ‹ ');
-  }
-
   /**
    * A name split around the part the query matched, so the row can mark it.
    *
@@ -727,15 +718,6 @@ export class TermPicker {
 
   protected sourceAcronym(hit: Hit): string {
     return hit.sourceAcronym;
-  }
-
-  /** The chain above a term, root first, or nothing where the source records no parent. */
-  protected fullPathOf(hit: Hit): string {
-    const path = hit.type === 'class' || hit.type === 'branch' ? hit.path : undefined;
-    if (!path || path.length === 0) {
-      return '';
-    }
-    return path.map((step) => step.termLabel ?? step.termIri).join(' › ');
   }
 
   /** How much sits under a term, phrased for a reader rather than as a bare figure. */
