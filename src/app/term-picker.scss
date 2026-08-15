@@ -312,6 +312,38 @@ button {
   font-size: 0.75em;
 }
 
+// What the marked row is offering, under the row itself. A definition list rather than a table:
+// the fields are few, they are labelled, and half of them are absent on any given term.
+.detail {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.15rem 0.75rem;
+  margin: 0.15rem 0 0.35rem 0;
+  padding: 0.5rem 0.6rem;
+  background: var(--ctp-color-surface);
+  border-radius: 3px;
+  font-size: var(--ctp-font-size-small);
+
+  dt {
+    color: var(--ctp-color-muted);
+    text-align: right;
+  }
+
+  dd {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  // The IRI is the value a template records, so it is shown whole and set apart from the prose.
+  .iri {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--ctp-color-heading);
+  }
+}
+
 // The full history, under the row that opened it. Scrolls rather than growing: DOID has fifteen
 // releases and nothing bounds the number an ontology can accumulate.
 .history {

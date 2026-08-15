@@ -77,6 +77,7 @@ export function source(acronym: string, options: SourceOptions = {}): object {
 }
 
 interface ClassOptions {
+  readonly under?: string;
   readonly obsolete?: boolean;
   readonly matched?: { label: string; language?: string };
   readonly descendantCount?: number;
@@ -95,6 +96,7 @@ export function classHit(acronym: string, label: string, options: ClassOptions =
     descendantCount: options.descendantCount ?? 0,
     matchType: options.matched ? 'synonym' : 'termLabel',
     matchedLabels: options.matched ? [options.matched] : undefined,
+    path: options.under ? [{ termIri: `http://${acronym.toLowerCase()}/parent`, termLabel: options.under }] : undefined,
   };
 }
 

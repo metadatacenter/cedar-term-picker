@@ -695,6 +695,37 @@ export class TermPicker {
     return `${hit.type}:${hit.sourceAcronym}:${hit.termBaseIri}`;
   }
 
+  /** The IRI a constraint would carry, which differs by kind: a class names one, a branch its root. */
+  protected termIriOf(hit: Hit): string {
+    if (hit.type === 'class') {
+      return hit.termIri;
+    }
+    // An ontology is addressed by its acronym within its system, not by a term IRI.
+    return hit.type === 'ontology' ? hit.sourceAcronym : hit.termBaseIri;
+  }
+
+  protected sourceAcronym(hit: Hit): string {
+    return hit.sourceAcronym;
+  }
+
+  /** The chain above a term, root first, or nothing where the source records no parent. */
+  protected fullPathOf(hit: Hit): string {
+    const path = hit.type === 'class' || hit.type === 'branch' ? hit.path : undefined;
+    if (!path || path.length === 0) {
+      return '';
+    }
+    return path.map((step) => step.termLabel ?? step.termIri).join(' › ');
+  }
+
+  /** How much sits under a term, phrased for a reader rather than as a bare figure. */
+  protected descendantsOf(hit: Hit): string {
+    const count = hit.type === 'class' || hit.type === 'branch' ? hit.descendantCount : 0;
+    if (count === 0) {
+      return '';
+    }
+    return `${count.toLocaleString()} ${count === 1 ? 'concept' : 'concepts'}`;
+  }
+
   protected isMarked(hit: Hit): boolean {
     return this.marked() === this.keyOf(hit);
   }

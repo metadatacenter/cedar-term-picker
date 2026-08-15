@@ -30,7 +30,7 @@ const MELANOMA = {
   results: {
     class: results(
       [
-        classHit('NCIT', 'Melanoma', { descendantCount: 321 }),
+        classHit('NCIT', 'Melanoma', { descendantCount: 321, under: 'Melanocytic Neoplasm' }),
         classHit('DOID', 'melanoma', { descendantCount: 31 }),
         classHit('OCHV', '6188', { matched: { label: 'HIV disease', language: 'en' } }),
       ],
@@ -245,6 +245,28 @@ test('a long label folds from the middle, keeping both ends', async ({ page }) =
   await expect(title).toContainText('Have you been diagnosed');
   await expect(title).toContainText(':Find:Pt:^Patient:Ord:PhenX');
   await expect(title).toHaveAttribute('title', long);
+});
+
+test('a marked term shows what it is offering', async ({ page }) => {
+  await stubSearch(page, () => MELANOMA);
+  await openPicker(page);
+  await search(page, 'melanoma');
+  await page.locator('cedar-term-picker .rowhead').first().click();
+
+  const ncit = page.locator('cedar-term-picker .child', { hasText: 'NCIT' });
+  await expect(page.locator('cedar-term-picker .detail')).toHaveCount(0);
+  await ncit.click();
+
+  // The IRI in full: it is the value a template records, and the rest of the row is shorthand.
+  const detail = page.locator('cedar-term-picker .detail');
+  await expect(detail.locator('.iri')).toHaveText('http://ncit/Melanoma');
+  await expect(detail).toContainText('Melanocytic Neoplasm');
+  await expect(detail).toContainText('321 concepts');
+  await expect(detail).toContainText('National Cancer Institute Thesaurus');
+
+  // One at a time: marking another row moves the panel with the mark.
+  await page.locator('cedar-term-picker .child', { hasText: 'DOID' }).click();
+  await expect(detail.locator('.iri')).toHaveText('http://doid/melanoma');
 });
 
 test('a click marks a row and a second act chooses it', async ({ page }) => {

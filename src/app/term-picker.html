@@ -24,6 +24,57 @@
   }
 </ng-template>
 
+<ng-template #detail let-hit>
+  @if (isMarked(hit)) {
+    <!--
+      What the marked row is actually offering. The rows above it are the shortlist; this is the one
+      an author is deciding about, and the decision is a term IRI written into a template — so the
+      IRI is here in full, beside the things that say whether it is the right concept.
+    -->
+    <dl class="detail">
+      <dt>Term</dt>
+      <dd class="iri" [title]="termIriOf(hit)">{{ termIriOf(hit) }}</dd>
+
+      @if (fullPathOf(hit); as chain) {
+        <dt>Under</dt>
+        <dd>{{ chain }}</dd>
+      }
+
+      @if (hit.matchedLabels?.length) {
+        <dt>Matched</dt>
+        <dd>
+          @for (name of hit.matchedLabels; track name.label) {
+            <span class="chip">{{ name.label }}@if (name.language) { · {{ name.language }}}</span>
+          }
+        </dd>
+      }
+
+      <dt>Beneath it</dt>
+      <dd>
+        @if (descendantsOf(hit); as beneath) {
+          {{ beneath }} — the branches tab offers this subtree as one constraint
+        } @else {
+          nothing; this term is a leaf
+        }
+      </dd>
+
+      @if (hit.obsolete) {
+        <dt>Deprecated</dt>
+        <dd>
+          @if (hit.replacedBy) {
+            replaced by {{ hit.replacedBy.termLabel ?? hit.replacedBy.termIri }}
+          } @else {
+            the source names no replacement
+          }
+        </dd>
+      }
+
+      <dt>From</dt>
+      <dd>{{ sourceAcronym(hit) }} · {{ sourceName(sourceAcronym(hit)) }} · {{ versionOf(sourceAcronym(hit)) }}</dd>
+    </dl>
+  }
+</ng-template>
+
 <ng-template #history let-acronym>
   @if (isHistoryOpen(acronym)) {
     <!--
@@ -214,6 +265,7 @@
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
                 </div>
+                <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
                 <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
               }
             </div>
@@ -263,6 +315,7 @@
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
                 </div>
+                <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
                 <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
               }
             </div>
