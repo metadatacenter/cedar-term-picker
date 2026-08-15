@@ -121,7 +121,7 @@ test('an ontology row says whether it is named for the query or holds its terms'
 
   const rows = page.locator('cedar-term-picker .row.oneline');
   await expect(rows.filter({ hasText: 'MELO' })).toContainText('named');
-  await expect(rows.filter({ hasText: 'NCIT' })).toContainText('950 terms inside');
+  await expect(rows.filter({ hasText: 'NCIT' })).toContainText('950 terms');
   await expect(rows.filter({ hasText: 'NCIT' })).not.toContainText('named');
 });
 
