@@ -317,6 +317,77 @@ test('a term picked from the tree becomes the selection, and the panel stays ope
   await expect(page.locator('cedar-term-picker .tree')).toBeVisible();
 });
 
+test('a term selected in one release is looked for in the next, and falls back when it is gone', async ({ page }) => {
+  const inBoth = 'http://ncit/InBoth';
+  const goneLater = 'http://ncit/GoneLater';
+  await stubSearch(page, (body) =>
+    body.includeVersions
+      ? {
+          sources: [
+            source('NCIT', {
+              name: 'National Cancer Institute Thesaurus',
+              versionCount: 2,
+              declaredVersion: '26.07d',
+              versions: [
+                { id: 'hash-new', declaredVersion: '26.07d' },
+                { id: 'hash-old', declaredVersion: '26.06e' },
+              ],
+            }),
+          ],
+          results: { ontology: results([]) },
+        }
+      : MELANOMA,
+  );
+  // The older release holds both children; the newer one dropped the second.
+  await stubHierarchy(page, (query) => {
+    const iri = query.get('termIri');
+    const old = query.get('versionId') === 'hash-old';
+    if (iri === goneLater && !old) {
+      return null;
+    }
+    if (iri === inBoth || iri === goneLater) {
+      return {
+        sourceAcronym: 'NCIT',
+        termIri: iri,
+        termLabel: iri === inBoth ? 'In Both' : 'Gone Later',
+        path: [{ termIri: 'http://ncit/Melanoma', termLabel: 'Melanoma' }],
+        childCount: 0,
+        descendantCount: 0,
+      };
+    }
+    return {
+      sourceAcronym: 'NCIT',
+      termIri: iri,
+      termLabel: 'Melanoma',
+      children: old
+        ? [
+            { termIri: inBoth, termLabel: 'In Both', hasChildren: false, descendantCount: 0 },
+            { termIri: goneLater, termLabel: 'Gone Later', hasChildren: false, descendantCount: 0 },
+          ]
+        : [{ termIri: inBoth, termLabel: 'In Both', hasChildren: false, descendantCount: 0 }],
+      childCount: old ? 2 : 1,
+      descendantCount: 2,
+    };
+  });
+  await openPicker(page);
+  await search(page, 'melanoma');
+  await page.locator('cedar-term-picker .rowhead').first().click();
+  const ncit = page.locator('cedar-term-picker .child', { hasText: 'NCIT' });
+  await ncit.click();
+  await ncit.locator('button.of').click();
+
+  // Step to the older release, where both children exist, and select the one that will vanish.
+  await page.locator('cedar-term-picker .release').nth(1).click();
+  const chosen = page.locator('cedar-term-picker .chosen');
+  await page.locator('cedar-term-picker .tree .node', { hasText: 'Gone Later' }).locator('.term').click();
+  await expect(chosen).toContainText('Gone Later');
+
+  // Back to the release that dropped it: the selection falls back to the row's own term.
+  await page.locator('cedar-term-picker .release').first().click();
+  await expect(chosen).toContainText('Melanoma');
+  await expect(chosen).not.toContainText('Gone Later');
+});
+
 test('a marked term shows what it is offering', async ({ page }) => {
   await stubSearch(page, () => MELANOMA);
   await stubHierarchy(page, (query) => ({

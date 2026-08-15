@@ -633,7 +633,7 @@ export class TermPicker {
     // for a hierarchy under a key nothing has fetched and waits for a read that was never started.
     const marked = this.marked();
     if (marked !== null && (marked.type === 'class' || marked.type === 'branch')) {
-      void this.readHierarchy(marked);
+      void this.readHierarchy(marked).then(() => this.followPick(acronym));
     }
   }
 
@@ -873,24 +873,62 @@ export class TermPicker {
    * hundreds of thousands of concepts, and an author opens the handful on their way down.
    */
   protected async toggleNode(acronym: string, iri: string): Promise<void> {
+    if (this.openNodes().has(this.nodeKey(acronym, iri))) {
+      this.openNodes.update((nodes) => {
+        const next = new Set(nodes);
+        next.delete(this.nodeKey(acronym, iri));
+        return next;
+      });
+      return;
+    }
+    await this.openNode(acronym, iri);
+  }
+
+  /** Opens a node, reading its children the first time. Idempotent, so a path can be walked open. */
+  private async openNode(acronym: string, iri: string): Promise<void> {
     const key = this.nodeKey(acronym, iri);
-    const open = this.openNodes().has(key);
-    this.openNodes.update((nodes) => {
-      const next = new Set(nodes);
-      if (open) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-    if (!open && !this.nodes().has(key)) {
-      try {
-        const found = await this.client.hierarchy(acronym, iri, this.pinned().get(acronym)?.id);
-        this.nodes.update((held) => new Map(held).set(key, found));
-      } catch {
-        this.nodes.update((held) => new Map(held).set(key, null));
-      }
+    this.openNodes.update((nodes) => new Set(nodes).add(key));
+    if (this.nodes().has(key)) {
+      return;
+    }
+    try {
+      const found = await this.client.hierarchy(acronym, iri, this.pinned().get(acronym)?.id);
+      this.nodes.update((held) => new Map(held).set(key, found));
+    } catch {
+      this.nodes.update((held) => new Map(held).set(key, null));
+    }
+  }
+
+  /**
+   * Carries a selected term across a change of release.
+   *
+   * An author reading a term deep in one release and stepping to another means to see that term
+   * there, not to be returned to the row they started from. So the same IRI is looked for in the
+   * new release and the tree opened down to it. A release that does not contain it — a term added
+   * since, or removed — falls back to the row's own term, which every release of it has.
+   */
+  private async followPick(acronym: string): Promise<void> {
+    const picked = this.picked();
+    const marked = this.marked();
+    if (picked === null || marked === null || picked.type !== 'class' || picked.sourceAcronym !== acronym) {
+      return;
+    }
+    if (marked.type !== 'class' && marked.type !== 'branch') {
+      return;
+    }
+    if (this.termIriOf(marked) === picked.termIri) {
+      return;
+    }
+    const found = await this.client.hierarchy(acronym, picked.termIri, this.pinned().get(acronym)?.id);
+    if (found === null) {
+      this.picked.set(marked);
+      return;
+    }
+    this.picked.set({ ...picked, termLabel: found.termLabel });
+    // Open the chain down to it. Only the steps at or below the row's own term are in this tree;
+    // the ones above it are the row's ancestors, already drawn.
+    for (const step of found.path ?? []) {
+      await this.openNode(acronym, step.termIri);
     }
   }
 
