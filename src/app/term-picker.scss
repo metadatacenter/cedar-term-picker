@@ -522,12 +522,11 @@ button {
   // The release the row is reading: the pinned one, or the current one where nothing is pinned.
   // Marked the way a marked row is marked — a tint and a bar down its edge — because a list of
   // releases where none is picked out reads as a list an author has yet to choose from, and the
-  // one they are already on is the fact the panel exists to state. Weight alone did not carry it.
-  // The tint and the bar say it; weight on top of them only made the row heavier to read.
+  // one they are already on is the fact the panel exists to state. The tint carries it on its own:
+  // marking is a tinted row throughout the picker, and nothing else marks a left edge.
   &.on,
   &.on:hover {
     background: var(--ctp-color-tint);
-    box-shadow: inset 3px 0 0 var(--ctp-color-primary);
     color: var(--ctp-color-heading);
   }
 
