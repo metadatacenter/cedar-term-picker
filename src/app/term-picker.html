@@ -212,7 +212,6 @@
                       </span>
                     }
                   </span>
-                  <span class="meta inline">{{ hit.descendantCount.toLocaleString() }} {{ hit.descendantCount === 1 ? 'descendant' : 'descendants' }}</span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
                 </div>
                 <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
