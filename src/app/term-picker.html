@@ -22,7 +22,13 @@
     [title]="'Version ' + versionOf(acronym)"
   >{{ elide(versionOf(acronym), 20, 8) }}</span>
   @if (versionCount(acronym); as count) {
-    <span class="of">of {{ count }}</span>
+    <button
+      type="button"
+      class="of"
+      [attr.aria-expanded]="isHistoryOpen(acronym)"
+      [title]="'Show all ' + count + ' releases of ' + acronym"
+      (click)="openHistory(acronym); $event.stopPropagation()"
+    >of {{ count }}</button>
   } @else {
     <span class="of"></span>
   }
@@ -36,6 +42,42 @@
     >›</button>
   } @else {
     <span class="step"></span>
+  }
+</ng-template>
+
+<ng-template #history let-acronym>
+  @if (isHistoryOpen(acronym)) {
+    <!--
+      Every release, not the one the row happens to be reading. An author stepping blind through
+      eight of them cannot tell which they have reached; the hash is what makes a pin reproducible
+      and the effective date is what identifies a release to a person, so the panel shows both.
+    -->
+    <div class="history">
+      @if (historyOf(acronym); as releases) {
+        <ol class="releases">
+          @for (release of releases; track release.id; let i = $index) {
+            <li>
+              <button
+                type="button"
+                class="release"
+                [class.on]="isShowing(acronym, release, i)"
+                (click)="pinTo(acronym, release, i)"
+              >
+                <span class="declared">{{ release.declaredVersion ?? 'no declared version' }}</span>
+                <span class="date" [title]="release.effectiveDate ?? ''">{{
+                  (release.effectiveDate ?? '').slice(0, 10)
+                }}</span>
+                <code class="hash" [title]="release.id">{{ shortHash(release.id) }}</code>
+                <span class="tag">{{ i === 0 ? 'current' : '' }}</span>
+              </button>
+            </li>
+          }
+        </ol>
+      }
+      @if (historyOf(acronym).length === 0) {
+        <p class="empty">Reading the releases…</p>
+      }
+    </div>
   }
 </ng-template>
 
@@ -181,6 +223,7 @@
                   <span class="meta inline">{{ hit.descendantCount }} beneath</span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
                 </div>
+                <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
               }
             </div>
           }
@@ -229,6 +272,7 @@
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
                 </div>
+                <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
               }
             </div>
           }
@@ -265,6 +309,7 @@
           </span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
         </div>
+          <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
       } @empty {
         <p class="empty">No vocabulary is named this, and none of them matched terms.</p>
       }
@@ -290,6 +335,7 @@
           <span class="meta inline">{{ hit.termCount }} values</span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
         </div>
+          <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
       } @empty {
         <p class="empty">No value set matches.</p>
       }

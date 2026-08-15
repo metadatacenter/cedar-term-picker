@@ -268,11 +268,82 @@ button {
 }
 
 // How many releases the ontology has, next to the one on the row. Shown only where an author can
-// reach the others, so it reads as an invitation to step rather than as a fact about the corpus.
+// reach the others, so it reads as an invitation rather than as a fact about the corpus — and it
+// is the way in, because stepping one release at a time never says which release you reached.
 .of {
+  background: transparent;
+  border: none;
+  border-radius: 3px;
   color: var(--ctp-color-muted);
   font-size: var(--ctp-font-size-small);
   white-space: nowrap;
+  padding: 0 0.2rem;
+  text-align: left;
+
+  &:hover {
+    color: var(--ctp-color-primary);
+    background: var(--ctp-color-surface);
+  }
+}
+
+// The full history, under the row that opened it. Scrolls rather than growing: MESH has 8 releases
+// and nothing bounds the number an ontology can accumulate.
+.history {
+  grid-column: 1 / -1;
+  background: var(--ctp-color-surface);
+  border-radius: 3px;
+  margin: 0.15rem 0 0.35rem 0;
+  max-height: 13rem;
+  overflow-y: auto;
+}
+
+.releases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+// Version, date and hash in fixed columns: what an author compares is one release against the
+// release above it, and a ragged column makes that a reading exercise.
+.release {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6em 7.5em 4.5em;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  text-align: left;
+  padding: 0.25rem 0.6rem;
+  font-size: var(--ctp-font-size-small);
+
+  &:hover {
+    background: var(--ctp-color-tint);
+  }
+
+  // The release the row is reading: the pinned one, or the current one where nothing is pinned.
+  &.on {
+    color: var(--ctp-color-heading);
+    font-weight: 500;
+  }
+
+  .declared {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .date,
+  .tag {
+    color: var(--ctp-color-muted);
+  }
+
+  .hash {
+    color: var(--ctp-color-muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
 }
 
 .rowhead {

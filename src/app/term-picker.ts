@@ -165,6 +165,9 @@ export class TermPicker {
   /** Version histories, fetched once per ontology when a row first steps. */
   private readonly histories = signal<ReadonlyMap<string, readonly VersionInfo[]>>(new Map());
 
+  /** The ontology whose release history is open beneath its row. One at a time. */
+  protected readonly historyFor = signal<string | null>(null);
+
   protected readonly tabs = TAB_ORDER;
   protected readonly tabLabels = TAB_LABELS;
 
@@ -498,24 +501,79 @@ export class TermPicker {
   }
 
   /**
-   * Steps an ontology back through its releases, or forward again.
+   * This ontology's releases, newest first, fetched once.
    *
-   * The history is fetched on the first step rather than with the search: a corpus-wide query
-   * touches a hundred ontologies and an author steps one.
+   * Not fetched with the search: a corpus-wide query touches a hundred ontologies and an author
+   * opens one.
    */
-  protected async step(acronym: string, by: 1 | -1): Promise<void> {
-    let history = this.histories().get(acronym);
-    if (!history) {
-      const response = await this.client.search({
-        query: this.text().trim(),
-        types: ['ontology'],
-        sources: [{ sourceAcronym: acronym }],
-        includeVersions: true,
-        pageSize: 1,
-      });
-      history = response.sources.find((s) => s.sourceAcronym === acronym)?.versions ?? [];
-      this.histories.update((map) => new Map(map).set(acronym, history ?? []));
+  private async loadHistory(acronym: string): Promise<readonly VersionInfo[]> {
+    const held = this.histories().get(acronym);
+    if (held) {
+      return held;
     }
+    const response = await this.client.search({
+      query: this.text().trim(),
+      types: ['ontology'],
+      sources: [{ sourceAcronym: acronym }],
+      includeVersions: true,
+      pageSize: 1,
+    });
+    const history = response.sources.find((s) => s.sourceAcronym === acronym)?.versions ?? [];
+    this.histories.update((map) => new Map(map).set(acronym, history));
+    return history;
+  }
+
+  protected historyOf(acronym: string): readonly VersionInfo[] {
+    return this.histories().get(acronym) ?? [];
+  }
+
+  protected isHistoryOpen(acronym: string): boolean {
+    return this.historyFor() === acronym;
+  }
+
+  /** Opens the full history under the row, or closes it if this row already has it open. */
+  protected async openHistory(acronym: string): Promise<void> {
+    if (this.historyFor() === acronym) {
+      this.historyFor.set(null);
+      return;
+    }
+    this.historyFor.set(acronym);
+    await this.loadHistory(acronym);
+  }
+
+  /** Which release the row is currently reading: the pinned one, else the current one. */
+  protected isShowing(acronym: string, version: VersionInfo, index: number): boolean {
+    const pinned = this.pinned().get(acronym);
+    return pinned === undefined ? index === 0 : pinned.id === version.id;
+  }
+
+  /**
+   * Pins a release chosen from the history.
+   *
+   * Choosing the current one unpins rather than writing today's version, the same rule stepping
+   * forward to current obeys: writing nothing is what keeps latest meaning latest until the
+   * template is published.
+   */
+  protected pinTo(acronym: string, version: VersionInfo, index: number): void {
+    this.pinned.update((map) => {
+      const updated = new Map(map);
+      if (index === 0) {
+        updated.delete(acronym);
+      } else {
+        updated.set(acronym, version);
+      }
+      return updated;
+    });
+  }
+
+  /** Enough of a content hash to tell two releases apart, with the whole of it on hover. */
+  protected shortHash(id: string | undefined): string {
+    return id === undefined ? '' : id.slice(0, 12);
+  }
+
+  /** Steps an ontology back through its releases, or forward again. */
+  protected async step(acronym: string, by: 1 | -1): Promise<void> {
+    const history = await this.loadHistory(acronym);
     if (history.length === 0) {
       return;
     }

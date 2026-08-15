@@ -369,6 +369,69 @@ test('paging asks for one type and keeps the ontologies it learns', async ({ pag
   await expect(page.locator('cedar-term-picker .child').first()).toContainText('An Ontology From Page Two');
 });
 
+test('the release count opens the whole history, and choosing from it pins', async ({ page }) => {
+  await stubSearch(page, (body) =>
+    body.includeVersions
+      ? {
+          sources: [
+            source('NCIT', {
+              name: 'National Cancer Institute Thesaurus',
+              versionCount: 3,
+              declaredVersion: '26.07d',
+              versions: [
+                { id: 'hash-c-0123456789abcdef', effectiveDate: '2026-07-01T00:00:00.000-07:00', declaredVersion: '26.07d' },
+                { id: 'hash-b-0123456789abcdef', effectiveDate: '2026-06-03T00:00:00.000-07:00', declaredVersion: '26.06e' },
+                { id: 'hash-a-0123456789abcdef', effectiveDate: '2026-05-06T00:00:00.000-07:00' },
+              ],
+            }),
+          ],
+          results: { ontology: results([]) },
+        }
+      : MELANOMA,
+  );
+  await openPicker(page);
+  await search(page, 'melanoma');
+  await page.locator('cedar-term-picker .tab').nth(1).click();
+  await expect(page.locator('cedar-term-picker .rowhead')).toHaveCount(1);
+  await page.locator('cedar-term-picker .rowhead').click();
+
+  const chosen: unknown[] = [];
+  await page.exposeFunction('recordChoice', (constraint: unknown) => chosen.push(constraint));
+  await page.evaluate(() =>
+    document
+      .querySelector('cedar-term-picker')!
+      .addEventListener('selected', (event) =>
+        (window as unknown as { recordChoice: (c: unknown) => void }).recordChoice(
+          (event as CustomEvent).detail,
+        ),
+      ),
+  );
+
+  await page.locator('cedar-term-picker button.of', { hasText: 'of 3' }).click();
+  const releases = page.locator('cedar-term-picker .release');
+  await expect(releases).toHaveCount(3);
+
+  // Each release says what identifies it to a person and what makes a pin reproducible.
+  await expect(releases.first()).toContainText('26.07d');
+  await expect(releases.first()).toContainText('2026-07-01');
+  await expect(releases.first()).toContainText('hash-c-01234');
+  await expect(releases.first()).toContainText('current');
+  // A release with no declared version says so rather than showing a gap.
+  await expect(releases.nth(2)).toContainText('no declared version');
+
+  // The row reads the current release until one is chosen, and the panel says which.
+  await expect(releases.first()).toHaveClass(/on/);
+  await releases.nth(1).click();
+  await expect(releases.nth(1)).toHaveClass(/on/);
+  await expect(
+    page.locator('cedar-term-picker .child', { hasText: 'NCIT' }).locator('.version'),
+  ).toHaveText('26.06e');
+
+  const ncit = page.locator('cedar-term-picker .child', { hasText: 'NCIT' });
+  await ncit.dblclick();
+  expect((chosen[0] as { version?: { id: string } }).version?.id).toBe('hash-b-0123456789abcdef');
+});
+
 test('stepping to an older release pins it, and stepping back to current does not', async ({ page }) => {
   await stubSearch(page, (body) =>
     body.includeVersions
