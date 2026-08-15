@@ -211,7 +211,7 @@ button {
 // columns through `subgrid` rather than by dissolving into the grid with `display: contents`.
 .results {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content 1.4em max-content max-content 1.4em;
+  grid-template-columns: minmax(0, 1fr) max-content max-content max-content;
   column-gap: 0.75rem;
 }
 
@@ -314,7 +314,7 @@ button {
   top: 0;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 6em 7.5em 4.5em;
+  grid-template-columns: minmax(0, 1fr) 7.5em 7.5em 4em;
   align-items: center;
   gap: 0.75rem;
   margin: 0;
@@ -335,7 +335,7 @@ button {
 // release above it, and a ragged column makes that a reading exercise.
 .release {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 6em 7.5em 4.5em;
+  grid-template-columns: minmax(0, 1fr) 7.5em 7.5em 4em;
   align-items: center;
   gap: 0.75rem;
   width: 100%;
@@ -482,7 +482,7 @@ mark {
 // which is enough: what an author compares is one ontology against another within a term.
 .children {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content 1.4em max-content max-content 1.4em;
+  grid-template-columns: minmax(0, 1fr) max-content max-content max-content;
   column-gap: 0.75rem;
 }
 
@@ -520,25 +520,6 @@ mark {
     border-radius: 3px;
     padding: 0 0.25rem;
     font-weight: 500;
-  }
-}
-
-// A step is a button where there is something to step to and an empty span where there is not, so
-// the column stays open either way and the versions stay in line. Not `.empty` for that span: the
-// empty-state paragraph owns that class and pads itself to a paragraph's height.
-.step {
-  background: transparent;
-  border: none;
-  border-radius: 2px;
-  color: var(--ctp-color-primary);
-  font-size: var(--ctp-font-size-lead);
-  line-height: 1;
-  padding: 0;
-  text-align: center;
-
-  &:disabled {
-    color: var(--ctp-color-border);
-    cursor: default;
   }
 }
 

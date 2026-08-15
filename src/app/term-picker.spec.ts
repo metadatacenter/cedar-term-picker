@@ -131,7 +131,7 @@ describe('TermPicker', () => {
     expect(notice?.textContent).toContain('sourceUnknown');
   });
 
-  it('offers a stepper only where there is more than one version to step to', async () => {
+  it('offers the release count only where there is more than one release', async () => {
     client.response = {
       ...client.response,
       sources: [
@@ -185,8 +185,8 @@ describe('TermPicker', () => {
     rows[0].dispatchEvent(new Event('click'));
     await fixture.whenStable();
 
-    // One version is nothing to step through, so that row shows the version and no controls.
-    expect(shadow(fixture).querySelectorAll('button.step').length).toBe(2);
+    // One release is nothing to open, so that row shows its version and no way in.
+    expect(shadow(fixture).querySelectorAll('button.of').length).toBe(1);
     expect(shadow(fixture).querySelectorAll('.version').length).toBe(2);
   });
 

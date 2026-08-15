@@ -2,20 +2,10 @@
 
 <ng-template #stepper let-acronym>
   <!--
-    Four cells, always, whether or not there is anything to step. The rows share one set of grid
-    columns, and a row that emits fewer cells than its neighbours shifts every cell after it: the
-    versions stop lining up, which is the whole point of the column.
+    The version the row is reading, and the way to every other. There are no step arrows: a glyph
+    that moves an ontology one release without saying which release it reached asked an author to
+    recognise a `›` and then to count, and the history says both in one click.
   -->
-  @if (steppable(acronym)) {
-    <button
-      type="button"
-      class="step"
-      title="Step back one release"
-      (click)="step(acronym, 1); $event.stopPropagation()"
-    >‹</button>
-  } @else {
-    <span class="step"></span>
-  }
   <span
     class="version"
     [class.pinned]="isPinned(acronym)"
@@ -31,17 +21,6 @@
     >of {{ count }}<span class="caret">{{ isHistoryOpen(acronym) ? '⌃' : '⌄' }}</span></button>
   } @else {
     <span class="of"></span>
-  }
-  @if (steppable(acronym)) {
-    <button
-      type="button"
-      class="step"
-      title="Step forward one release"
-      [disabled]="!isPinned(acronym)"
-      (click)="step(acronym, -1); $event.stopPropagation()"
-    >›</button>
-  } @else {
-    <span class="step"></span>
   }
 </ng-template>
 
@@ -60,7 +39,7 @@
         -->
         <p class="releases-head">
           <span class="grow">{{ releases.length }} releases, newest first</span>
-          <span class="date">effective</span>
+          <span class="date">effective date</span>
           <span class="hash">content hash</span>
           <span class="tag"></span>
         </p>
@@ -78,7 +57,7 @@
                   (release.effectiveDate ?? '').slice(0, 10)
                 }}</span>
                 <code class="hash" [title]="release.id">{{ shortHash(release.id) }}</code>
-                <span class="tag">{{ i === 0 ? 'current' : '' }}</span>
+                <span class="tag">{{ i === 0 ? 'latest' : '' }}</span>
               </button>
             </li>
           }

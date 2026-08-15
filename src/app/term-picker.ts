@@ -479,25 +479,8 @@ export class TermPicker {
     return version?.declaredVersion ?? version?.effectiveDate?.slice(0, 10) ?? 'latest';
   }
 
-  /** Whether this ontology has anything to step back to. */
-  protected steppable(acronym: string): boolean {
-    const source = this.sourceOf(acronym);
-    return source?.pinnable === true && (source.versionCount ?? 1) > 1;
-  }
-
   protected isPinned(acronym: string): boolean {
     return this.pinned().has(acronym);
-  }
-
-  /** Where this ontology sits in its history: 0 is current. */
-  private positionOf(acronym: string): number {
-    const history = this.histories().get(acronym);
-    const current = this.pinned().get(acronym);
-    if (!history || !current) {
-      return 0;
-    }
-    const at = history.findIndex((version) => version.id === current.id);
-    return at < 0 ? 0 : at;
   }
 
   /**
@@ -569,26 +552,6 @@ export class TermPicker {
   /** Enough of a content hash to tell two releases apart, with the whole of it on hover. */
   protected shortHash(id: string | undefined): string {
     return id === undefined ? '' : id.slice(0, 12);
-  }
-
-  /** Steps an ontology back through its releases, or forward again. */
-  protected async step(acronym: string, by: 1 | -1): Promise<void> {
-    const history = await this.loadHistory(acronym);
-    if (history.length === 0) {
-      return;
-    }
-    const next = Math.min(Math.max(this.positionOf(acronym) + by, 0), history.length - 1);
-    this.pinned.update((map) => {
-      const updated = new Map(map);
-      // Stepping back to current unpins rather than pinning to today's version. Writing nothing is
-      // what keeps "latest" meaning latest until the template is published.
-      if (next === 0) {
-        updated.delete(acronym);
-      } else {
-        updated.set(acronym, history[next]);
-      }
-      return updated;
-    });
   }
 
   /** The last steps of a branch's path: the root never disambiguates, the parents do. */

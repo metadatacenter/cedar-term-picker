@@ -415,7 +415,7 @@ test('the release count opens the whole history, and choosing from it pins', asy
   await expect(releases.first()).toContainText('26.07d');
   await expect(releases.first()).toContainText('2026-07-01');
   await expect(releases.first()).toContainText('hash-c-01234');
-  await expect(releases.first()).toContainText('current');
+  await expect(releases.first()).toContainText('latest');
   // A release with no declared version says so rather than showing a gap.
   await expect(releases.nth(2)).toContainText('no declared version');
 
@@ -430,59 +430,12 @@ test('the release count opens the whole history, and choosing from it pins', asy
   const ncit = page.locator('cedar-term-picker .child', { hasText: 'NCIT' });
   await ncit.dblclick();
   expect((chosen[0] as { version?: { id: string } }).version?.id).toBe('hash-b-0123456789abcdef');
-});
 
-test('stepping to an older release pins it, and stepping back to current does not', async ({ page }) => {
-  await stubSearch(page, (body) =>
-    body.includeVersions
-      ? {
-          sources: [
-            source('NCIT', {
-              name: 'National Cancer Institute Thesaurus',
-              versionCount: 3,
-              declaredVersion: '26.07d',
-              versions: [
-                { id: 'hash-c', declaredVersion: '26.07d' },
-                { id: 'hash-b', declaredVersion: '26.06e' },
-                { id: 'hash-a', declaredVersion: '26.05d' },
-              ],
-            }),
-          ],
-          results: { ontology: results([]) },
-        }
-      : MELANOMA,
-  );
-  await openPicker(page);
-  await search(page, 'melanoma');
-  await page.locator('cedar-term-picker .tab').nth(1).click();
-  // The branch results fold to one row; waiting for that is what says the tab has rendered.
-  await expect(page.locator('cedar-term-picker .rowhead')).toHaveCount(1);
-  await page.locator('cedar-term-picker .rowhead').click();
-
-  const chosen: unknown[] = [];
-  await page.exposeFunction('recordChoice', (constraint: unknown) => chosen.push(constraint));
-  await page.evaluate(() =>
-    document
-      .querySelector('cedar-term-picker')!
-      .addEventListener('selected', (event) =>
-        (window as unknown as { recordChoice: (c: unknown) => void }).recordChoice(
-          (event as CustomEvent).detail,
-        ),
-      ),
-  );
-
-  const ncit = page.locator('cedar-term-picker .child', { hasText: 'NCIT' });
-  await ncit.locator('.step').first().click();
-  await expect(ncit.locator('.version')).toHaveText('26.06e');
-  // The row says how many releases there are, which is the only thing on it inviting a step.
-  await expect(ncit.locator('.of')).toContainText('of 3');
-
-  await ncit.dblclick();
-  expect((chosen[0] as { version?: { declaredVersion: string } }).version?.declaredVersion).toBe('26.06e');
-
-  // Forward to current unpins: latest keeps meaning latest until publishing resolves it.
-  await ncit.locator('.step').nth(1).click();
+  // Choosing latest again writes nothing: freeze-on-publish resolves an unpinned constraint at
+  // publish time, and pinning today's version would silently take that away.
+  await releases.first().click();
   await expect(ncit.locator('.version')).toHaveText('26.07d');
   await ncit.dblclick();
   expect((chosen[1] as { version?: unknown }).version).toBeUndefined();
 });
+
