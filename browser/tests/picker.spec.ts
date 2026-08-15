@@ -524,8 +524,10 @@ test('the release count opens the whole history, and choosing from it pins', asy
   // A release with no declared version says so rather than showing a gap.
   await expect(releases.nth(2)).toContainText('no declared version');
 
-  // The row reads the current release until one is chosen, and the panel says which.
+  // The row reads the current release until one is chosen, and the panel marks which — a list
+  // where none is picked out reads as one nothing has been chosen from.
   await expect(releases.first()).toHaveClass(/on/);
+  await expect(releases.nth(1)).not.toHaveClass(/on/);
   await releases.nth(1).click();
   await expect(releases.nth(1)).toHaveClass(/on/);
   await expect(
