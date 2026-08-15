@@ -28,7 +28,7 @@
       [attr.aria-expanded]="isHistoryOpen(acronym)"
       [title]="'Show all ' + count + ' releases of ' + acronym"
       (click)="openHistory(acronym); $event.stopPropagation()"
-    >of {{ count }}</button>
+    >of {{ count }}<span class="caret">{{ isHistoryOpen(acronym) ? '⌃' : '⌄' }}</span></button>
   } @else {
     <span class="of"></span>
   }
@@ -54,6 +54,16 @@
     -->
     <div class="history">
       @if (historyOf(acronym); as releases) {
+        <!--
+          The heading stays put while the list moves under it, which is what says the list moves.
+          It also names the hash column: a bare row of hex beside a date explains nothing.
+        -->
+        <p class="releases-head">
+          <span class="grow">{{ releases.length }} releases, newest first</span>
+          <span class="date">effective</span>
+          <span class="hash">content hash</span>
+          <span class="tag"></span>
+        </p>
         <ol class="releases">
           @for (release of releases; track release.id; let i = $index) {
             <li>

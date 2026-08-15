@@ -475,7 +475,7 @@ test('stepping to an older release pins it, and stepping back to current does no
   await ncit.locator('.step').first().click();
   await expect(ncit.locator('.version')).toHaveText('26.06e');
   // The row says how many releases there are, which is the only thing on it inviting a step.
-  await expect(ncit.locator('.of')).toHaveText('of 3');
+  await expect(ncit.locator('.of')).toContainText('of 3');
 
   await ncit.dblclick();
   expect((chosen[0] as { version?: { declaredVersion: string } }).version?.declaredVersion).toBe('26.06e');

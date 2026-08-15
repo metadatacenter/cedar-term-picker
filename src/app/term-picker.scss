@@ -280,21 +280,49 @@ button {
   padding: 0 0.2rem;
   text-align: left;
 
+  color: var(--ctp-color-primary);
+
   &:hover {
-    color: var(--ctp-color-primary);
     background: var(--ctp-color-surface);
   }
 }
 
-// The full history, under the row that opened it. Scrolls rather than growing: MESH has 8 releases
-// and nothing bounds the number an ontology can accumulate.
+// The caret carries the affordance. Without it the count reads as another muted figure beside the
+// version, and an author has no reason to click the one thing on the row that opens.
+.caret {
+  padding-left: 0.15rem;
+}
+
+// The full history, under the row that opened it. Scrolls rather than growing: DOID has fifteen
+// releases and nothing bounds the number an ontology can accumulate.
 .history {
   grid-column: 1 / -1;
   background: var(--ctp-color-surface);
   border-radius: 3px;
   margin: 0.15rem 0 0.35rem 0;
-  max-height: 13rem;
+  max-height: 11rem;
   overflow-y: auto;
+
+  // A visible track, rather than one that appears once an author is already scrolling. It is the
+  // second thing saying the list is longer than the box, after the row cut off at the bottom edge.
+  scrollbar-width: thin;
+  scrollbar-color: var(--ctp-color-border) transparent;
+}
+
+.releases-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6em 7.5em 4.5em;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.3rem 0.6rem;
+  background: var(--ctp-color-surface);
+  border-bottom: 1px solid var(--ctp-color-border);
+  color: var(--ctp-color-muted);
+  font-size: var(--ctp-font-size-small);
 }
 
 .releases {
