@@ -456,6 +456,12 @@ export class TermPicker {
    * Shown as the ontology declares it, with nothing prepended. A synthesised `v` reads as part of
    * the version and is wrong about it as often as not: the catalog holds `V2`, `v1.0.0`, `2026-07-06`
    * and `latest`, which a prefix turns into `vV2`, `vv1.0.0` and `vlatest`.
+   *
+   * Declared, and therefore arbitrary: `owl:versionInfo` is free text, and some ontologies put a
+   * changelog in it. Of the 998 snapshots that declare a version, 915 are 20 characters or fewer,
+   * and the longest is 782 characters of prose with newlines and a table of HTML. The row elides
+   * from the middle at 20 and carries the whole string in its title, so a version that is prose
+   * costs a hover rather than the layout.
    */
   private static nameOf(version: VersionInfo | undefined): string {
     return version?.declaredVersion ?? version?.effectiveDate?.slice(0, 10) ?? 'latest';

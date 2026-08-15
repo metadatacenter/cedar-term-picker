@@ -244,6 +244,32 @@ test('a long label folds from the middle, keeping both ends', async ({ page }) =
   await expect(title).toHaveAttribute('title', long);
 });
 
+test('a version that is prose is elided, not laid out', async ({ page }) => {
+  // owl:versionInfo is free text. The longest one the catalog holds is 782 characters of prose,
+  // and a row that lays it out is a row with no room for anything else.
+  const prose =
+    'New modular version of the SSN ontology. This ontology was originally developed by the ' +
+    'W3C Semantic Sensor Networks Incubator Group and revised for the 2017 Recommendation.';
+  await stubSearch(page, () => ({
+    sources: [source('SSN', { name: 'Semantic Sensor Network', declaredVersion: prose })],
+    results: { ontology: results([ontologyHit('SSN', 12, true)]) },
+  }));
+  await openPicker(page);
+  await search(page, 'sensor');
+  await page.locator('cedar-term-picker .tab').nth(2).click();
+
+  const version = page.locator('cedar-term-picker .version');
+  await expect(version).toHaveAttribute('title', `Version ${prose}`);
+  const shown = (await version.innerText()).trim();
+  expect(shown.length).toBeLessThanOrEqual(20);
+  expect(shown).toContain('…');
+
+  // The row it sits in stays the height of an ordinary one.
+  const rows = page.locator('cedar-term-picker .row');
+  const box = await rows.first().boundingBox();
+  expect(box!.height).toBeLessThan(48);
+});
+
 test('narrowing ranks by matching terms and survives being used', async ({ page }) => {
   const recorded = await stubSearch(page, (body) =>
     body.ontologyOrder === 'matches'
