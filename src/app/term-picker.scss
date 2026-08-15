@@ -505,7 +505,7 @@ mark {
   column-gap: 0.75rem;
 }
 
-// The counts run right against their column, so "terms" and "beneath" line up down the list
+// The counts run right against their column, so "terms" and "descendants" line up down the list
 // rather than starting wherever the number before them happens to end.
 .row > .meta.inline,
 .child > .meta.inline {

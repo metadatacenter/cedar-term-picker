@@ -100,11 +100,11 @@ test('branches fold across and within ontologies, and open onto their parents', 
   await search(page, 'melanoma');
   await page.locator('cedar-term-picker .tab').nth(1).click();
 
-  // Three positions in two ontologies, folded to one row: RH-MESH places one concept twice.
+  // Three branches in two ontologies, folded to one row: RH-MESH places one concept twice.
   const row = page.locator('cedar-term-picker .rowhead');
   await expect(row).toHaveCount(1);
   await expect(row).toContainText('in 2 ontologies');
-  await expect(row).toContainText('3 positions');
+  await expect(row).toContainText('3 branches in 2 ontologies');
 
   await row.click();
   const children = page.locator('cedar-term-picker .child');

@@ -209,7 +209,7 @@
                       </span>
                     }
                   </span>
-                  <span class="meta inline">{{ hit.descendantCount }} beneath</span>
+                  <span class="meta inline">{{ hit.descendantCount.toLocaleString() }} {{ hit.descendantCount === 1 ? 'descendant' : 'descendants' }}</span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
                 </div>
                 <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
@@ -231,11 +231,11 @@
               <span class="title" [title]="group.label">{{ elide(group.label) }}</span>
             </span>
             <span class="meta inline">
-              in {{ group.ontologyCount }} {{ group.ontologyCount === 1 ? 'ontology' : 'ontologies' }}
               @if (group.hits.length !== group.ontologyCount) {
-                · {{ group.hits.length }} positions
+                {{ group.hits.length }} branches in
               }
-              · {{ spanOf(group.hits) }} beneath
+              {{ group.ontologyCount }} {{ group.ontologyCount === 1 ? 'ontology' : 'ontologies' }}
+              · {{ spanOf(group.hits) }} descendants each
             </span>
           </button>
           @if (expanded() === group.label) {
@@ -257,7 +257,8 @@
                     }
                   </span>
                   <span class="meta inline">
-                    {{ hit.descendantCount.toLocaleString() }} beneath
+                    {{ hit.descendantCount.toLocaleString() }} {{
+                      hit.descendantCount === 1 ? 'descendant' : 'descendants' }}
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
                 </div>
@@ -267,7 +268,7 @@
           }
         </div>
       } @empty {
-        <p class="empty">No branches match. A branch is a term with something beneath it.</p>
+        <p class="empty">No branches match. A branch is a term with descendants.</p>
       }
     }
 
