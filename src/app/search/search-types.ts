@@ -226,4 +226,7 @@ export interface Selection {
   readonly version: string;
   /** Whether the author chose that release, rather than it being whatever is current. */
   readonly pinned: boolean;
+  /** The rest of what a pinned constraint records: the release's date and its content hash. */
+  readonly effectiveDate?: string;
+  readonly id?: string;
 }

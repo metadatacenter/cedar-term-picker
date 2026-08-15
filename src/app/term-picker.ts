@@ -782,6 +782,9 @@ export class TermPicker {
     const acronym = hit.sourceAcronym;
     const pinned = this.pinned().get(acronym);
     const version = TermPicker.nameOf(pinned ?? this.sourceOf(acronym)?.version);
+    // The date and the hash only where one was chosen: they are what a pinned constraint records
+    // beside the declared version, and an unpinned one records none of the three.
+    const of = { effectiveDate: pinned?.effectiveDate?.slice(0, 10), id: pinned?.id?.slice(0, 12) };
     switch (hit.type) {
       case 'ontology':
         return {
@@ -790,9 +793,17 @@ export class TermPicker {
           acronym,
           version,
           pinned: pinned !== undefined,
+          ...of,
         };
       case 'branch':
-        return { kind: 'Everything under', what: hit.termBaseLabel, acronym, version, pinned: pinned !== undefined };
+        return {
+          kind: 'Everything under',
+          what: hit.termBaseLabel,
+          acronym,
+          version,
+          pinned: pinned !== undefined,
+          ...of,
+        };
       case 'valueSet':
         // A value set's name is optional in the contract, so this falls back to what addresses it.
         return {
@@ -801,9 +812,11 @@ export class TermPicker {
           acronym,
           version,
           pinned: pinned !== undefined,
+          ...of,
         };
       default:
-        return { kind: 'The term', what: hit.termLabel, acronym, version, pinned: pinned !== undefined };
+        // No kind for a class: the terms tab is where it was found and the label is the whole of it.
+        return { kind: '', what: hit.termLabel, acronym, version, pinned: pinned !== undefined, ...of };
     }
   });
 

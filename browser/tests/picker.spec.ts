@@ -278,6 +278,8 @@ test('the bar says what is selected, and nothing before anything is', async ({ p
   await page.locator('cedar-term-picker .row.pick').first().click();
   await expect(chosen).toContainText('Every term in');
   await expect(chosen).toContainText('Melanoma Ontology');
+  // A term needs no kind said out loud — the label is the whole of it.
+  await expect(chosen).not.toContainText('The term');
   // "latest", not the release latest happens to be: an unpinned constraint records no version and
   // freeze-on-publish resolves it at publish time.
   await expect(chosen).toContainText('latest');
@@ -640,6 +642,11 @@ test('the release count opens the whole history, and choosing from it pins', asy
   await expect(releases.nth(1)).not.toHaveClass(/on/);
   await releases.nth(1).click();
   await expect(releases.nth(1)).toHaveClass(/on/);
+  // A pinned selection states all three of what it records: version, date and content hash.
+  const bar = page.locator('cedar-term-picker .chosen');
+  await expect(bar).toContainText('26.06e');
+  await expect(bar).toContainText('2026-06-03');
+  await expect(bar).toContainText('hash-b-01234');
   // The tree is of a release, so stepping to another one reads it again rather than waiting for a
   // read that was never started.
   // Read again at the release chosen, rather than waiting on a read that was never started.

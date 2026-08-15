@@ -196,16 +196,29 @@
       @if (selection(); as chosen) {
         <span class="label">Selected</span>
         <p class="phrase">
-          {{ chosen.kind }}
+          @if (chosen.kind) {
+            {{ chosen.kind }}
+          }
           <strong [title]="chosen.what">{{ elide(chosen.what, 44, 14) }}</strong>
           <span class="who">{{ chosen.acronym }}</span>
           <!--
-            "latest" rather than the release latest currently resolves to. An unpinned constraint
+            "latest" rather than the release latest currently resolves to: an unpinned constraint
             records no version at all and freeze-on-publish resolves it at publish time, so naming
-            today's release here would describe something the template will not say.
+            today's release would describe something the template will not say. A pinned one records
+            all three of declared version, effective date and content hash, so all three are here.
           -->
           <span class="meta inline">
-            · {{ chosen.pinned ? elide(chosen.version, 20, 8) : 'latest' }}
+            @if (chosen.pinned) {
+              · {{ elide(chosen.version, 20, 8) }}
+              @if (chosen.effectiveDate) {
+                · {{ chosen.effectiveDate }}
+              }
+              @if (chosen.id) {
+                · <code class="hash">{{ chosen.id }}</code>
+              }
+            } @else {
+              · latest
+            }
           </span>
         </p>
       }
