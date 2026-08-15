@@ -288,6 +288,34 @@ test('the bar says what is selected, and nothing before anything is', async ({ p
   await expect(chosen).toContainText('Everything under');
 });
 
+test('a term picked from the tree becomes the selection, and the panel stays open', async ({ page }) => {
+  await stubSearch(page, () => MELANOMA);
+  await stubHierarchy(page, (query) => ({
+    sourceAcronym: query.get('sourceAcronym'),
+    termIri: query.get('termIri'),
+    termLabel: 'Melanoma',
+    children: [
+      { termIri: 'http://ncit/Amelanotic', termLabel: 'Amelanotic Melanoma', hasChildren: false, descendantCount: 0 },
+    ],
+    childCount: 1,
+    descendantCount: 321,
+  }));
+  await openPicker(page);
+  await search(page, 'melanoma');
+  await page.locator('cedar-term-picker .rowhead').first().click();
+  await page.locator('cedar-term-picker .child', { hasText: 'NCIT' }).click();
+
+  const chosen = page.locator('cedar-term-picker .chosen');
+  await expect(chosen).toContainText('Melanoma');
+
+  // Clicking a term in the tree selects it, and the tree it was found in stays open.
+  const child = page.locator('cedar-term-picker .tree .node', { hasText: 'Amelanotic Melanoma' });
+  await child.locator('.term').click();
+  await expect(chosen).toContainText('Amelanotic Melanoma');
+  await expect(child).toHaveClass(/picked/);
+  await expect(page.locator('cedar-term-picker .tree')).toBeVisible();
+});
+
 test('a marked term shows what it is offering', async ({ page }) => {
   await stubSearch(page, () => MELANOMA);
   await stubHierarchy(page, (query) => ({

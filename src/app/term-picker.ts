@@ -139,6 +139,15 @@ export class TermPicker {
   protected readonly marked = signal<Hit | null>(null);
 
   /**
+   * What would go on the field, which is not always the row whose panel is open.
+   *
+   * Marking a row picks it and opens its panel; clicking a term inside that panel's tree picks the
+   * term without closing the panel it was found in. Two signals rather than one, because the panel
+   * belongs to a row and the choice belongs to whatever was last pointed at.
+   */
+  protected readonly picked = signal<Hit | null>(null);
+
+  /**
    * Which page each tab is showing.
    *
    * Per tab rather than one for the picker: the tabs count different things and an author reading
@@ -766,7 +775,7 @@ export class TermPicker {
    * be recorded at — the sentence an author is about to commit to.
    */
   protected readonly selection = computed<Selection | null>(() => {
-    const hit = this.marked();
+    const hit = this.picked();
     if (hit === null) {
       return null;
     }
@@ -800,6 +809,7 @@ export class TermPicker {
 
   protected mark(hit: Hit): void {
     this.marked.set(hit);
+    this.picked.set(hit);
     if (hit.type === 'class' || hit.type === 'branch') {
       void this.readHierarchy(hit);
     }
@@ -956,9 +966,9 @@ export class TermPicker {
     return (tree.path ?? []).find((step) => step.termIri === iri)?.termLabel ?? iri;
   }
 
-  /** Chooses a term reached by browsing rather than by searching. */
-  protected chooseNode(hit: Hit, row: TreeRow): void {
-    this.choose({
+  /** A term reached by browsing, shaped as the constraint it would become. */
+  private nodeAsHit(hit: Hit, row: TreeRow): ClassHit {
+    return {
       type: 'class',
       sourceSystem: hit.sourceSystem,
       sourceAcronym: row.acronym,
@@ -968,7 +978,24 @@ export class TermPicker {
       obsolete: false,
       hasChildren: row.hasChildren,
       descendantCount: row.descendantCount,
-    });
+    };
+  }
+
+  /** Picks a term from the tree. The panel stays where it is: the tree is where it was found. */
+  protected pickNode(hit: Hit, row: TreeRow): void {
+    this.picked.set(this.nodeAsHit(hit, row));
+  }
+
+  protected isPicked(row: TreeRow): boolean {
+    const picked = this.picked();
+    return (
+      picked !== null && picked.type === 'class' && picked.termIri === row.iri && picked.sourceAcronym === row.acronym
+    );
+  }
+
+  /** Chooses a term reached by browsing rather than by searching. */
+  protected chooseNode(hit: Hit, row: TreeRow): void {
+    this.choose(this.nodeAsHit(hit, row));
   }
 
   /** How many releases this ontology has, when it has more than the one on the row. */

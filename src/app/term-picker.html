@@ -48,6 +48,7 @@
                   class="node"
                   [class.self]="row.self"
                   [class.spine]="row.onSpine"
+                  [class.picked]="isPicked(row)"
                   [style.padding-left.rem]="row.depth * 0.9"
                 >
                   @if (row.hasChildren) {
@@ -61,12 +62,17 @@
                   } @else {
                     <span class="twist"></span>
                   }
+                  <!--
+                    A click selects the term, which the bar then states; opening a node is the
+                    twist's job. Selecting inside the tree leaves the panel where it is: the tree is
+                    where the term was found, and closing it would take the context with it.
+                  -->
                   <button
                     type="button"
                     class="term"
                     [title]="row.iri + ' — double click to use it'"
+                    (click)="pickNode(hit, row)"
                     (dblclick)="chooseNode(hit, row)"
-                    (click)="row.hasChildren ? toggleNode(row.acronym, row.iri) : null"
                   >{{ row.label }}</button>
                   @if (row.loading) {
                     <span class="meta inline">· reading…</span>

@@ -396,6 +396,13 @@ button {
       font-weight: 500;
     }
 
+    // The term the bar is describing, marked the way a marked row and a chosen release are.
+    &.picked > .term {
+      background: var(--ctp-color-tint);
+      box-shadow: inset 2px 0 0 var(--ctp-color-primary);
+      color: var(--ctp-color-heading);
+    }
+
     > .twist {
       flex: 0 0 1.1em;
       background: transparent;
