@@ -525,7 +525,14 @@ export class TermPicker {
    * costs a hover rather than the layout.
    */
   private static nameOf(version: VersionInfo | undefined): string {
-    return version?.declaredVersion ?? version?.effectiveDate?.slice(0, 10) ?? 'latest';
+    if (version === undefined) {
+      return 'latest';
+    }
+    // A snapshot with neither a declared version nor an effective date is a release the source
+    // never named — 67 of the 448 ontologies a query for "disease" reaches. Calling it "latest"
+    // would say a release was unpinned when the row is reading a particular one; the history panel
+    // is where its hash identifies it.
+    return version.declaredVersion ?? version.effectiveDate?.slice(0, 10) ?? 'unversioned';
   }
 
   protected isPinned(acronym: string): boolean {
