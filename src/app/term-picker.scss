@@ -409,10 +409,10 @@ button {
       font-weight: 500;
     }
 
-    // The term the bar is describing, marked the way a marked row and a chosen release are.
+    // The term the bar is describing. The tint alone: a bar down its edge is the mark a row and a
+    // release carry, and inside a tree it read as another level of indent rather than as emphasis.
     &.picked > .term {
       background: var(--ctp-color-tint);
-      box-shadow: inset 2px 0 0 var(--ctp-color-primary);
       color: var(--ctp-color-heading);
     }
 
