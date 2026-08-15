@@ -1,26 +1,41 @@
 <ctp-font-registrar />
 
 <ng-template #stepper let-acronym>
+  <!--
+    Four cells, always, whether or not there is anything to step. The rows share one set of grid
+    columns, and a row that emits fewer cells than its neighbours shifts every cell after it: the
+    versions stop lining up, which is the whole point of the column.
+  -->
   @if (steppable(acronym)) {
-    <span class="stepper" [class.pinned]="isPinned(acronym)">
-      <button
-        type="button"
-        class="step"
-        title="Step back one release"
-        (click)="step(acronym, 1); $event.stopPropagation()"
-      >‹</button>
-      <span class="version" [title]="'Version ' + versionOf(acronym)">{{ elide(versionOf(acronym), 20, 8) }}</span>
-      <span class="of">of {{ versionCount(acronym) }}</span>
-      <button
-        type="button"
-        class="step"
-        title="Step forward one release"
-        [disabled]="!isPinned(acronym)"
-        (click)="step(acronym, -1); $event.stopPropagation()"
-      >›</button>
-    </span>
+    <button
+      type="button"
+      class="step"
+      title="Step back one release"
+      (click)="step(acronym, 1); $event.stopPropagation()"
+    >‹</button>
   } @else {
-    <span class="version" [title]="'Version ' + versionOf(acronym)">{{ elide(versionOf(acronym), 20, 8) }}</span>
+    <span class="step"></span>
+  }
+  <span
+    class="version"
+    [class.pinned]="isPinned(acronym)"
+    [title]="'Version ' + versionOf(acronym)"
+  >{{ elide(versionOf(acronym), 20, 8) }}</span>
+  @if (versionCount(acronym); as count) {
+    <span class="of">of {{ count }}</span>
+  } @else {
+    <span class="of"></span>
+  }
+  @if (steppable(acronym)) {
+    <button
+      type="button"
+      class="step"
+      title="Step forward one release"
+      [disabled]="!isPinned(acronym)"
+      (click)="step(acronym, -1); $event.stopPropagation()"
+    >›</button>
+  } @else {
+    <span class="step"></span>
   }
 </ng-template>
 
@@ -35,7 +50,18 @@
         (input)="onInput($event)"
       />
     </label>
-    <button type="button" class="ghost" (click)="onCancel()">Close</button>
+    <!--
+      Dismissal, not an answer. It emits `cancelled` and nothing else, so a host that closes on it
+      closes with the field's constraints as they were. The label is the glyph, so it carries the
+      words for anyone who cannot see it.
+    -->
+    <button
+      type="button"
+      class="dismiss"
+      title="Close without choosing"
+      aria-label="Close without choosing"
+      (click)="onCancel()"
+    >✕</button>
   </header>
 
   <div class="narrowing">
@@ -104,6 +130,7 @@
     </p>
   }
 
+  <div class="results">
   @switch (activeTab()) {
     @case ('class') {
       @for (group of labelGroups(); track group.label) {
@@ -151,9 +178,8 @@
                       </span>
                     }
                   </span>
-                  <span class="meta inline" [title]="'Version ' + versionOf(hit.sourceAcronym)">
-                    {{ hit.descendantCount }} beneath · {{ elide(versionOf(hit.sourceAcronym), 20, 8) }}
-                  </span>
+                  <span class="meta inline">{{ hit.descendantCount }} beneath</span>
+                  <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
                 </div>
               }
             </div>
@@ -269,6 +295,7 @@
       }
     }
   }
+  </div>
 
   @if (pageCount(activeTab()); as pages) {
     <nav class="pager">

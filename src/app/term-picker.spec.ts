@@ -186,7 +186,7 @@ describe('TermPicker', () => {
     await fixture.whenStable();
 
     // One version is nothing to step through, so that row shows the version and no controls.
-    expect(shadow(fixture).querySelectorAll('.stepper').length).toBe(1);
+    expect(shadow(fixture).querySelectorAll('button.step').length).toBe(2);
     expect(shadow(fixture).querySelectorAll('.version').length).toBe(2);
   });
 
@@ -303,7 +303,7 @@ describe('TermPicker', () => {
     await fixture.whenStable();
     let cancelled = 0;
     fixture.componentInstance.cancelled.subscribe(() => (cancelled += 1));
-    shadow(fixture).querySelector<HTMLButtonElement>('.ghost')?.click();
+    shadow(fixture).querySelector<HTMLButtonElement>('.dismiss')?.click();
     expect(cancelled).toBe(1);
   });
 });

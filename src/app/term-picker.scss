@@ -205,10 +205,21 @@ button {
   color: var(--ctp-color-muted);
 }
 
+// One set of columns for every row of a tab, so the counts, the versions and the step arrows line
+// up down the list instead of each row packing its own trailing cells against the right edge. The
+// rows are their own boxes — they tint when marked and rule off from each other — so they take the
+// columns through `subgrid` rather than by dissolving into the grid with `display: contents`.
+.results {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content 1.4em max-content max-content 1.4em;
+  column-gap: 0.75rem;
+}
+
 .row {
-  display: flex;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: 0.75rem;
   padding: 0.35rem 0.2rem;
   border-bottom: 1px solid var(--ctp-color-border);
 
@@ -236,6 +247,23 @@ button {
   &:focus-visible {
     outline: 2px solid var(--ctp-color-primary);
     outline-offset: -2px;
+  }
+}
+
+// Dismissal. A glyph rather than a word: it is the one control on the bar that answers nothing, and
+// spelling it out gave it the weight of a choice next to the field it sits beside.
+.dismiss {
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--ctp-color-muted);
+  font-size: var(--ctp-font-size-lead);
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+
+  &:hover {
+    color: var(--ctp-color-heading);
+    background: var(--ctp-color-surface);
   }
 }
 
@@ -350,10 +378,27 @@ mark {
   padding: 0.1rem 0.5rem 0.2rem 1.6rem;
 }
 
+// The children of one group get the same treatment among themselves. They cannot take the outer
+// columns — a group row spans them all and the children sit inside it — so they declare their own,
+// which is enough: what an author compares is one ontology against another within a term.
+.children {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content 1.4em max-content max-content 1.4em;
+  column-gap: 0.75rem;
+}
+
+// The counts run right against their column, so "terms inside" and "beneath" line up down the list
+// rather than starting wherever the number before them happens to end.
+.row > .meta.inline,
+.child > .meta.inline {
+  text-align: right;
+}
+
 .child {
-  display: flex;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: 0.75rem;
   padding: 0.3rem 0;
   border-bottom: 1px solid var(--ctp-color-border);
 
@@ -364,13 +409,13 @@ mark {
 
 // Stepping back through releases. Muted until an author steps off latest, at which point the row is
 // carrying a decision and says so.
-.stepper {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.1rem;
+.version {
+  font-size: var(--ctp-font-size-small);
+  color: var(--ctp-color-muted);
+  text-align: right;
   white-space: nowrap;
 
-  &.pinned .version {
+  &.pinned {
     background: var(--ctp-color-tint);
     color: var(--ctp-color-heading);
     border-radius: 3px;
@@ -379,13 +424,9 @@ mark {
   }
 }
 
-.version {
-  font-size: var(--ctp-font-size-small);
-  color: var(--ctp-color-muted);
-  min-width: 4.5rem;
-  text-align: center;
-}
-
+// A step is a button where there is something to step to and an empty span where there is not, so
+// the column stays open either way and the versions stay in line. Not `.empty` for that span: the
+// empty-state paragraph owns that class and pads itself to a paragraph's height.
 .step {
   background: transparent;
   border: none;
@@ -393,7 +434,8 @@ mark {
   color: var(--ctp-color-primary);
   font-size: var(--ctp-font-size-lead);
   line-height: 1;
-  padding: 0 0.25rem;
+  padding: 0;
+  text-align: center;
 
   &:disabled {
     color: var(--ctp-color-border);
