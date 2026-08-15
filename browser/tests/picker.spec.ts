@@ -278,8 +278,9 @@ test('the bar says what is selected, and nothing before anything is', async ({ p
   await page.locator('cedar-term-picker .row.pick').first().click();
   await expect(chosen).toContainText('Every term in');
   await expect(chosen).toContainText('Melanoma Ontology');
-  // Unpinned is the default and says so: freeze-on-publish resolves it at publish time.
-  await expect(chosen).toContainText('unpinned');
+  // "latest", not the release latest happens to be: an unpinned constraint records no version and
+  // freeze-on-publish resolves it at publish time.
+  await expect(chosen).toContainText('latest');
 
   // The phrase follows the mark, and the kind follows the tab.
   await page.locator('cedar-term-picker .tab').nth(1).click();

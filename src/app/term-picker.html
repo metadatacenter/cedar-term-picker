@@ -199,12 +199,13 @@
           {{ chosen.kind }}
           <strong [title]="chosen.what">{{ elide(chosen.what, 44, 14) }}</strong>
           <span class="who">{{ chosen.acronym }}</span>
+          <!--
+            "latest" rather than the release latest currently resolves to. An unpinned constraint
+            records no version at all and freeze-on-publish resolves it at publish time, so naming
+            today's release here would describe something the template will not say.
+          -->
           <span class="meta inline">
-            @if (chosen.pinned) {
-              · pinned to {{ elide(chosen.version, 20, 8) }}
-            } @else {
-              · at {{ elide(chosen.version, 20, 8) }}, and unpinned
-            }
+            · {{ chosen.pinned ? elide(chosen.version, 20, 8) : 'latest' }}
           </span>
         </p>
       }

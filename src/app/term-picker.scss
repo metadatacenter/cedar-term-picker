@@ -55,6 +55,7 @@
 }
 
 .picker {
+  position: relative;
   border: 1px solid var(--ctp-color-border);
   border-radius: 4px;
   padding: 0.75rem;
@@ -84,10 +85,13 @@
   flex: 1 1 50%;
   min-width: 0;
   align-self: end;
+  // Clear of the corner the dismiss now occupies.
+  padding-right: 1.6rem;
 
   .phrase {
     margin: 0;
-    padding: 0.5rem 0;
+    // Sits on the input's baseline opposite it, rather than floating clear of its own caption.
+    padding: 0.45rem 0 0.5rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -294,7 +298,13 @@ button {
 
 // Dismissal. A glyph rather than a word: it is the one control on the bar that answers nothing, and
 // spelling it out gave it the weight of a choice next to the field it sits beside.
+// In the panel's corner, not in the bar's flow. The bar is as tall as the search field and the
+// phrase beside it, and a control that answers nothing was being centred against them — floating in
+// the middle of the panel with a hand's width of space beneath it.
 .dismiss {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
   background: transparent;
   border: none;
   border-radius: 3px;
