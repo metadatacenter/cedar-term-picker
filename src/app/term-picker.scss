@@ -71,8 +71,32 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  flex: 1;
+  // Half the bar rather than all of it: the other half says what has been found. Both halves keep
+  // their width whether or not anything is selected, so marking a row does not move the input.
+  flex: 1 1 50%;
   min-width: 0;
+}
+
+.chosen {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1 1 50%;
+  min-width: 0;
+  align-self: end;
+
+  .phrase {
+    margin: 0;
+    padding: 0.5rem 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    color: var(--ctp-color-heading);
+    font-weight: 500;
+  }
 }
 
 .label {

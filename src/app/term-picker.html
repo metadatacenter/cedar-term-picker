@@ -187,6 +187,33 @@
       closes with the field's constraints as they were. The label is the glyph, so it carries the
       words for anyone who cannot see it.
     -->
+    <!--
+      What the marked row would put on the field. Half the bar, opposite the search, because the two
+      are the two halves of one act: the search is what an author is looking through and this is
+      what they have found. Absent until something is marked, rather than an empty frame.
+    -->
+    <div class="chosen">
+      @if (selection(); as chosen) {
+        <span class="label">Selected</span>
+        <p class="phrase">
+          {{ chosen.kind }}
+          <strong [title]="chosen.what">{{ elide(chosen.what, 44, 14) }}</strong>
+          <span class="who">{{ chosen.acronym }}</span>
+          <span class="meta inline">
+            @if (chosen.pinned) {
+              · pinned to {{ elide(chosen.version, 20, 8) }}
+            } @else {
+              · at {{ elide(chosen.version, 20, 8) }}, and unpinned
+            }
+          </span>
+        </p>
+      }
+    </div>
+    <!--
+      Dismissal, not an answer. It emits `cancelled` and nothing else, so a host that closes on it
+      closes with the field's constraints as they were. The label is the glyph, so it carries the
+      words for anyone who cannot see it.
+    -->
     <button
       type="button"
       class="dismiss"

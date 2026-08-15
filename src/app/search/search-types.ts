@@ -217,3 +217,13 @@ export interface TreeRow {
   /** Children the server held back, since a node can have hundreds. */
   readonly hidden: number;
 }
+
+/** What a marked row would put on the field, said in a phrase. */
+export interface Selection {
+  readonly kind: string;
+  readonly what: string;
+  readonly acronym: string;
+  readonly version: string;
+  /** Whether the author chose that release, rather than it being whatever is current. */
+  readonly pinned: boolean;
+}

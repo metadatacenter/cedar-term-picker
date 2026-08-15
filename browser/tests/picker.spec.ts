@@ -264,6 +264,30 @@ test('a long label folds from the middle, keeping both ends', async ({ page }) =
   await expect(title).toHaveAttribute('title', long);
 });
 
+test('the bar says what is selected, and nothing before anything is', async ({ page }) => {
+  await stubSearch(page, () => MELANOMA);
+  await stubHierarchy(page, () => null);
+  await openPicker(page);
+  await search(page, 'melanoma');
+
+  // Nothing marked, nothing claimed. An empty frame would read as a selection of nothing.
+  const chosen = page.locator('cedar-term-picker .chosen');
+  await expect(chosen).toBeEmpty();
+
+  await page.locator('cedar-term-picker .tab').nth(2).click();
+  await page.locator('cedar-term-picker .row.pick').first().click();
+  await expect(chosen).toContainText('Every term in');
+  await expect(chosen).toContainText('Melanoma Ontology');
+  // Unpinned is the default and says so: freeze-on-publish resolves it at publish time.
+  await expect(chosen).toContainText('unpinned');
+
+  // The phrase follows the mark, and the kind follows the tab.
+  await page.locator('cedar-term-picker .tab').nth(1).click();
+  await page.locator('cedar-term-picker .rowhead').click();
+  await page.locator('cedar-term-picker .child').first().click();
+  await expect(chosen).toContainText('Everything under');
+});
+
 test('a marked term shows what it is offering', async ({ page }) => {
   await stubSearch(page, () => MELANOMA);
   await stubHierarchy(page, (query) => ({

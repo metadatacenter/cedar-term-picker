@@ -26,6 +26,7 @@ import {
   OntologyHit,
   SearchKind,
   SearchResponse,
+  Selection,
   SourceSelector,
   SourceBlock,
   TAB_LABELS,
@@ -135,7 +136,7 @@ export class TermPicker {
    * A single click that emitted would make every mis-aimed click a decision, and the rows are one
    * line tall and adjacent.
    */
-  protected readonly marked = signal<string | null>(null);
+  protected readonly marked = signal<Hit | null>(null);
 
   /**
    * Which page each tab is showing.
@@ -747,11 +748,52 @@ export class TermPicker {
   }
 
   protected isMarked(hit: Hit): boolean {
-    return this.marked() === this.keyOf(hit);
+    const marked = this.marked();
+    return marked !== null && this.keyOf(marked) === this.keyOf(hit);
   }
 
+  /**
+   * What the marked row would put on the field, said in a phrase.
+   *
+   * A row is dense with the evidence for choosing it and says nothing about the choice itself. The
+   * summary is the other half: the kind of constraint, the thing it names, and the release it would
+   * be recorded at — the sentence an author is about to commit to.
+   */
+  protected readonly selection = computed<Selection | null>(() => {
+    const hit = this.marked();
+    if (hit === null) {
+      return null;
+    }
+    const acronym = hit.sourceAcronym;
+    const pinned = this.pinned().get(acronym);
+    const version = TermPicker.nameOf(pinned ?? this.sourceOf(acronym)?.version);
+    switch (hit.type) {
+      case 'ontology':
+        return {
+          kind: 'Every term in',
+          what: this.sourceName(acronym) || acronym,
+          acronym,
+          version,
+          pinned: pinned !== undefined,
+        };
+      case 'branch':
+        return { kind: 'Everything under', what: hit.termBaseLabel, acronym, version, pinned: pinned !== undefined };
+      case 'valueSet':
+        // A value set's name is optional in the contract, so this falls back to what addresses it.
+        return {
+          kind: 'The value set',
+          what: hit.termBaseLabel ?? hit.termBaseIri,
+          acronym,
+          version,
+          pinned: pinned !== undefined,
+        };
+      default:
+        return { kind: 'The term', what: hit.termLabel, acronym, version, pinned: pinned !== undefined };
+    }
+  });
+
   protected mark(hit: Hit): void {
-    this.marked.set(this.keyOf(hit));
+    this.marked.set(hit);
     if (hit.type === 'class' || hit.type === 'branch') {
       void this.readHierarchy(hit);
     }
