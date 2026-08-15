@@ -68,14 +68,8 @@
                     (dblclick)="chooseNode(hit, row)"
                     (click)="row.hasChildren ? toggleNode(row.acronym, row.iri) : null"
                   >{{ row.label }}</button>
-                  @if (row.descendantCount) {
-                    <span class="meta inline">· {{ row.descendantCount.toLocaleString() }} beneath</span>
-                  }
                   @if (row.loading) {
                     <span class="meta inline">· reading…</span>
-                  }
-                  @if (row.open && row.hidden > 0) {
-                    <span class="meta inline">· {{ row.hidden.toLocaleString() }} more not shown</span>
                   }
                 </li>
               }

@@ -321,7 +321,6 @@ test('a marked term shows what it is offering', async ({ page }) => {
     /Amelanotic Melanoma/,
   ]);
   await expect(detail.locator('.tree .node.self')).toContainText('Melanoma');
-  await expect(detail).toContainText('3 more not shown');
 
   // An ancestor opens where it stands, showing what else is beside the path rather than replacing
   // the tree with a different one.
