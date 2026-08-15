@@ -101,7 +101,7 @@
         <dt>Also called</dt>
         <dd>
           @for (name of names; track name.label) {
-            <span class="chip">{{ elide(name.label, 44, 12) }}@if (name.language) { · {{
+            <span class="tag">{{ elide(name.label, 44, 12) }}@if (name.language) { · {{
               name.language }}}</span>
           }
           @if (moreNames(hit); as more) {
@@ -252,13 +252,26 @@
           {{ acronym }} <span class="x">×</span>
         </button>
       }
-      <button type="button" class="ghost" (click)="clearNarrowing()">Search everything</button>
+      <!--
+        Shaped like the chips beside it rather than as a button: adding an ontology and removing one
+        are the same kind of act on the same strip, and two outlined boxes at the end of a row of
+        chips read as controls of their own rather than as part of it.
+      -->
+      <button type="button" class="chip adder" (click)="openNarrowing()">
+        {{ choosingNarrowing() ? 'done' : '+ ontology' }}
+      </button>
+      <!--
+        Removing the last chip already searches everything, so this is a bulk reset and nothing
+        more. Plain text, because it is worth having once several ontologies are on and worth
+        nothing before that.
+      -->
+      <button type="button" class="quiet" (click)="clearNarrowing()">clear</button>
     } @else {
       <span class="meta inline">Searching every ontology</span>
+      <button type="button" class="chip adder" (click)="openNarrowing()">
+        {{ choosingNarrowing() ? 'done' : '+ narrow to…' }}
+      </button>
     }
-    <button type="button" class="ghost" (click)="openNarrowing()">
-      {{ choosingNarrowing() ? 'Done' : 'Narrow to…' }}
-    </button>
   </div>
 
   @if (choosingNarrowing()) {

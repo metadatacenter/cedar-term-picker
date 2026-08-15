@@ -172,6 +172,32 @@ button {
   }
 }
 
+// The way in, wearing the shape of what it adds. Outlined rather than filled, so a strip of chips
+// reads as the ontologies chosen plus one empty slot rather than as one more of them.
+.chip.adder {
+  background: transparent;
+  border: 1px dashed var(--ctp-color-border);
+  color: var(--ctp-color-primary);
+  cursor: pointer;
+  padding: 0.1rem 0.45rem;
+}
+
+// A control with no box. For the reset beside the chips, which is worth having once several
+// ontologies are on and worth nothing before that.
+.quiet {
+  background: transparent;
+  border: none;
+  padding: 0.1rem 0.2rem;
+  color: var(--ctp-color-muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: var(--ctp-color-heading);
+  }
+}
+
 .candidates {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
@@ -676,6 +702,18 @@ mark {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+// A term's other names. Outlined and muted, not tinted: the tint is what marks a selection
+// throughout the picker, and a row of tinted names read as eight things an author had chosen.
+.tag {
+  display: inline-block;
+  border: 1px solid var(--ctp-color-border);
+  color: var(--ctp-color-muted);
+  font-size: var(--ctp-font-size-small);
+  padding: 0.02rem 0.35rem;
+  border-radius: 3px;
+  margin-right: 0.35rem;
 }
 
 .chip {

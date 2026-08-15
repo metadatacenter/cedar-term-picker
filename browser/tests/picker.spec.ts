@@ -273,6 +273,9 @@ test('the bar says what is selected, and nothing before anything is', async ({ p
   // Nothing marked, nothing claimed. An empty frame would read as a selection of nothing.
   const chosen = page.locator('cedar-term-picker .chosen');
   await expect(chosen).toBeEmpty();
+  // Nothing narrowed: one chip-shaped way in, and no reset for a state there is nothing to reset.
+  await expect(page.locator('cedar-term-picker .narrowing .adder')).toHaveText('+ narrow to…');
+  await expect(page.locator('cedar-term-picker .narrowing .quiet')).toHaveCount(0);
 
   await page.locator('cedar-term-picker .tab').nth(2).click();
   await page.locator('cedar-term-picker .row.pick').first().click();
@@ -445,7 +448,7 @@ test('narrowed to one ontology, the terms are drawn where they sit in it', async
   await page.locator('cedar-term-picker .row.pick, cedar-term-picker .rowhead').first().click();
 
   // Narrow through the panel, the way an author would.
-  await page.locator('cedar-term-picker button', { hasText: 'Narrow to' }).click();
+  await page.locator('cedar-term-picker .adder').click();
   await page.locator('cedar-term-picker .candidate', { hasText: 'DOID' }).click();
 
   const nodes = page.locator('cedar-term-picker .tree.scoped .node');
@@ -592,7 +595,7 @@ test('narrowing ranks by matching terms and survives being used', async ({ page 
   await openPicker(page);
   await search(page, 'melanoma');
 
-  await page.locator('cedar-term-picker .narrowing button', { hasText: 'Narrow to' }).click();
+  await page.locator('cedar-term-picker .narrowing .adder').click();
   const candidates = page.locator('cedar-term-picker .candidate');
   // Ranked by what each holds, not by its name: NCIT with 950 before BERO with 782.
   await expect(candidates.first()).toContainText('NCIT');
