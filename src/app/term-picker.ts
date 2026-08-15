@@ -20,6 +20,7 @@ import {
   BranchHit,
   ClassHit,
   Hierarchy,
+  HierarchyChild,
   Hit,
   MatchedLabel,
   OntologyHit,
@@ -30,6 +31,7 @@ import {
   TAB_LABELS,
   TAB_ORDER,
   TermRef,
+  TreeRow,
   SelectedConstraint,
   ValueSetHit,
   VersionInfo,
@@ -180,6 +182,12 @@ export class TermPicker {
 
   /** Where each marked term sits, once read. A held null is a term the store does not hold. */
   private readonly hierarchies = signal<ReadonlyMap<string, Hierarchy | null>>(new Map());
+
+  /** What each opened node of a tree holds, read as it opens. */
+  private readonly nodes = signal<ReadonlyMap<string, Hierarchy | null>>(new Map());
+
+  /** Which nodes of the tree are open. Keyed by source and IRI, so two trees cannot collide. */
+  private readonly openNodes = signal<ReadonlySet<string>>(new Set());
 
   /** The ontology whose release history is open beneath its row. One at a time. */
   protected readonly historyFor = signal<string | null>(null);
@@ -782,6 +790,13 @@ export class TermPicker {
     try {
       const found = await this.client.hierarchy(hit.sourceAcronym, iri);
       this.hierarchies.update((held) => new Map(held).set(key, found));
+      // The term itself opens, since what is under it is the first thing an author looks at. Its
+      // ancestors stay closed: opening one shows what else is beside the path, which is a question
+      // asked of one ancestor at a time and not of all of them at once.
+      if (found) {
+        this.openNodes.update((nodes) => new Set(nodes).add(TermPicker.nodeKey(hit.sourceAcronym, iri)));
+        this.nodes.update((held) => new Map(held).set(TermPicker.nodeKey(hit.sourceAcronym, iri), found));
+      }
     } catch {
       // A hierarchy is context, not the answer. Failing to read it leaves the panel without it
       // rather than replacing the results with an error the author cannot act on.
@@ -791,6 +806,130 @@ export class TermPicker {
 
   protected hierarchyOf(hit: Hit): Hierarchy | null | undefined {
     return this.hierarchies().get(this.keyOf(hit));
+  }
+
+  /** Keys a node of the tree. The same pair that addresses a term anywhere else. */
+  private static nodeKey(acronym: string, iri: string): string {
+    return `${acronym}\u0000${iri}`;
+  }
+
+  protected isNodeOpen(acronym: string, iri: string): boolean {
+    return this.openNodes().has(TermPicker.nodeKey(acronym, iri));
+  }
+
+  /**
+   * Opens or closes a node of the tree, reading its children the first time it opens.
+   *
+   * Lazily, because a hierarchy is a tree and not a list: SNOMED's clinical findings run to
+   * hundreds of thousands of concepts, and an author opens the handful on their way down.
+   */
+  protected async toggleNode(acronym: string, iri: string): Promise<void> {
+    const key = TermPicker.nodeKey(acronym, iri);
+    const open = this.openNodes().has(key);
+    this.openNodes.update((nodes) => {
+      const next = new Set(nodes);
+      if (open) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+    if (!open && !this.nodes().has(key)) {
+      try {
+        const found = await this.client.hierarchy(acronym, iri);
+        this.nodes.update((held) => new Map(held).set(key, found));
+      } catch {
+        this.nodes.update((held) => new Map(held).set(key, null));
+      }
+    }
+  }
+
+  /**
+   * The tree under a marked term, flattened to rows with a depth apiece.
+   *
+   * Flattened rather than rendered by recursion: the shape is a list of lines on screen, one
+   * template renders it, and a row can be reasoned about — and tested — by its depth and its key
+   * rather than by where it sits in a nest of outlets.
+   */
+  protected treeRows(hit: Hit): readonly TreeRow[] {
+    const tree = this.hierarchyOf(hit);
+    if (!tree) {
+      return [];
+    }
+    const acronym = hit.sourceAcronym;
+    const spine = [...(tree.path ?? []).map((step) => step.termIri), tree.termIri];
+    const rows: TreeRow[] = [];
+
+    // `known` is what the node's parent already said about it, which is everything a row needs to
+    // draw before the node is opened: reading the node to learn whether it can be opened would make
+    // a closed tree fetch every branch of itself.
+    const walk = (iri: string, label: string, depth: number, onSpine: boolean, known?: HierarchyChild): void => {
+      const key = TermPicker.nodeKey(acronym, iri);
+      const held = iri === tree.termIri ? tree : this.nodes().get(key);
+      const children = held === undefined ? undefined : (held?.children ?? []);
+      const open = this.isNodeOpen(acronym, iri);
+      rows.push({
+        key,
+        iri,
+        label,
+        depth,
+        acronym,
+        self: iri === tree.termIri,
+        onSpine,
+        open,
+        loading: open && children === undefined,
+        // A node on the spine always has something below it — the next step of the path — whatever
+        // else is known about it.
+        hasChildren: (onSpine && iri !== tree.termIri) || known?.hasChildren === true || (held?.childCount ?? 0) > 0,
+        descendantCount: known?.descendantCount ?? held?.descendantCount ?? 0,
+        hidden: (held?.childCount ?? 0) - (held?.children?.length ?? 0),
+      });
+      const next = onSpine ? (spine[spine.indexOf(iri) + 1] ?? null) : null;
+      // The path always continues. Closing an ancestor hides what stands beside the path, not the
+      // path itself: a tree that collapsed to its root would lose the term the panel is about.
+      if (!open) {
+        if (next !== null) {
+          walk(next, this.spineLabel(tree, next), depth + 1, true);
+        }
+        return;
+      }
+      const seen = new Set<string>();
+      for (const child of children ?? []) {
+        seen.add(child.termIri);
+        walk(child.termIri, child.termLabel, depth + 1, child.termIri === next, child);
+      }
+      // Also while an opened ancestor's children are still being read.
+      if (next !== null && !seen.has(next)) {
+        walk(next, this.spineLabel(tree, next), depth + 1, true);
+      }
+    };
+
+    const root = spine[0];
+    walk(root, this.spineLabel(tree, root), 0, true);
+    return rows;
+  }
+
+  private spineLabel(tree: Hierarchy, iri: string): string {
+    if (iri === tree.termIri) {
+      return tree.termLabel;
+    }
+    return (tree.path ?? []).find((step) => step.termIri === iri)?.termLabel ?? iri;
+  }
+
+  /** Chooses a term reached by browsing rather than by searching. */
+  protected chooseNode(hit: Hit, row: TreeRow): void {
+    this.choose({
+      type: 'class',
+      sourceSystem: hit.sourceSystem,
+      sourceAcronym: row.acronym,
+      termIri: row.iri,
+      termType: 'class',
+      termLabel: row.label,
+      obsolete: false,
+      hasChildren: row.hasChildren,
+      descendantCount: row.descendantCount,
+    });
   }
 
   /** How many releases this ontology has, when it has more than the one on the row. */

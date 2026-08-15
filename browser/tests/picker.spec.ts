@@ -257,7 +257,7 @@ test('a marked term shows what it is offering', async ({ page }) => {
   await stubHierarchy(page, (query) => ({
     sourceAcronym: query.get('sourceAcronym'),
     termIri: query.get('termIri'),
-    termLabel: 'Melanoma',
+    termLabel: query.get('termIri') === 'http://ncit/Neoplasm' ? 'Neoplasm' : 'Melanoma',
     path: [
       { termIri: 'http://ncit/Neoplasm', termLabel: 'Neoplasm' },
       { termIri: 'http://ncit/Melanocytic', termLabel: 'Melanocytic Neoplasm' },
@@ -279,10 +279,25 @@ test('a marked term shows what it is offering', async ({ page }) => {
   await expect(detail.locator('.iri').first()).toHaveText('http://ncit/Melanoma');
   // The chain above the term and what hangs below it, which is what tells one "Melanoma" from
   // another when the label alone cannot.
-  await expect(detail.locator('.tree .up')).toHaveText(['Neoplasm', 'Melanocytic Neoplasm']);
-  await expect(detail.locator('.tree .self')).toHaveText('Melanoma');
-  await expect(detail.locator('.tree .down')).toContainText('Amelanotic Melanoma');
-  await expect(detail).toContainText('3 more directly below');
+  const tree = detail.locator('.tree .node');
+  await expect(tree).toHaveText([
+    /Neoplasm/,
+    /Melanocytic Neoplasm/,
+    /Melanoma/,
+    /Amelanotic Melanoma/,
+  ]);
+  await expect(detail.locator('.tree .node.self')).toContainText('Melanoma');
+  await expect(detail).toContainText('3 more not shown');
+
+  // An ancestor opens where it stands, showing what else is beside the path rather than replacing
+  // the tree with a different one.
+  await tree.first().locator('.twist').click();
+  await expect(detail.locator('.tree .node')).toContainText([
+    /Neoplasm/,
+    /Melanocytic Neoplasm/,
+    /Melanoma/,
+    /Amelanotic Melanoma/,
+  ]);
   // The other names it goes by, which is what says whether the concept is the one meant.
   await expect(detail).toContainText('Also called');
   await expect(detail).toContainText('Cutaneous melanoma');

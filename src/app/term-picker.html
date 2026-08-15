@@ -43,29 +43,45 @@
       @if (hit.type === 'class' || hit.type === 'branch') {
         <dt>Where it sits</dt>
         <dd>
-          @if (hierarchyOf(hit); as tree) {
+          @if (hierarchyOf(hit)) {
             <ol class="tree">
-              @for (step of tree.path ?? []; track step.termIri; let depth = $index) {
-                <li class="up" [style.padding-left.rem]="depth * 0.8">{{ step.termLabel ?? step.termIri }}</li>
-              }
-              <li class="self" [style.padding-left.rem]="(tree.path?.length ?? 0) * 0.8">
-                {{ tree.termLabel }}
-              </li>
-              @for (child of tree.children ?? []; track child.termIri) {
-                <li class="down" [style.padding-left.rem]="((tree.path?.length ?? 0) + 1) * 0.8">
-                  {{ child.termLabel }}
-                  @if (child.descendantCount) {
-                    <span class="meta inline">· {{ child.descendantCount.toLocaleString() }} beneath</span>
+              @for (row of treeRows(hit); track row.key) {
+                <li
+                  class="node"
+                  [class.self]="row.self"
+                  [class.spine]="row.onSpine"
+                  [style.padding-left.rem]="row.depth * 0.9"
+                >
+                  @if (row.hasChildren) {
+                    <button
+                      type="button"
+                      class="twist"
+                      [attr.aria-expanded]="row.open"
+                      [title]="(row.open ? 'Collapse ' : 'Expand ') + row.label"
+                      (click)="toggleNode(row.acronym, row.iri)"
+                    >{{ row.open ? '▾' : '▸' }}</button>
+                  } @else {
+                    <span class="twist"></span>
+                  }
+                  <button
+                    type="button"
+                    class="term"
+                    [title]="row.iri + ' — double click to use it'"
+                    (dblclick)="chooseNode(hit, row)"
+                    (click)="row.hasChildren ? toggleNode(row.acronym, row.iri) : null"
+                  >{{ row.label }}</button>
+                  @if (row.descendantCount) {
+                    <span class="meta inline">· {{ row.descendantCount.toLocaleString() }} beneath</span>
+                  }
+                  @if (row.loading) {
+                    <span class="meta inline">· reading…</span>
+                  }
+                  @if (row.open && row.hidden > 0) {
+                    <span class="meta inline">· {{ row.hidden.toLocaleString() }} more not shown</span>
                   }
                 </li>
               }
             </ol>
-            @if (tree.childCount > (tree.children?.length ?? 0)) {
-              <span class="meta inline">and {{ tree.childCount - (tree.children?.length ?? 0) }} more directly below</span>
-            }
-            @if (tree.childCount === 0 && !tree.path?.length) {
-              <span class="meta inline">a root of its ontology, with nothing below it</span>
-            }
           } @else if (hierarchyOf(hit) === null) {
             <span class="meta inline">the store holds no hierarchy for this term</span>
           } @else {

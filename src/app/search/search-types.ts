@@ -198,3 +198,22 @@ export interface HierarchyChild {
   readonly hasChildren: boolean;
   readonly descendantCount: number;
 }
+
+/** One line of the tree drawn under a marked term. */
+export interface TreeRow {
+  readonly key: string;
+  readonly acronym: string;
+  readonly iri: string;
+  readonly label: string;
+  readonly depth: number;
+  /** The term the panel belongs to, drawn as the one the rest is arranged around. */
+  readonly self: boolean;
+  /** On the chain from the root down to that term, rather than off to one side of it. */
+  readonly onSpine: boolean;
+  readonly open: boolean;
+  readonly loading: boolean;
+  readonly hasChildren: boolean;
+  readonly descendantCount: number;
+  /** Children the server held back, since a node can have hundreds. */
+  readonly hidden: number;
+}
