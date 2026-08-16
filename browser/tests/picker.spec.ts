@@ -54,6 +54,22 @@ const MELANOMA = {
   },
 };
 
+test('a tab does not claim nothing matched while it is still asking', async ({ page }) => {
+  // An answer that takes its time is the case this exists for: the empty state is a claim about the
+  // answer, and there is no answer yet.
+  await stubSearch(page, () => MELANOMA);
+  await page.route('**/search', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    await route.fallback();
+  });
+  await openPicker(page);
+  await page.locator('cedar-term-picker input').fill('melanoma');
+
+  await expect(page.locator('cedar-term-picker .working')).toBeVisible();
+  await expect(page.locator('cedar-term-picker')).not.toContainText('No terms match');
+  await expect(page.locator('cedar-term-picker .rowhead').first()).toBeVisible();
+});
+
 test('a tab counts what the author will see, not what matched', async ({ page }) => {
   await stubSearch(page, () => MELANOMA);
   await openPicker(page);

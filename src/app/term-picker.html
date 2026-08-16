@@ -407,7 +407,9 @@
           }
         </div>
       } @empty {
-        <p class="empty">No terms match.</p>
+        @if (!searching()) {
+          <p class="empty">No terms match.</p>
+        }
       }
       }
     }
@@ -458,7 +460,9 @@
           }
         </div>
       } @empty {
-        <p class="empty">No branches match. A branch is a term with descendants.</p>
+        @if (!searching()) {
+          <p class="empty">No branches match. A branch is a term with descendants.</p>
+        }
       }
     }
 
@@ -491,7 +495,9 @@
           <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
           <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
       } @empty {
-        <p class="empty">No vocabulary is named this, and none of them matched terms.</p>
+        @if (!searching()) {
+          <p class="empty">No vocabulary is named this, and none of them matched terms.</p>
+        }
       }
     }
 
@@ -518,7 +524,9 @@
           <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
           <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
       } @empty {
-        <p class="empty">No value set matches.</p>
+        @if (!searching()) {
+          <p class="empty">No value set matches.</p>
+        }
       }
     }
   }
