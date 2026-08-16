@@ -352,7 +352,7 @@
       } @else {
       @for (group of labelGroups(); track group.label) {
         <div class="row group" [class.open]="expanded() === group.label">
-          <button type="button" class="rowhead oneline" (click)="toggle(group.label)">
+          <button type="button" class="rowhead oneline" (click)="toggle(group.label, group.hits)">
             <span class="twist">{{ expanded() === group.label ? '▾' : '▸' }}</span>
             <span class="grow ellipsis">
               <span class="title" [class.obsolete]="group.hits[0].obsolete" [title]="group.label">{{
@@ -417,7 +417,7 @@
     @case ('branch') {
       @for (group of branchGroups(); track group.label) {
         <div class="row group">
-          <button type="button" class="rowhead oneline" (click)="toggle(group.label)">
+          <button type="button" class="rowhead oneline" (click)="toggle(group.label, group.hits)">
             <span class="twist">{{ expanded() === group.label ? '▾' : '▸' }}</span>
             <span class="grow ellipsis">
               <span class="title" [title]="group.label">{{ elide(group.label) }}</span>

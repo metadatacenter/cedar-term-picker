@@ -802,8 +802,20 @@ export class TermPicker {
     this.text.set((event.target as HTMLInputElement).value);
   }
 
-  protected toggle(label: string): void {
+  /**
+   * Opens a folded label, or closes it, and selects the first row it opens onto.
+   *
+   * Opening a fold is an author asking about that label, and the first row is the answer they are
+   * most likely to want — so the bar names it without a second click. Selecting rather than marking:
+   * the highlight and the phrase cost nothing, where opening the panel would fetch a hierarchy for
+   * every fold an author glances into.
+   */
+  protected toggle(label: string, hits: readonly Hit[] = []): void {
+    const opening = this.expanded() !== label;
     this.expanded.update((open) => (open === label ? null : label));
+    if (opening && hits.length > 0 && !hits.some((hit) => this.isSelected(hit))) {
+      this.picked.set(hits[0]);
+    }
   }
 
   /**

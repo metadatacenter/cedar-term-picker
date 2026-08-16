@@ -313,6 +313,24 @@ test('the bar says what is selected, and nothing before anything is', async ({ p
   await expect(chosen).toContainText('Everything under');
 });
 
+test('opening a fold selects the first row it opens onto', async ({ page }) => {
+  await stubSearch(page, () => MELANOMA);
+  await stubHierarchy(page, () => null);
+  await openPicker(page);
+  await search(page, 'melanoma');
+
+  const chosen = page.locator('cedar-term-picker .chosen');
+  await expect(chosen).toBeEmpty();
+  await page.locator('cedar-term-picker .rowhead').first().click();
+
+  // The first row is the answer an author opening a label is most likely to want, so the bar names
+  // it without a second click. Selected, not marked: no panel, and so no hierarchy fetched.
+  const children = page.locator('cedar-term-picker .child');
+  await expect(children.first()).toHaveClass(/marked/);
+  await expect(chosen).toContainText('NCIT');
+  await expect(page.locator('cedar-term-picker .detail')).toHaveCount(0);
+});
+
 test('a term picked from the tree becomes the selection, and the panel stays open', async ({ page }) => {
   await stubSearch(page, () => MELANOMA);
   await stubHierarchy(page, (query) => ({
