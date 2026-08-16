@@ -125,7 +125,8 @@
   }
 </ng-template>
 
-<ng-template #history let-acronym>
+<ng-template #history let-hit>
+  @let acronym = hit.sourceAcronym;
   @if (isHistoryOpen(acronym)) {
     <!--
       Every release, not the one the row happens to be reading. An author stepping blind through
@@ -151,7 +152,7 @@
                 type="button"
                 class="release"
                 [class.on]="isShowing(acronym, release, i)"
-                (click)="pinTo(acronym, release, i)"
+                (click)="pinTo(hit, release, i)"
               >
                 <span class="declared">{{ release.declaredVersion ?? 'no declared version' }}</span>
                 <span class="date" [title]="release.effectiveDate ?? ''">{{
@@ -400,7 +401,7 @@
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
                 </div>
-                <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
+                <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
                 <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
               }
             </div>
@@ -453,7 +454,7 @@
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
                 </div>
-                <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
+                <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
                 <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
               }
             </div>
@@ -492,7 +493,7 @@
           </span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
         </div>
-          <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
+          <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
           <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
       } @empty {
         @if (!searching()) {
@@ -521,7 +522,7 @@
           <span class="meta inline">{{ hit.termCount }} values</span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
         </div>
-          <ng-container *ngTemplateOutlet="history; context: { $implicit: hit.sourceAcronym }" />
+          <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
           <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
       } @empty {
         @if (!searching()) {

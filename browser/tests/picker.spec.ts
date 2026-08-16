@@ -765,6 +765,8 @@ test('the release count opens the whole history, and choosing from it pins', asy
   await expect(releases.nth(1)).not.toHaveClass(/on/);
   await releases.nth(1).click();
   await expect(releases.nth(1)).toHaveClass(/on/);
+  // Choosing a release opens the row it belongs to, so the change has somewhere to show.
+  await expect(page.locator('cedar-term-picker .detail')).toHaveCount(1);
   // A pinned selection states all three of what it records: version, date and content hash.
   const bar = page.locator('cedar-term-picker .chosen');
   await expect(bar).toContainText('26.06e');

@@ -724,7 +724,8 @@ export class TermPicker {
    * forward to current obeys: writing nothing is what keeps latest meaning latest until the
    * template is published.
    */
-  protected pinTo(acronym: string, version: VersionInfo, index: number): void {
+  protected pinTo(hit: Hit, version: VersionInfo, index: number): void {
+    const acronym = hit.sourceAcronym;
     this.pinned.update((map) => {
       const updated = new Map(map);
       if (index === 0) {
@@ -734,6 +735,13 @@ export class TermPicker {
       }
       return updated;
     });
+    // Choosing a release opens the row it belongs to. The release list can be opened from the row's
+    // own count without marking it, and a version chosen with no hierarchy on screen shows an author
+    // nothing of what they changed — which is the whole of what a release means to a term.
+    if (!this.isMarked(hit)) {
+      this.mark(hit);
+      return;
+    }
     // The tree is of a release, so changing the release asks again. Without this the panel looks
     // for a hierarchy under a key nothing has fetched and waits for a read that was never started.
     const marked = this.marked();
