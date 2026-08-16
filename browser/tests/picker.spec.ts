@@ -648,6 +648,8 @@ test('the list fills itself, asks for one type, and keeps the ontologies it lear
 
   // A short page is the end of the list, and the list says so rather than asking again.
   await expect(page.locator('cedar-term-picker .tail')).toContainText('no more matches');
+  // And it never claimed to be reading more of a list that did not exist yet.
+  await expect(page.locator('cedar-term-picker .tail')).not.toContainText('reading more');
 });
 
 test('the release count opens the whole history, and choosing from it pins', async ({ page }) => {

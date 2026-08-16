@@ -518,8 +518,12 @@
   }
   </div>
 
+  <!--
+    What the bottom of the list is doing. Only while it is growing: a first search has nothing yet
+    to be more of, and the tab strip already says that one is running.
+  -->
   <p class="tail">
-    @if (searching()) {
+    @if (loadingMore()) {
       reading more…
     } @else if (isExhausted(activeTab()) && pageOf(activeTab()) > 1) {
       no more matches

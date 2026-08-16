@@ -127,6 +127,15 @@ export class TermPicker {
   protected readonly response = signal<SearchResponse | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly searching = signal(false);
+
+  /**
+   * Whether a page is being appended, as against a search being run.
+   *
+   * Its own signal because the two read differently at the bottom of the list: appending is "more
+   * of what you are looking at", and a first search has nothing yet to be more of. The tab strip
+   * says a search is running; this says the list is growing.
+   */
+  protected readonly loadingMore = signal(false);
   protected readonly expanded = signal<string | null>(null);
 
   /**
@@ -572,6 +581,7 @@ export class TermPicker {
     }
     const page = this.pageOf(kind) + 1;
     this.searching.set(true);
+    this.loadingMore.set(true);
     try {
       const next = await this.client.search({
         query,
@@ -605,6 +615,7 @@ export class TermPicker {
       this.error.set(failure instanceof Error ? failure.message : 'The search failed.');
     } finally {
       this.searching.set(false);
+      this.loadingMore.set(false);
       this.topUp(kind);
     }
   }
