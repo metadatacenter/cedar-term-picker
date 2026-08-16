@@ -628,6 +628,30 @@ export class TermPicker {
     return this.sourceOf(acronym)?.sourceName ?? acronym;
   }
 
+  /**
+   * The repository a row's release was ingested from, named for a reader.
+   *
+   * An author choosing between vocabularies wants to know whose copy they are constraining to, and
+   * the rows said nothing about it. Only the well-known repositories get a name; anything else is
+   * shown as the catalog recorded it rather than guessed at, and a direct download says so.
+   */
+  protected authorityOf(acronym: string): string {
+    const authority = this.sourceOf(acronym)?.authority;
+    if (authority === undefined || authority === '') {
+      return '';
+    }
+    return TermPicker.AUTHORITY_NAMES[authority] ?? authority;
+  }
+
+  private static readonly AUTHORITY_NAMES: Readonly<Record<string, string>> = {
+    bioportal: 'BioPortal',
+    obofoundry: 'OBO Foundry',
+    agroportal: 'AgroPortal',
+    ecoportal: 'EcoPortal',
+    eionet: 'Eionet',
+    url: 'direct download',
+  };
+
   /** The name only when it says more than the acronym, so a row never reads "BERO BERO". */
   protected sourceNameIfDistinct(acronym: string): string {
     const name = this.sourceOf(acronym)?.sourceName;

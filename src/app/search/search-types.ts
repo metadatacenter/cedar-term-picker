@@ -60,6 +60,14 @@ export interface SourceBlock {
   readonly sourceName?: string;
   readonly sourceIri?: string;
   readonly served: 'local' | 'proxied' | 'unavailable';
+  /**
+   * Which repository the release was ingested from — `bioportal`, `obofoundry`, a named OntoPortal
+   * instance, or `url` for a direct download. Absent where the source was not served.
+   *
+   * Distinct from the constraint's source system, which decides how a source is resolved. This says
+   * where the copy came from, which two vocabularies of the same name are told apart by.
+   */
+  readonly authority?: string;
   readonly pinnable: boolean;
   readonly version?: VersionInfo;
   /** How many versions the store holds, so a row knows whether stepping back is possible. */

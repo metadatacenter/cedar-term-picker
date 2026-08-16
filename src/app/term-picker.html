@@ -24,6 +24,16 @@
   }
 </ng-template>
 
+<ng-template #opener let-hit>
+  <!--
+    That the row opens onto something. A row carried no sign of it, so the panel under it was found
+    by clicking a row that looked inert; the group above has a twist and these did not. It follows
+    the row's own state rather than acting on its own, because the row is already the control — a
+    second button here would be a second way to do one thing.
+  -->
+  <span class="opener" [class.open]="isMarked(hit)" aria-hidden="true">▸</span>
+</ng-template>
+
 <ng-template #detail let-hit>
   @if (isMarked(hit)) {
     <!--
@@ -421,6 +431,10 @@
                   <span class="grow ellipsis">
                     <span class="who">{{ hit.sourceAcronym }}</span>
                     <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
+                    <!-- Whose copy this is. Two vocabularies of one name are told apart by it. -->
+                    @if (authorityOf(hit.sourceAcronym); as from) {
+                      <span class="meta inline dim from">· {{ from }}</span>
+                    }
                     @if (parentIfRepeated(group.hits, hit); as under) {
                       <span class="meta inline dim under" [title]="under">&nbsp;· under {{ under }}</span>
                     }
@@ -431,6 +445,7 @@
                     }
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
+                  <ng-container *ngTemplateOutlet="opener; context: { $implicit: hit }" />
                 </div>
                 <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
                 <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
@@ -475,6 +490,10 @@
                   <span class="grow ellipsis">
                     <span class="who">{{ hit.sourceAcronym }}</span>
                     <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
+                    <!-- Whose copy this is. Two vocabularies of one name are told apart by it. -->
+                    @if (authorityOf(hit.sourceAcronym); as from) {
+                      <span class="meta inline dim from">· {{ from }}</span>
+                    }
                     @if (parentIfRepeated(group.hits, hit); as under) {
                       <span class="meta inline dim under" [title]="under">&nbsp;· under {{ under }}</span>
                     }
@@ -484,6 +503,7 @@
                       hit.descendantCount === 1 ? 'descendant' : 'descendants' }}
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
+                  <ng-container *ngTemplateOutlet="opener; context: { $implicit: hit }" />
                 </div>
                 <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
                 <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
