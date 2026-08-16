@@ -726,6 +726,14 @@ export class TermPicker {
    */
   protected pinTo(hit: Hit, version: VersionInfo, index: number): void {
     const acronym = hit.sourceAcronym;
+    // Clicking the release already showing folds the hierarchy away, and clicking it again brings it
+    // back: the release rows are what an author is using at that moment, so the toggle belongs on
+    // them as much as on the row above. A different release always opens, since it has something new
+    // to show.
+    if (this.isShowing(acronym, version, index) && this.isMarked(hit)) {
+      this.marked.set(null);
+      return;
+    }
     this.pinned.update((map) => {
       const updated = new Map(map);
       if (index === 0) {

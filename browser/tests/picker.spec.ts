@@ -771,6 +771,13 @@ test('the release count opens the whole history, and choosing from it pins', asy
   await expect(releases.nth(1)).toHaveClass(/on/);
   // Choosing a release opens the row it belongs to, so the change has somewhere to show.
   await expect(page.locator('cedar-term-picker .detail')).toHaveCount(1);
+
+  // And the release rows toggle it: the one already showing folds the hierarchy away, and a
+  // different release always opens, since it has something new to show.
+  await releases.nth(1).click();
+  await expect(page.locator('cedar-term-picker .detail')).toHaveCount(0);
+  await releases.nth(1).click();
+  await expect(page.locator('cedar-term-picker .detail')).toHaveCount(1);
   // A pinned selection states all three of what it records: version, date and content hash.
   const bar = page.locator('cedar-term-picker .chosen');
   await expect(bar).toContainText('26.06e');

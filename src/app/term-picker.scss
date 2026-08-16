@@ -482,7 +482,7 @@ button {
   // Tight against whatever it follows. Below the release list these were stacking — that margin,
   // this one and this padding — into a finger's width of nothing above the tree.
   margin: 0 0 0.35rem 0;
-  padding: 0.2rem 0.6rem 0.35rem;
+  padding: 0 0.6rem 0.3rem;
   background: var(--ctp-color-surface);
   border-radius: 3px;
   font-size: var(--ctp-font-size-small);
@@ -517,8 +517,9 @@ button {
   grid-column: 1 / -1;
   background: var(--ctp-color-surface);
   border-radius: 3px;
-  margin: 0.15rem 0 0.35rem 0;
+  margin: 0.15rem 0 0 0;
   max-height: 11rem;
+  margin-bottom: 0;
   overflow-y: auto;
 
   // A visible track, rather than one that appears once an author is already scrolling. It is the
