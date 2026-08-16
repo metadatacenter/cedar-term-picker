@@ -3,7 +3,7 @@
  *
  * Keys are the versioned value-constraint specification's, which is the point of them: a hit is a
  * constraint entry plus the evidence for choosing it, so what the picker hands back needs no
- * translation. The design is in `cedar-development/ops/VERSION-AWARE-SEARCH.md`.
+ * translation. The design is in `cedar-development/ops/VERSIONING-ROADMAP.md`, "The Search API".
  */
 
 /** The four kinds a controlled-term field can be constrained to. */

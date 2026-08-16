@@ -32,8 +32,11 @@ releases.
 It is not embedded anywhere yet. The component runs in its own development
 host, and putting it in the Template Designer is later work.
 
-Planned work, and the decisions already taken, are tracked in
-[TERM-PICKER-ROADMAP.md](https://github.com/metadatacenter/cedar-development/blob/develop/ops/TERM-PICKER-ROADMAP.md).
+Planned work, and the decisions already taken, are tracked with the rest of
+versioning in
+[VERSIONING-ROADMAP.md](https://github.com/metadatacenter/cedar-development/blob/develop/ops/VERSIONING-ROADMAP.md)
+— the picker exists to author versioned constraints, so it has no roadmap of its
+own.
 
 ## Theming
 
@@ -101,7 +104,9 @@ async APIs: a view updates on a microtask after a signal is set, and
 `await fixture.whenStable()` is what a spec waits on.
 
 Fuller development notes are in
-[TERM-PICKER-RUNBOOK.md](https://github.com/metadatacenter/cedar-development/blob/develop/ops/TERM-PICKER-RUNBOOK.md).
+[VERSIONING-RUNBOOK.md](https://github.com/metadatacenter/cedar-development/blob/develop/ops/VERSIONING-RUNBOOK.md),
+which covers running, building and releasing the picker alongside the store it
+reads.
 
 ## Browser Support
 
