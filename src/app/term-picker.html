@@ -389,6 +389,9 @@
                   <span class="grow ellipsis">
                     <span class="who">{{ hit.sourceAcronym }}</span>
                     <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
+                    @if (parentIfRepeated(group.hits, hit); as under) {
+                      <span class="meta inline dim under" [title]="under">&nbsp;· under {{ under }}</span>
+                    }
                     @if (hit.replacedBy) {
                       <span class="meta inline dim">
                         · replaced by {{ hit.replacedBy.termLabel ?? hit.replacedBy.termIri }}
@@ -438,6 +441,9 @@
                   <span class="grow ellipsis">
                     <span class="who">{{ hit.sourceAcronym }}</span>
                     <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
+                    @if (parentIfRepeated(group.hits, hit); as under) {
+                      <span class="meta inline dim under" [title]="under">&nbsp;· under {{ under }}</span>
+                    }
                   </span>
                   <span class="meta inline">
                     {{ hit.descendantCount.toLocaleString() }} {{

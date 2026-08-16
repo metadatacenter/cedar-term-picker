@@ -867,6 +867,24 @@ export class TermPicker {
     return Math.max((names?.length ?? 0) - NAME_LIMIT, 0);
   }
 
+  /**
+   * The step above a term, but only where the row would otherwise be a duplicate.
+   *
+   * A fold gathers one label across ontologies, and an ontology can offer that label twice: ACESO
+   * merges three vocabularies and labels a class "Disease" in each, so two of its rows carry the
+   * same acronym, the same name and the same release. Saying the parent on every row was noise;
+   * saying it on none left two rows an author cannot tell apart. It is said where it distinguishes.
+   */
+  protected parentIfRepeated(hits: readonly Hit[], hit: Hit): string {
+    const twice = hits.filter((other) => other.sourceAcronym === hit.sourceAcronym).length > 1;
+    if (!twice) {
+      return '';
+    }
+    const path = hit.type === 'class' || hit.type === 'branch' ? hit.path : undefined;
+    const step = path?.[path.length - 1];
+    return step === undefined ? '' : (step.termLabel ?? step.termIri);
+  }
+
   protected isMarked(hit: Hit): boolean {
     const marked = this.marked();
     return marked !== null && this.keyOf(marked) === this.keyOf(hit);

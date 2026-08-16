@@ -115,8 +115,11 @@ test('branches fold across and within ontologies, and open onto their parents', 
   const children = page.locator('cedar-term-picker .child');
   await expect(children).toHaveCount(3);
 
-  // Two of them are RH-MESH placing one concept at two points in its own tree. The rows no longer
-  // say which point; marking one draws the tree it sits in, and that is where they differ.
+  // Two of them are RH-MESH placing one concept at two points in its own tree, so those two — and
+  // only those two — name the step above them. A row with no twin says nothing about the hierarchy.
+  await expect(children.nth(0)).toContainText('under Neuroendocrine Tumors');
+  await expect(children.nth(1)).toContainText('under Nevi and Melanomas');
+  await expect(children.nth(2)).not.toContainText('under');
   await stubHierarchy(page, (query) => ({
     sourceAcronym: query.get('sourceAcronym'),
     termIri: query.get('termIri'),
