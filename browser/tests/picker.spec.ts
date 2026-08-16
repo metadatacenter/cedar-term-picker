@@ -300,21 +300,39 @@ test('the bar says what is selected, and nothing before anything is', async ({ p
 
   await page.locator('cedar-term-picker .tab').nth(2).click();
   await page.locator('cedar-term-picker .row.pick').first().click();
-  await expect(chosen).toContainText('Every term in');
+  // The heading names the kind, so a constraint on one term and a constraint on a whole ontology
+  // are told apart without reading the phrasing under it.
+  await expect(chosen.locator('.label')).toHaveText('Selected ontology');
   const after = await page.locator('cedar-term-picker .tabs').boundingBox();
   expect(after!.y).toBe(before!.y);
   await expect(chosen).toContainText('Melanoma Ontology');
-  // A term needs no kind said out loud — the label is the whole of it.
-  await expect(chosen).not.toContainText('The term');
   // "latest", not the release latest happens to be: an unpinned constraint records no version and
   // freeze-on-publish resolves it at publish time.
   await expect(chosen).toContainText('latest');
+  // An ontology is every term in it, so a count of what sits under it would say nothing.
+  await expect(chosen).not.toContainText('descendants');
 
-  // The phrase follows the mark, and the kind follows the tab.
+  // A fold is remembered by its label, and the same label folds a term row and a branch row, so a
+  // group can already be open when a tab is opened. Opening it again would close it.
+  const pickFirstUnder = async () => {
+    const children = page.locator('cedar-term-picker .child');
+    if ((await children.count()) === 0) {
+      await page.locator('cedar-term-picker .rowhead').first().click();
+    }
+    await children.first().click();
+  };
+
+  // The heading follows the tab, and a branch carries the size of what it brings with it.
   await page.locator('cedar-term-picker .tab').nth(1).click();
-  await page.locator('cedar-term-picker .rowhead').click();
-  await page.locator('cedar-term-picker .child').first().click();
-  await expect(chosen).toContainText('Everything under');
+  await pickFirstUnder();
+  await expect(chosen.locator('.label')).toHaveText('Selected branch');
+  await expect(chosen).toContainText('descendants');
+
+  // A term is one term: it has no size to state, only a name.
+  await page.locator('cedar-term-picker .tab').nth(0).click();
+  await pickFirstUnder();
+  await expect(chosen.locator('.label')).toHaveText('Selected term');
+  await expect(chosen).not.toContainText('descendants');
 });
 
 test('opening a fold selects the first row it opens onto', async ({ page }) => {

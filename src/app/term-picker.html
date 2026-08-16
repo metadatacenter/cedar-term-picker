@@ -201,11 +201,14 @@
     -->
     <div class="chosen" [class.awaiting]="!selection()">
       @if (selection(); as chosen) {
-        <span class="label">Selected</span>
+        <!--
+          Named down to the kind. A constraint on one term and a constraint on everything under it
+          are different constraints, and the heading is where an author can see which they made
+          without re-reading the phrasing. It also retires the "Everything under" / "Every term in"
+          prefixes the phrase used to carry, which said the same thing twice.
+        -->
+        <span class="label">Selected {{ chosen.noun }}</span>
         <p class="phrase">
-          @if (chosen.kind) {
-            {{ chosen.kind }}
-          }
           <strong [title]="chosen.what">{{ elide(chosen.what, 72, 20) }}</strong>
         </p>
         <!--
@@ -232,6 +235,16 @@
               }
             } @else {
               · latest
+            }
+            <!--
+              How much a branch or a value set brings with it — the size of the constraint, which a
+              term and a whole ontology have no need of. On this line rather than beside the name,
+              because the name is the one part long enough to be elided and the bar holds a fixed
+              two lines.
+            -->
+            @if (chosen.descendants) {
+              · {{ chosen.descendants.toLocaleString() }} {{
+                chosen.descendants === 1 ? 'descendant' : 'descendants' }}
             }
           </span>
         </p>

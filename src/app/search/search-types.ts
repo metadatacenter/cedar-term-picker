@@ -222,8 +222,16 @@ export interface TreeRow {
 
 /** What a marked row would put on the field, said in a phrase. */
 export interface Selection {
-  readonly kind: string;
+  /**
+   * What kind of thing was chosen, for the heading over the summary.
+   *
+   * A constraint on one term and a constraint on everything under it are different constraints, and
+   * a heading reading only "Selected" left that to be inferred from the phrasing below it.
+   */
+  readonly noun: string;
   readonly what: string;
+  /** How much a branch or a value set brings with it. Absent for a term and for an ontology. */
+  readonly descendants?: number;
   readonly acronym: string;
   readonly version: string;
   /** Whether the author chose that release, rather than it being whatever is current. */

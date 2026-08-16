@@ -951,7 +951,7 @@ export class TermPicker {
     switch (hit.type) {
       case 'ontology':
         return {
-          kind: 'Every term in',
+          noun: 'ontology',
           what: this.sourceName(acronym) || acronym,
           acronym,
           version,
@@ -960,8 +960,9 @@ export class TermPicker {
         };
       case 'branch':
         return {
-          kind: 'Everything under',
+          noun: 'branch',
           what: hit.termBaseLabel,
+          descendants: hit.descendantCount,
           acronym,
           version,
           pinned: pinned !== undefined,
@@ -970,16 +971,16 @@ export class TermPicker {
       case 'valueSet':
         // A value set's name is optional in the contract, so this falls back to what addresses it.
         return {
-          kind: 'The value set',
+          noun: 'value set',
           what: hit.termBaseLabel ?? hit.termBaseIri,
+          descendants: hit.termCount,
           acronym,
           version,
           pinned: pinned !== undefined,
           ...of,
         };
       default:
-        // No kind for a class: the terms tab is where it was found and the label is the whole of it.
-        return { kind: '', what: hit.termLabel, acronym, version, pinned: pinned !== undefined, ...of };
+        return { noun: 'term', what: hit.termLabel, acronym, version, pinned: pinned !== undefined, ...of };
     }
   });
 
