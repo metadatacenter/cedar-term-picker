@@ -77,6 +77,14 @@
                   @if (row.loading) {
                     <span class="meta inline">· reading…</span>
                   }
+                  <!--
+                    A node with more children than the store will hand over at once says so. Fifty of
+                    two hundred and eighty read as all of them, and a term absent from a list that
+                    looks complete reads as a term the release does not have.
+                  -->
+                  @if (row.open && row.hidden > 0) {
+                    <span class="meta inline">· {{ row.hidden.toLocaleString() }} more not shown</span>
+                  }
                 </li>
               }
             </ol>
