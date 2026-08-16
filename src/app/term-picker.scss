@@ -81,6 +81,12 @@
 }
 
 .chosen {
+  // Holding the space, saying nothing. `visibility` rather than a conditional, so the bar is the
+  // same height before and after a first selection.
+  &.awaiting {
+    visibility: hidden;
+  }
+
   display: flex;
   flex-direction: column;
   gap: 0.25rem;

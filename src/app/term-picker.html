@@ -193,7 +193,13 @@
       are the two halves of one act: the search is what an author is looking through and this is
       what they have found. Absent until something is marked, rather than an empty frame.
     -->
-    <div class="chosen">
+    <!--
+      Always laid out, shown only once there is something to say. Rendering it into existence on the
+      first selection grew the bar by the height of its three lines and dropped everything below it
+      by 17 pixels, at the moment an author was reading a row — so the space is held from the start
+      and the content is what appears.
+    -->
+    <div class="chosen" [class.awaiting]="!selection()">
       @if (selection(); as chosen) {
         <span class="label">Selected</span>
         <p class="phrase">
@@ -229,6 +235,10 @@
             }
           </span>
         </p>
+      } @else {
+        <span class="label">&nbsp;</span>
+        <p class="phrase">&nbsp;</p>
+        <p class="about">&nbsp;</p>
       }
     </div>
     <!--

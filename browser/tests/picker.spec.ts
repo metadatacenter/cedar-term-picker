@@ -289,9 +289,11 @@ test('the bar says what is selected, and nothing before anything is', async ({ p
   await openPicker(page);
   await search(page, 'melanoma');
 
-  // Nothing marked, nothing claimed. An empty frame would read as a selection of nothing.
+  // Nothing marked, nothing claimed — but the space is held, or the first selection would grow the
+  // bar and drop everything below it at the moment an author is reading a row.
   const chosen = page.locator('cedar-term-picker .chosen');
-  await expect(chosen).toBeEmpty();
+  await expect(chosen).not.toContainText('Selected');
+  const before = await page.locator('cedar-term-picker .tabs').boundingBox();
   // Nothing narrowed: one chip-shaped way in, and no reset for a state there is nothing to reset.
   await expect(page.locator('cedar-term-picker .narrowing .adder')).toHaveText('+ narrow to…');
   await expect(page.locator('cedar-term-picker .narrowing .quiet')).toHaveCount(0);
@@ -299,6 +301,8 @@ test('the bar says what is selected, and nothing before anything is', async ({ p
   await page.locator('cedar-term-picker .tab').nth(2).click();
   await page.locator('cedar-term-picker .row.pick').first().click();
   await expect(chosen).toContainText('Every term in');
+  const after = await page.locator('cedar-term-picker .tabs').boundingBox();
+  expect(after!.y).toBe(before!.y);
   await expect(chosen).toContainText('Melanoma Ontology');
   // A term needs no kind said out loud — the label is the whole of it.
   await expect(chosen).not.toContainText('The term');
