@@ -295,7 +295,7 @@ test('the bar says what is selected, and nothing before anything is', async ({ p
   await expect(chosen).not.toContainText('Selected');
   const before = await page.locator('cedar-term-picker .tabs').boundingBox();
   // Nothing narrowed: one chip-shaped way in, and no reset for a state there is nothing to reset.
-  await expect(page.locator('cedar-term-picker .narrowing .adder')).toHaveText('+ narrow to…');
+  await expect(page.locator('cedar-term-picker .narrowing .adder')).toHaveText('narrow to…');
   await expect(page.locator('cedar-term-picker .narrowing .quiet')).toHaveCount(0);
 
   await page.locator('cedar-term-picker .tab').nth(2).click();
