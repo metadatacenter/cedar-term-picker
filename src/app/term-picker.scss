@@ -766,14 +766,14 @@ mark {
 // The counts run right against their column, so "terms" and "descendants" line up down the list
 // rather than starting wherever the number before them happens to end.
 .row > .meta.inline,
-// That a row opens onto something. In the primary colour and in the last column, so every row
-// carries the same sign in the same place whether or not it has releases to step through — the
-// group heading above has its twist, and these rows had nothing.
+// That a row opens onto something. In the primary colour and at the head of the row, under the
+// twist of the group heading it sits below, so the two read as the same sign at the same depth —
+// these rows had nothing at all.
 .opener {
   color: var(--ctp-color-primary);
   font-size: var(--ctp-font-size-small);
-  padding: 0 0.2rem;
-  justify-self: end;
+  flex: 0 0 auto;
+  padding-right: 0.35rem;
   // One glyph turned, rather than two swapped: ▸ and ▾ are a pixel apart in width, and the column
   // stepped sideways as a row opened.
   display: inline-block;

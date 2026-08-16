@@ -429,6 +429,7 @@
                   (keydown.enter)="choose(hit)"
                 >
                   <span class="grow ellipsis">
+                    <ng-container *ngTemplateOutlet="opener; context: { $implicit: hit }" />
                     <span class="who">{{ hit.sourceAcronym }}</span>
                     <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
                     <!-- Whose copy this is. Two vocabularies of one name are told apart by it. -->
@@ -445,7 +446,6 @@
                     }
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
-                  <ng-container *ngTemplateOutlet="opener; context: { $implicit: hit }" />
                 </div>
                 <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
                 <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
@@ -488,6 +488,7 @@
                   (keydown.enter)="choose(hit)"
                 >
                   <span class="grow ellipsis">
+                    <ng-container *ngTemplateOutlet="opener; context: { $implicit: hit }" />
                     <span class="who">{{ hit.sourceAcronym }}</span>
                     <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
                     <!-- Whose copy this is. Two vocabularies of one name are told apart by it. -->
@@ -503,7 +504,6 @@
                       hit.descendantCount === 1 ? 'descendant' : 'descendants' }}
                   </span>
                   <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
-                  <ng-container *ngTemplateOutlet="opener; context: { $implicit: hit }" />
                 </div>
                 <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
                 <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
