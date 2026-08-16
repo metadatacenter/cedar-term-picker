@@ -101,7 +101,7 @@
         <dt>Also called</dt>
         <dd>
           @for (name of names; track name.label) {
-            <span class="tag">{{ elide(name.label, 44, 12) }}@if (name.language) { · {{
+            <span class="alias">{{ elide(name.label, 44, 12) }}@if (name.language) { · {{
               name.language }}}</span>
           }
           @if (moreNames(hit); as more) {

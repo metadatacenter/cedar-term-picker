@@ -397,7 +397,7 @@ button {
 // opened to see beside it.
 .tree {
   list-style: none;
-  margin: 0.1rem 0 0.2rem;
+  margin: 0 0 0.2rem;
   padding: 0;
   max-height: 14rem;
   overflow-y: auto;
@@ -479,8 +479,10 @@ button {
   grid-template-columns: max-content minmax(0, 1fr);
   align-items: baseline;
   gap: 0.15rem 0.75rem;
-  margin: 0.15rem 0 0.35rem 0;
-  padding: 0.5rem 0.6rem;
+  // Tight against whatever it follows. Below the release list these were stacking — that margin,
+  // this one and this padding — into a finger's width of nothing above the tree.
+  margin: 0 0 0.35rem 0;
+  padding: 0.2rem 0.6rem 0.35rem;
   background: var(--ctp-color-surface);
   border-radius: 3px;
   font-size: var(--ctp-font-size-small);
@@ -712,7 +714,10 @@ mark {
 
 // A term's other names. Outlined and muted, not tinted: the tint is what marks a selection
 // throughout the picker, and a row of tinted names read as eight things an author had chosen.
-.tag {
+//
+// Not `.tag`: the release list marks its current release with one, and an outline meant for a name
+// drew a thin grey line across every release that is not the latest, and across the header.
+.alias {
   display: inline-block;
   border: 1px solid var(--ctp-color-border);
   color: var(--ctp-color-muted);
