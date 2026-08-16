@@ -381,7 +381,7 @@
 <div
                   class="child oneline pick"
                   tabindex="0"
-                  [class.marked]="isMarked(hit)"
+                  [class.marked]="isSelected(hit)"
                   (click)="mark(hit)"
                   (dblclick)="choose(hit)"
                   (keydown.enter)="choose(hit)"
@@ -433,7 +433,7 @@
 <div
                   class="child oneline pick"
                   tabindex="0"
-                  [class.marked]="isMarked(hit)"
+                  [class.marked]="isSelected(hit)"
                   (click)="mark(hit)"
                   (dblclick)="choose(hit)"
                   (keydown.enter)="choose(hit)"
@@ -467,7 +467,7 @@
 <div
           class="row oneline pick"
           tabindex="0"
-          [class.marked]="isMarked(hit)"
+          [class.marked]="isSelected(hit)"
           (click)="mark(hit)"
           (dblclick)="choose(hit)"
           (keydown.enter)="choose(hit)"
@@ -500,7 +500,7 @@
 <div
           class="row oneline pick"
           tabindex="0"
-          [class.marked]="isMarked(hit)"
+          [class.marked]="isSelected(hit)"
           (click)="mark(hit)"
           (dblclick)="choose(hit)"
           (keydown.enter)="choose(hit)"

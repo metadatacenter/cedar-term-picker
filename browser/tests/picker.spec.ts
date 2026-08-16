@@ -518,6 +518,8 @@ test('a marked term shows what it is offering', async ({ page }) => {
   // deep enough to fill the list. What was selected stays selected.
   await ncit.click();
   await expect(detail).toHaveCount(0);
+  // Collapsing a hierarchy is not unselecting a row: the row stays marked and the bar stays put.
+  await expect(ncit).toHaveClass(/marked/);
   await expect(page.locator('cedar-term-picker .chosen')).toContainText('Melanoma');
   await ncit.click();
   await expect(detail).toHaveCount(1);

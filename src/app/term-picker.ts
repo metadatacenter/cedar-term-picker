@@ -885,6 +885,18 @@ export class TermPicker {
     return step === undefined ? '' : (step.termLabel ?? step.termIri);
   }
 
+  /**
+   * Whether this row is the selection — which outlives its panel.
+   *
+   * Collapsing a hierarchy and unselecting a row are different acts, and clicking the row does the
+   * first: what an author selected is still what they selected once they have folded the tree away.
+   * So the highlight follows the selection and the panel follows the mark.
+   */
+  protected isSelected(hit: Hit): boolean {
+    const picked = this.picked();
+    return picked !== null && this.keyOf(picked) === this.keyOf(hit);
+  }
+
   protected isMarked(hit: Hit): boolean {
     const marked = this.marked();
     return marked !== null && this.keyOf(marked) === this.keyOf(hit);
@@ -953,7 +965,9 @@ export class TermPicker {
    */
   protected mark(hit: Hit): void {
     if (this.isMarked(hit)) {
+      // Closes the panel and leaves the row selected: the bar goes on naming it, and so does the row.
       this.marked.set(null);
+      this.picked.set(hit);
       return;
     }
     this.marked.set(hit);
