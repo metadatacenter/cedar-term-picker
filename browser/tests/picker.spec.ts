@@ -514,6 +514,14 @@ test('a marked term shows what it is offering', async ({ page }) => {
   await expect(detail).toContainText('Also called');
   await expect(detail).toContainText('Cutaneous melanoma');
 
+  // Clicking the marked row again closes the panel it opened, which is the only way out of a tree
+  // deep enough to fill the list. What was selected stays selected.
+  await ncit.click();
+  await expect(detail).toHaveCount(0);
+  await expect(page.locator('cedar-term-picker .chosen')).toContainText('Melanoma');
+  await ncit.click();
+  await expect(detail).toHaveCount(1);
+
   // One at a time: marking another row moves the panel with the mark.
   await page.locator('cedar-term-picker .child', { hasText: 'DOID' }).click();
   await expect(detail.locator('.tree .node.self')).toContainText('Melanoma');

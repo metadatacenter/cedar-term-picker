@@ -943,7 +943,19 @@ export class TermPicker {
     }
   });
 
+  /**
+   * Marks a row, or closes the one already marked.
+   *
+   * The panel a mark opens has no dismissal of its own, and a tree deep enough to fill the list is
+   * exactly when an author wants it gone. Clicking the row again is where they will try, so that is
+   * what closes it. The selection survives: closing the panel says nothing about what was chosen,
+   * and the bar goes on stating it.
+   */
   protected mark(hit: Hit): void {
+    if (this.isMarked(hit)) {
+      this.marked.set(null);
+      return;
+    }
     this.marked.set(hit);
     this.picked.set(hit);
     if (hit.type === 'class' || hit.type === 'branch') {
