@@ -321,9 +321,15 @@ button {
 }
 
 .working {
-  margin-left: auto;
+  margin: 0;
+  padding: 0.35rem 0.2rem 0;
   font-size: var(--ctp-font-size-small);
   color: var(--ctp-color-muted);
+
+  // Holding the line, saying nothing, so the list below does not move when a search starts.
+  &.idle {
+    visibility: hidden;
+  }
 }
 
 // One set of columns for every row of a tab, so the counts, the versions and the step arrows line

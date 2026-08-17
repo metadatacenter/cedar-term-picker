@@ -1139,8 +1139,51 @@ export class TermPicker {
       return next;
     });
     clearTimeout(this.filterDebounce.get(key));
-    this.filterDebounce.set(key,
-      setTimeout(() => void this.readChildren(acronym, iri, text, 0, false), DEBOUNCE_MS));
+    this.filterDebounce.set(
+      key,
+      setTimeout(() => void this.readChildren(acronym, iri, text, 0, false), DEBOUNCE_MS),
+    );
+  }
+
+  /**
+   * Reads on when a tree is scrolled near its end, as the results list does.
+   *
+   * A tree scrolls what has been fetched, which is at most fifty children — so its scrollbar ended
+   * long before the node did, and a button had to stand in for the rest of the scroll. Scrolling is
+   * the natural way to ask for more of a list, so it is what asks.
+   *
+   * The node topped up is the last one on screen that has children left, which is the one whose
+   * list the author has just reached the bottom of.
+   */
+  protected onTreeScroll(event: Event, hit: Hit): void {
+    const tree = event.target as HTMLElement;
+    if (tree.scrollHeight - tree.scrollTop - tree.clientHeight >= tree.clientHeight) {
+      return;
+    }
+    const truncated = this.treeRows(hit).filter((row) => row.hidden > 0 && row.open);
+    const last = truncated[truncated.length - 1];
+    if (last) {
+      void this.showMore(last.acronym, last.iri);
+    }
+  }
+
+  /**
+   * How many children the store hands over at a time, which is what makes a node worth narrowing.
+   *
+   * The server's own limit, named here so the line that offers the narrowing can stay for as long
+   * as the node is bigger than one read — including after the last of it has been scrolled in,
+   * where a box that vanished at the moment it became reachable would be worse than none.
+   */
+  private static readonly CHILD_PAGE = 50;
+
+  /** Whether a node holds more than one read, and so gets a way to narrow it. */
+  protected worthNarrowing(row: TreeRow): boolean {
+    return (row.childCount ?? 0) > TermPicker.CHILD_PAGE;
+  }
+
+  /** How many of a node's children are drawn, which is what the count beside it is counting. */
+  protected shownUnder(row: TreeRow): number {
+    return (row.filter ? (row.matchCount ?? 0) : (row.childCount ?? 0)) - row.hidden;
   }
 
   /** One pending read a node, so typing in two open nodes does not cancel either. */
@@ -1159,8 +1202,7 @@ export class TermPicker {
     if (!held) {
       return;
     }
-    await this.readChildren(acronym, iri, this.nodeFilterOf(acronym, iri),
-      held.children?.length ?? 0, true);
+    await this.readChildren(acronym, iri, this.nodeFilterOf(acronym, iri), held.children?.length ?? 0, true);
   }
 
   /**
@@ -1169,8 +1211,13 @@ export class TermPicker {
    * The node keeps its own path and counts; only the children change, so narrowing or extending a
    * node does not redraw the tree around it.
    */
-  private async readChildren(acronym: string, iri: string, filter: string, offset: number,
-                             append: boolean): Promise<void> {
+  private async readChildren(
+    acronym: string,
+    iri: string,
+    filter: string,
+    offset: number,
+    append: boolean,
+  ): Promise<void> {
     const key = this.nodeKey(acronym, iri);
     // Cancel rather than let a slower earlier read land on top of a faster later one: "ru" answered
     // after "rust" would put back the wider list the author had already narrowed past.
@@ -1178,16 +1225,20 @@ export class TermPicker {
     const attempt = new AbortController();
     this.nodeInFlight.set(key, attempt);
     try {
-      const found = await this.client.hierarchy(acronym, iri, this.pinned().get(acronym)?.id,
-        attempt.signal, filter, offset);
+      const found = await this.client.hierarchy(
+        acronym,
+        iri,
+        this.pinned().get(acronym)?.id,
+        attempt.signal,
+        filter,
+        offset,
+      );
       if (found === null) {
         return;
       }
       this.nodes.update((held) => {
         const previous = held.get(key);
-        const children = append
-          ? [...(previous?.children ?? []), ...(found.children ?? [])]
-          : (found.children ?? []);
+        const children = append ? [...(previous?.children ?? []), ...(found.children ?? [])] : (found.children ?? []);
         return new Map(held).set(key, { ...found, children });
       });
     } catch {

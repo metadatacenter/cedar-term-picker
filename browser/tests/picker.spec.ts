@@ -556,13 +556,13 @@ test('a node too big to read can be narrowed, or read on through', async ({ page
   const terms = tree.locator('.node:not(.narrow):not(.self) .term');
   // Fifty of a hundred and twenty, and the node says so rather than passing them off as all of them.
   await expect(terms).toHaveCount(50);
-  await expect(tree.locator('.node').first()).toContainText('70 more not shown');
+  await expect(tree.locator('.node.narrow')).toContainText('50 of 120');
 
   // Naming what is wanted asks the store, so a term outside the first fifty is still found. Typed a
   // character at a time, because a word is several keystrokes and only the last one should be asked.
   await tree.locator('.within').pressSequentially('rust', { delay: 40 });
   await expect(terms).toHaveCount(3);
-  await expect(tree.locator('.node.narrow')).toContainText('3 of 120');
+  await expect(tree.locator('.node.narrow')).toContainText('3 of 3 matching');
   await expect(terms.first()).toHaveText('rust 3');
   await expect(terms.last()).toHaveText('rust 83');
 
@@ -570,14 +570,18 @@ test('a node too big to read can be narrowed, or read on through', async ({ page
   await tree.locator('.within').fill('');
   await expect(terms).toHaveCount(50);
 
-  // The fallback: read on, appending rather than replacing.
-  await tree.locator('.of.more').click();
+  // The other way through: scrolling the tree reads on, appending rather than replacing, so the
+  // scrollbar reaches the end of the node rather than the end of what was fetched.
+  const toBottom = () => tree.evaluate((el: HTMLElement) => {
+    el.scrollTop = el.scrollHeight;
+    el.dispatchEvent(new Event('scroll'));
+  });
+  await toBottom();
   await expect(terms).toHaveCount(100);
   await expect(terms.first()).toHaveText('term 000');
-  await tree.locator('.of.more').click();
+  await toBottom();
   await expect(terms).toHaveCount(120);
-  // Nothing left hidden, so nothing offers to show more.
-  await expect(tree.locator('.of.more')).toHaveCount(0);
+  await expect(tree.locator('.node.narrow')).toContainText('120 of 120');
 });
 
 test('a marked term shows what it is offering', async ({ page }) => {

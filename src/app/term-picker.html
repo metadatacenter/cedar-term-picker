@@ -52,7 +52,7 @@
       @if (hit.type === 'class' || hit.type === 'branch') {
         <dd class="wide">
           @if (hierarchyOf(hit)) {
-            <ol class="tree">
+            <ol class="tree" (scroll)="onTreeScroll($event, hit)">
               @for (row of treeRows(hit); track row.key) {
                 <li
                   class="node"
@@ -87,40 +87,30 @@
                   @if (row.loading) {
                     <span class="meta inline">· reading…</span>
                   }
-                  <!--
-                    A node with more children than the store will hand over at once says so. Fifty of
-                    two hundred and eighty read as all of them, and a term absent from a list that
-                    looks complete reads as a term the release does not have.
-                  -->
-                  @if (row.open && row.hidden > 0) {
-                    <span class="meta inline">· {{ row.hidden.toLocaleString() }} more not shown</span>
-                  }
                 </li>
                 <!--
-                  A node too big to read gets a way to name what is wanted, and a way to read on.
-                  The filter is the primary route: paging alphabetically through 280 siblings is a
-                  way of not finding something, where the word an author remembers finds it at once.
+                  One line for a node the store will not hand over whole: what is being shown of what
+                  there is, a box to narrow it, and a way to read further. Said once — the count used
+                  to be repeated on the node's own label, which was the same fact in two places above
+                  the list it was about.
+
+                  Narrowing leads, because paging alphabetically through 280 siblings is a way of not
+                  finding something, and the word an author remembers finds it at once.
                 -->
-                @if (row.open && (row.hidden > 0 || row.filter)) {
+                @if (row.open && (worthNarrowing(row) || row.filter)) {
                   <li class="node narrow" [style.padding-left.rem]="(row.depth + 1) * 0.9">
                     <span class="twist"></span>
                     <input
                       type="search"
                       class="within"
                       [value]="row.filter"
-                      [attr.aria-label]="'Search within ' + row.label"
-                      [placeholder]="'Search ' + (row.childCount ?? 0).toLocaleString() + ' under ' + elide(row.label, 28, 8)"
+                      [attr.aria-label]="'Search the children of ' + row.label"
+                      placeholder="search these"
                       (input)="filterNode(row.acronym, row.iri, $any($event.target).value)"
                     />
-                    @if (row.filter) {
-                      <span class="meta inline">{{ (row.matchCount ?? 0).toLocaleString() }} of {{
-                        (row.childCount ?? 0).toLocaleString() }}</span>
-                    }
-                    @if (row.hidden > 0) {
-                      <button type="button" class="of more" (click)="showMore(row.acronym, row.iri)">
-                        Show {{ row.hidden < 50 ? row.hidden : 50 }} more
-                      </button>
-                    }
+                    <span class="meta inline">{{ shownUnder(row).toLocaleString() }} of {{
+                      (row.filter ? (row.matchCount ?? 0) : (row.childCount ?? 0)).toLocaleString() }}{{
+                      row.filter ? ' matching' : '' }}</span>
                   </li>
                 }
               }
@@ -384,10 +374,15 @@
         }
       </button>
     }
-    @if (searching()) {
-      <span class="working">searching…</span>
-    }
   </nav>
+
+  <!--
+    Under the tabs, at the head of the list it is fetching, rather than pinned to the far right of
+    the tab strip where it sat away from anything it was about. Always laid out and only shown while
+    a search runs: rendering it into existence pushed the results down a line at the moment an
+    author was reading them.
+  -->
+  <p class="working" [class.idle]="!searching()">searching…</p>
 
   @if (error(); as message) {
     <p class="notice">{{ message }}</p>
