@@ -3,6 +3,48 @@
 @use '../cee-tokens' as tokens;
 @use '../cedar-neutrals' as neutrals;
 
+// A box that scrolls, and says so before it is scrolled.
+//
+// The standards properties are honoured by Firefox. Chrome and Safari on macOS draw an overlay
+// scrollbar instead, which is invisible until an author is already scrolling — exactly when the
+// hint is no longer needed, and why a release list of nineteen read as a list of seven. Giving the
+// scrollbar a style opts the element out of overlay behaviour, so the track is laid out from the
+// start and takes its width from the content rather than floating over it.
+@mixin scrolls {
+  overflow-y: auto;
+
+  // One engine each, because setting both silently disables the half that works here: Chrome from
+  // 121 ignores the `-webkit-` rules on any element that also sets `scrollbar-width` or
+  // `scrollbar-color`, and its `thin` is still an overlay bar. Measured, the track went from taking
+  // 0px of layout to 11px once these moved out of its way.
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ctp-color-border) transparent;
+  }
+
+  &::-webkit-scrollbar {
+    width: 11px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    // Inset by a transparent border rather than by width, so the thumb is thin while the hit area
+    // stays the full track.
+    background: var(--ctp-color-border);
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 6px;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background: var(--ctp-color-muted);
+    background-clip: content-box;
+  }
+}
+
 // The host contract.
 //
 // These nine custom properties are what an embedder may set, and the list is short on purpose. A
@@ -219,7 +261,7 @@ button {
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   gap: 0.15rem 0.5rem;
   max-height: 11rem;
-  overflow-y: auto;
+  @include scrolls;
   margin-top: 0.4rem;
   padding: 0.35rem;
   background: var(--ctp-color-surface);
@@ -297,9 +339,7 @@ button {
   // thousand distinct labels; page numbers over a count that stops at a cap said "400+" and asked
   // an author to navigate a list nobody knows the length of.
   max-height: 60vh;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--ctp-color-border) transparent;
+  @include scrolls;
 }
 
 // What the bottom of the list is doing: fetching, finished, or neither.
@@ -406,9 +446,7 @@ button {
   margin: 0 0 0.2rem;
   padding: 0;
   max-height: 14rem;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--ctp-color-border) transparent;
+  @include scrolls;
 }
 
 .node {
@@ -526,12 +564,10 @@ button {
   margin: 0.15rem 0 0 0;
   max-height: 11rem;
   margin-bottom: 0;
-  overflow-y: auto;
 
   // A visible track, rather than one that appears once an author is already scrolling. It is the
   // second thing saying the list is longer than the box, after the row cut off at the bottom edge.
-  scrollbar-width: thin;
-  scrollbar-color: var(--ctp-color-border) transparent;
+  @include scrolls;
 }
 
 .releases-head {
