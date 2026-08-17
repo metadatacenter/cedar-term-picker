@@ -236,6 +236,9 @@
         -->
         <p class="about">
           <span class="who">{{ chosen.acronym }}</span>
+          @if (authorityOf(chosen.acronym); as from) {
+            <span class="meta inline dim from">· {{ from }}</span>
+          }
           <span class="meta inline">
             @if (chosen.pinned) {
               @if (chosen.version) {
@@ -554,6 +557,9 @@
               parts[2] }}</span>
             @let who = splitAcronym(hit.sourceAcronym);
             <span class="who">{{ who[0] }}@if (who[1]) {<mark>{{ who[1] }}</mark>}{{ who[2] }}</span>
+            @if (authorityOf(hit.sourceAcronym); as from) {
+              <span class="meta inline dim from">· {{ from }}</span>
+            }
           </span>
           <span class="meta inline">
             @if (hit.matchCount) {
@@ -586,6 +592,9 @@
           <span class="grow ellipsis">
             <span class="title" [title]="hit.termBaseLabel">{{ elide(hit.termBaseLabel) }}</span>
             <span class="who">{{ hit.sourceAcronym }}</span>
+            @if (authorityOf(hit.sourceAcronym); as from) {
+              <span class="meta inline dim from">· {{ from }}</span>
+            }
             @if (labelsOf(hit.matchedTerms); as matched) {
               <span class="meta inline dim"> · {{ matched }}</span>
             }
