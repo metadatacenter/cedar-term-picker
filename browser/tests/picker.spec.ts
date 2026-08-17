@@ -523,6 +523,62 @@ test('narrowed to one ontology, the terms are drawn where they sit in it', async
   expect(depths[1]).toBeLessThan(depths[2]);
 });
 
+test('a node too big to read can be narrowed, or read on through', async ({ page }) => {
+  const ALL = Array.from({ length: 120 }, (_, i) => ({
+    termIri: `http://ncit/c${i}`,
+    termLabel: i % 40 === 3 ? `rust ${i}` : `term ${String(i).padStart(3, '0')}`,
+    hasChildren: false,
+    descendantCount: 0,
+  }));
+  await stubSearch(page, () => MELANOMA);
+  await stubHierarchy(page, (query) => {
+    const filter = query.get('filter');
+    const offset = Number(query.get('offset') ?? 0);
+    const matching = filter ? ALL.filter((c) => c.termLabel.includes(filter)) : ALL;
+    return {
+      sourceAcronym: query.get('sourceAcronym'),
+      termIri: query.get('termIri'),
+      termLabel: 'Melanoma',
+      children: matching.slice(offset, offset + 50),
+      childCount: ALL.length,
+      matchCount: filter ? matching.length : undefined,
+      offset,
+      descendantCount: ALL.length,
+    };
+  });
+  await openPicker(page);
+  await search(page, 'melanoma');
+  await page.locator('cedar-term-picker .rowhead').first().click();
+  await page.locator('cedar-term-picker .child', { hasText: 'NCIT' }).click();
+
+  const tree = page.locator('cedar-term-picker .detail .tree');
+  // The term the panel is about is a row too; these assertions are about its children.
+  const terms = tree.locator('.node:not(.narrow):not(.self) .term');
+  // Fifty of a hundred and twenty, and the node says so rather than passing them off as all of them.
+  await expect(terms).toHaveCount(50);
+  await expect(tree.locator('.node').first()).toContainText('70 more not shown');
+
+  // Naming what is wanted asks the store, so a term outside the first fifty is still found.
+  await tree.locator('.within').fill('rust');
+  await expect(terms).toHaveCount(3);
+  await expect(tree.locator('.node.narrow')).toContainText('3 of 120');
+  await expect(terms.first()).toHaveText('rust 3');
+  await expect(terms.last()).toHaveText('rust 83');
+
+  // Clearing it puts the node back as it was, rather than leaving it narrowed to nothing.
+  await tree.locator('.within').fill('');
+  await expect(terms).toHaveCount(50);
+
+  // The fallback: read on, appending rather than replacing.
+  await tree.locator('.of.more').click();
+  await expect(terms).toHaveCount(100);
+  await expect(terms.first()).toHaveText('term 000');
+  await tree.locator('.of.more').click();
+  await expect(terms).toHaveCount(120);
+  // Nothing left hidden, so nothing offers to show more.
+  await expect(tree.locator('.of.more')).toHaveCount(0);
+});
+
 test('a marked term shows what it is offering', async ({ page }) => {
   await stubSearch(page, () => MELANOMA);
   await stubHierarchy(page, (query) => ({
@@ -548,7 +604,7 @@ test('a marked term shows what it is offering', async ({ page }) => {
   const detail = page.locator('cedar-term-picker .detail');
   // The chain above the term and what hangs below it, which is what tells one "Melanoma" from
   // another when the label alone cannot.
-  const tree = detail.locator('.tree .node');
+  const tree = detail.locator('.tree .node:not(.narrow)');
   await expect(tree).toHaveText([
     /Neoplasm/,
     /Melanocytic Neoplasm/,

@@ -197,6 +197,10 @@ export interface Hierarchy {
   readonly path?: readonly TermRef[];
   readonly children?: readonly HierarchyChild[];
   readonly childCount: number;
+  /** How many children a filter kept. Absent when the request set no filter. */
+  readonly matchCount?: number;
+  /** Where the returned children start, so the rest can be asked for. */
+  readonly offset?: number;
   readonly descendantCount: number;
 }
 
@@ -224,6 +228,12 @@ export interface TreeRow {
   readonly descendantCount: number;
   /** Children the server held back, since a node can have hundreds. */
   readonly hidden: number;
+  /** Every child the node has, whatever a filter has narrowed the drawn list to. */
+  readonly childCount?: number;
+  /** What this node's children are narrowed to, empty when they are not. */
+  readonly filter?: string;
+  /** How many children the filter kept. Absent when the node is not narrowed. */
+  readonly matchCount?: number;
   /** In a scoped tree: whether this node is one of the query's matches or a step on the way to one. */
   readonly match?: boolean;
 }

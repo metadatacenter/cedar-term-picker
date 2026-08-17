@@ -769,6 +769,33 @@ mark {
 // That a row opens onto something. In the primary colour and at the head of the row, under the
 // twist of the group heading it sits below, so the two read as the same sign at the same depth —
 // these rows had nothing at all.
+// The way past a node's cap: name what is wanted, or read on. Indented with the children it acts
+// on, so it reads as part of the node rather than as chrome belonging to the panel.
+.node.narrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+  padding-bottom: 4px;
+}
+
+.within {
+  flex: 0 1 20rem;
+  min-width: 0;
+  height: 26px;
+  font-size: var(--ctp-font-size-small);
+  padding: 0 0.4rem;
+  border: 1px solid var(--ctp-color-border);
+  border-radius: 3px;
+  background: var(--ctp-color-background);
+  color: inherit;
+}
+
+.of.more {
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
 .opener {
   color: var(--ctp-color-primary);
   font-size: var(--ctp-font-size-small);

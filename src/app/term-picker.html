@@ -96,6 +96,33 @@
                     <span class="meta inline">· {{ row.hidden.toLocaleString() }} more not shown</span>
                   }
                 </li>
+                <!--
+                  A node too big to read gets a way to name what is wanted, and a way to read on.
+                  The filter is the primary route: paging alphabetically through 280 siblings is a
+                  way of not finding something, where the word an author remembers finds it at once.
+                -->
+                @if (row.open && (row.hidden > 0 || row.filter)) {
+                  <li class="node narrow" [style.padding-left.rem]="(row.depth + 1) * 0.9">
+                    <span class="twist"></span>
+                    <input
+                      type="search"
+                      class="within"
+                      [value]="row.filter"
+                      [attr.aria-label]="'Search within ' + row.label"
+                      [placeholder]="'Search ' + (row.childCount ?? 0).toLocaleString() + ' under ' + elide(row.label, 28, 8)"
+                      (input)="filterNode(row.acronym, row.iri, $any($event.target).value)"
+                    />
+                    @if (row.filter) {
+                      <span class="meta inline">{{ (row.matchCount ?? 0).toLocaleString() }} of {{
+                        (row.childCount ?? 0).toLocaleString() }}</span>
+                    }
+                    @if (row.hidden > 0) {
+                      <button type="button" class="of more" (click)="showMore(row.acronym, row.iri)">
+                        Show {{ row.hidden < 50 ? row.hidden : 50 }} more
+                      </button>
+                    }
+                  </li>
+                }
               }
             </ol>
           } @else if (hierarchyOf(hit) === null) {
