@@ -104,6 +104,48 @@ test('identical labels fold into one row, counting the ontologies that offer it'
   await expect(page.locator('cedar-term-picker .child').first()).toContainText('NCIT');
 });
 
+test('rows of one ontology that share a parent are told apart by their identifiers', async ({ page }) => {
+  // GENEPIO imports "disease" from three upstream vocabularies and files all three under
+  // "disposition", so the parent — what a repeated row usually says to distinguish itself — is the
+  // same on all three and they read identically down to the release.
+  const imported = (iri: string) => ({
+    type: 'class',
+    sourceSystem: 'bioportal',
+    sourceAcronym: 'GENEPIO',
+    termIri: iri,
+    termType: 'class',
+    termLabel: 'disease',
+    obsolete: false,
+    hasChildren: true,
+    descendantCount: 44,
+    matchType: 'termLabel',
+    path: [{ termIri: 'http://purl.obolibrary.org/obo/BFO_0000016', termLabel: 'disposition' }],
+  });
+  await stubSearch(page, () => ({
+    ...MELANOMA,
+    results: {
+      ...MELANOMA.results,
+      class: results(
+        [
+          imported('http://purl.obolibrary.org/obo/DOID_4'),
+          imported('http://purl.obolibrary.org/obo/MONDO_0000001'),
+          imported('http://purl.obolibrary.org/obo/OGMS_0000031'),
+        ],
+        { totalCount: 3, distinctLabelCount: 1 },
+      ),
+    },
+  }));
+  await openPicker(page);
+  await search(page, 'disease');
+  await page.locator('cedar-term-picker .rowhead').first().click();
+
+  // Not the parent, which says the same thing three times, but the identifier, which is the whole
+  // of what differs — and is how an OBO term is cited.
+  const rows = page.locator('cedar-term-picker .child .under');
+  await expect(rows).toHaveText(['· DOID:4', '· MONDO:0000001', '· OGMS:0000031']);
+  await expect(page.locator('cedar-term-picker .child').first()).not.toContainText('disposition');
+});
+
 test('a row whose label is a bare code leads with the name that matched', async ({ page }) => {
   await stubSearch(page, () => MELANOMA);
   await openPicker(page);

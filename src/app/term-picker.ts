@@ -920,21 +920,47 @@ export class TermPicker {
   }
 
   /**
-   * The step above a term, but only where the row would otherwise be a duplicate.
+   * What tells a row apart from its twins, where it has any.
    *
-   * A fold gathers one label across ontologies, and an ontology can offer that label twice: ACESO
-   * merges three vocabularies and labels a class "Disease" in each, so two of its rows carry the
-   * same acronym, the same name and the same release. Saying the parent on every row was noise;
-   * saying it on none left two rows an author cannot tell apart. It is said where it distinguishes.
+   * A fold gathers one label across ontologies, and an ontology can offer that label more than
+   * once: ACESO merges three vocabularies and labels a class "Disease" in each, so two of its rows
+   * carry the same acronym, the same name and the same release. Saying this on every row was noise;
+   * saying it on none left rows an author cannot tell apart. It is said where it distinguishes.
+   *
+   * The parent usually does. Where it does not, the term's own identifier is what is left: GENEPIO
+   * imports "disease" from three upstream vocabularies and files all three under "disposition", so
+   * three rows read identically down to the parent and are told apart only as DOID:4, MONDO:0000001
+   * and OGMS:0000031.
    */
-  protected parentIfRepeated(hits: readonly Hit[], hit: Hit): string {
-    const twice = hits.filter((other) => other.sourceAcronym === hit.sourceAcronym).length > 1;
-    if (!twice) {
+  protected distinguisher(hits: readonly Hit[], hit: Hit): string {
+    const twins = hits.filter((other) => other.sourceAcronym === hit.sourceAcronym);
+    if (twins.length < 2) {
       return '';
     }
+    const parent = TermPicker.parentOf(hit);
+    const shared = twins.filter((other) => TermPicker.parentOf(other) === parent).length > 1;
+    if (parent !== '' && !shared) {
+      return `under ${parent}`;
+    }
+    return TermPicker.shortId(this.termIriOf(hit));
+  }
+
+  private static parentOf(hit: Hit): string {
     const path = hit.type === 'class' || hit.type === 'branch' ? hit.path : undefined;
     const step = path?.[path.length - 1];
     return step === undefined ? '' : (step.termLabel ?? step.termIri);
+  }
+
+  /**
+   * The tail of an IRI as a source and a local name, which is how OBO vocabularies are cited.
+   *
+   * Falls back to the whole IRI where it does not end in something of that shape, since an
+   * identifier an author cannot recognise still tells two rows apart.
+   */
+  private static shortId(iri: string): string {
+    const tail = iri.split(/[/#]/).pop() ?? iri;
+    const obo = /^([A-Za-z][\w-]*)_(.+)$/.exec(tail);
+    return obo === null ? tail : `${obo[1]}:${obo[2]}`;
   }
 
   /**

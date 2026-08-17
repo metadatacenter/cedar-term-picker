@@ -441,8 +441,8 @@
                     @if (authorityOf(hit.sourceAcronym); as from) {
                       <span class="meta inline dim from">· {{ from }}</span>
                     }
-                    @if (parentIfRepeated(group.hits, hit); as under) {
-                      <span class="meta inline dim under" [title]="under">&nbsp;· under {{ under }}</span>
+                    @if (distinguisher(group.hits, hit); as apart) {
+                      <span class="meta inline dim under" [title]="apart">&nbsp;· {{ apart }}</span>
                     }
                     @if (hit.replacedBy) {
                       <span class="meta inline dim">
@@ -500,8 +500,8 @@
                     @if (authorityOf(hit.sourceAcronym); as from) {
                       <span class="meta inline dim from">· {{ from }}</span>
                     }
-                    @if (parentIfRepeated(group.hits, hit); as under) {
-                      <span class="meta inline dim under" [title]="under">&nbsp;· under {{ under }}</span>
+                    @if (distinguisher(group.hits, hit); as apart) {
+                      <span class="meta inline dim under" [title]="apart">&nbsp;· {{ apart }}</span>
                     }
                   </span>
                   <span class="meta inline">
