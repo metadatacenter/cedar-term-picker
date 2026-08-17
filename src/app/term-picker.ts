@@ -48,6 +48,17 @@ export const TERM_PICKER_TAG = 'cedar-term-picker';
 /** How long the author stops typing before a search runs. */
 const DEBOUNCE_MS = 250;
 
+/**
+ * How long a query too short to search corpus-wide waits, and what counts as too short.
+ *
+ * The server will not search every ontology for one character, and says so. Sent on the ordinary
+ * delay, that answer arrived while an author was still typing the second character, so the rule was
+ * explained before they had a chance to break it. A short query waits longer: rest at one character
+ * and it is still explained, type on and it is never mentioned.
+ */
+const SHORT_QUERY = 2;
+const SHORT_QUERY_MS = 900;
+
 /** Labels per page for the folding tabs, rows per page for the rest. */
 const PAGE_SIZE = 25;
 
@@ -247,7 +258,8 @@ export class TermPicker {
     effect(() => {
       const query = this.text().trim();
       clearTimeout(this.debounce);
-      this.debounce = setTimeout(() => void this.run(query), DEBOUNCE_MS);
+      const wait = query.length < SHORT_QUERY && this.narrowedTo().length === 0 ? SHORT_QUERY_MS : DEBOUNCE_MS;
+      this.debounce = setTimeout(() => void this.run(query), wait);
     });
   }
 
@@ -263,6 +275,9 @@ export class TermPicker {
     const controller = new AbortController();
     this.inFlight = controller;
     this.searching.set(true);
+    // Whatever the last query was told, this one has not been told anything yet. Left standing, a
+    // refusal sat under "searching…" as though it were this query's answer.
+    this.error.set(null);
     try {
       const response = await this.client.search(
         { query, pageSize: PAGE_SIZE, sources: this.sourceSelectors() },
