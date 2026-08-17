@@ -321,8 +321,24 @@
   </div>
 
   @if (choosingNarrowing()) {
+    <!--
+      A way into a list of hundreds. The panel holds every ontology the query reaches, so this finds
+      a row in it rather than running a search of its own — the counts stay counts of the query.
+    -->
+    <label class="finder">
+      <input
+        type="search"
+        [value]="narrowingFilter()"
+        placeholder="Find an ontology by name or acronym"
+        aria-label="Find an ontology to narrow to"
+        (input)="narrowingFilter.set($any($event.target).value)"
+      />
+      @if (narrowingFilter()) {
+        <span class="meta inline">{{ visibleCandidates().length }} of {{ candidates().length }}</span>
+      }
+    </label>
     <div class="candidates">
-      @for (candidate of candidates(); track candidate.sourceAcronym) {
+      @for (candidate of visibleCandidates(); track candidate.sourceAcronym) {
         <button
           type="button"
           class="candidate"
@@ -334,7 +350,11 @@
           <span class="meta inline">{{ candidate.matchCount?.toLocaleString() }}</span>
         </button>
       } @empty {
-        <p class="empty">Nothing to narrow to — search for something first.</p>
+        @if (candidates().length > 0) {
+          <p class="empty">No ontology here goes by that.</p>
+        } @else {
+          <p class="empty">Nothing to narrow to — search for something first.</p>
+        }
       }
     </div>
   }

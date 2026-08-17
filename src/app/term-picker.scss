@@ -256,9 +256,31 @@ button {
   }
 }
 
+// The finder above the list it filters, sharing its width so the two read as one panel.
+.finder {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+
+  input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 28px;
+    font-size: var(--ctp-font-size-small);
+    padding: 0 0.45rem;
+    border: 1px solid var(--ctp-color-border);
+    border-radius: 3px;
+    background: var(--ctp-color-background);
+    color: inherit;
+  }
+}
+
+// One a line rather than in columns. Side by side, the eye had to read across as well as down to
+// find a name, and the second column was cut off by the panel's own width more often than not.
 .candidates {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.15rem 0.5rem;
   max-height: 11rem;
   @include scrolls;

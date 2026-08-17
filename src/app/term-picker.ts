@@ -51,6 +51,10 @@ const DEBOUNCE_MS = 250;
 /** Labels per page for the folding tabs, rows per page for the rest. */
 const PAGE_SIZE = 25;
 
+/** How many ontologies the narrowing panel will hold, and how many it asks for at a time. */
+const NARROWING_LIMIT = 1000;
+const NARROWING_PAGE = 200;
+
 /** How many of a term's other names a panel shows before saying how many are left. */
 const NAME_LIMIT = 8;
 
@@ -184,6 +188,28 @@ export class TermPicker {
 
   /** The narrowing panel's candidates, ranked by matching terms rather than by name. */
   protected readonly candidates = signal<readonly OntologyHit[]>([]);
+
+  /** What the narrowing panel's list is being narrowed to, by acronym or by name. */
+  protected readonly narrowingFilter = signal('');
+
+  /**
+   * The candidates an author can see, once they have typed.
+   *
+   * Filtered here rather than asked of the server, because the panel already holds every ontology
+   * the query reaches: the counts beside them are of that query, and re-asking for the typed text
+   * would replace them with counts of something else. So the box finds a row in a list rather than
+   * running a second search.
+   */
+  protected readonly visibleCandidates = computed<readonly OntologyHit[]>(() => {
+    const wanted = this.narrowingFilter().trim().toLocaleLowerCase();
+    if (wanted === '') {
+      return this.candidates();
+    }
+    return this.candidates().filter((candidate) => {
+      const name = this.sourceName(candidate.sourceAcronym);
+      return candidate.sourceAcronym.toLocaleLowerCase().includes(wanted) || name.toLocaleLowerCase().includes(wanted);
+    });
+  });
   protected readonly choosingNarrowing = signal(false);
 
   /**
@@ -248,6 +274,7 @@ export class TermPicker {
       // choosing from.
       if (!keepCandidates) {
         this.candidates.set([]);
+        this.narrowingFilter.set('');
       }
       this.pages.set({});
       this.exhausted.set({});
@@ -413,16 +440,30 @@ export class TermPicker {
     if (query.length === 0) {
       return;
     }
-    const response = await this.client.search({
-      query,
-      types: ['ontology'],
-      ontologyOrder: 'matches',
-      pageSize: 40,
-    });
-    this.candidates.set((response.results.ontology?.collection ?? []).filter(isOntologyHit));
-    this.response.update((current) =>
-      current === null ? current : { ...current, sources: mergeSources(current.sources, response.sources) },
-    );
+    // Every ontology the query reaches, not the first page of them: the list is filtered in the
+    // panel, and a filter over the first page could not find the ontology ranked just past it. The
+    // server serves at most 200 a page, so this asks for pages until the list is complete — three
+    // requests for a query reaching 448 — and an ontology hit is an acronym and two counts.
+    const found: OntologyHit[] = [];
+    for (let page = 1; found.length < NARROWING_LIMIT; page++) {
+      const response = await this.client.search({
+        query,
+        types: ['ontology'],
+        ontologyOrder: 'matches',
+        page,
+        pageSize: NARROWING_PAGE,
+      });
+      const batch = (response.results.ontology?.collection ?? []).filter(isOntologyHit);
+      found.push(...batch);
+      this.response.update((current) =>
+        current === null ? current : { ...current, sources: mergeSources(current.sources, response.sources) },
+      );
+      // A short page is the end of the list, which is the same test the results tabs use.
+      if (batch.length < NARROWING_PAGE) {
+        break;
+      }
+    }
+    this.candidates.set(found);
   }
 
   protected pageOf(kind: SearchKind): number {
