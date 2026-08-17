@@ -377,30 +377,6 @@
   <div class="results" #list (scroll)="onScroll($event)">
   @switch (activeTab()) {
     @case ('class') {
-      @if (isScoped()) {
-        <!--
-          One ontology: the matches drawn where they sit in it. Folding by label answers a
-          corpus-wide question — two hundred vocabularies offering one label — and inside a single
-          ontology it says nothing, while a flat list hides what that ontology is for.
-        -->
-        <ol class="tree scoped">
-          @for (row of scopedTree(); track row.key) {
-            <li class="node" [class.picked]="isPicked(row)" [style.padding-left.rem]="row.depth * 0.9">
-              <span class="twist"></span>
-              <button
-                type="button"
-                class="term"
-                [class.hit]="row.match"
-                [title]="row.iri + ' — double click to use it'"
-                (click)="pickScoped(row)"
-                (dblclick)="chooseScoped(row)"
-              >{{ row.label }}</button>
-            </li>
-          } @empty {
-            <li class="node"><span class="meta inline">No terms match.</span></li>
-          }
-        </ol>
-      } @else {
       @for (group of labelGroups(); track group.label) {
         <div class="row group" [class.open]="expanded() === group.label">
           <button type="button" class="rowhead oneline" (click)="toggle(group.label, group.hits)">
@@ -466,7 +442,6 @@
         @if (!searching()) {
           <p class="empty">No terms match.</p>
         }
-      }
       }
     }
 

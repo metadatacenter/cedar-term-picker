@@ -510,18 +510,6 @@ button {
 
 // One ontology's tree, standing in for the folded rows. It takes the whole width of the results
 // grid and scrolls with it rather than inside a box of its own.
-.tree.scoped {
-  grid-column: 1 / -1;
-  max-height: none;
-  padding: 0.35rem 0.2rem;
-
-  // A match, as against a step on the way to one. The ancestors are context; without the
-  // distinction a tree of two hundred rows says nothing about which of them the query found.
-  .term.hit {
-    color: var(--ctp-color-heading);
-    font-weight: 500;
-  }
-}
 
 .detail {
   grid-column: 1 / -1;

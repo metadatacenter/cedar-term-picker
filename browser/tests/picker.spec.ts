@@ -494,7 +494,7 @@ test('a term selected in one release is looked for in the next, and falls back w
   await expect(chosen).not.toContainText('Gone Later');
 });
 
-test('narrowed to one ontology, the terms are drawn where they sit in it', async ({ page }) => {
+test('narrowing changes what the rows hold, not how they are drawn', async ({ page }) => {
   const scoped = {
     sources: [source('DOID', { name: 'Human Disease Ontology' })],
     results: {
@@ -508,61 +508,31 @@ test('narrowed to one ontology, the terms are drawn where they sit in it', async
       ),
     },
   };
-  // The scoped search returns each hit's whole ancestry, which is what roots the tree.
-  const chains: Record<string, { termIri: string; termLabel: string }[]> = {
-    'http://doid/disease': [],
-    'http://doid/lower%20respiratory%20tract%20disease': [
-      { termIri: 'http://doid/disease', termLabel: 'disease' },
-    ],
-    'http://doid/lung%20disease': [
-      { termIri: 'http://doid/disease', termLabel: 'disease' },
-      {
-        termIri: 'http://doid/lower%20respiratory%20tract%20disease',
-        termLabel: 'lower respiratory tract disease',
-      },
-    ],
-  };
   await stubSearch(page, (body) => {
     // The narrowing panel asks for its own ranking; without an answer there is nothing to narrow to.
     if (body.ontologyOrder === 'matches') {
-      return {
-        sources: [source('DOID', { name: 'Human Disease Ontology' })],
-        results: { ontology: results([ontologyHit('DOID', 1569, false)]) },
-      };
+      return { sources: [source('DOID', { name: 'Human Disease Ontology' })], results: { ontology: results([ontologyHit('DOID', 3, true)]) } };
     }
-    if (!body.sources?.length) {
-      return MELANOMA;
-    }
-    const hits = scoped.results.class.collection as { termIri: string }[];
-    return {
-      ...scoped,
-      results: {
-        class: {
-          ...scoped.results.class,
-          collection: hits.map((h) => ({ ...h, path: chains[h.termIri] ?? [] })),
-        },
-      },
-    };
+    return body.sources?.length ? scoped : MELANOMA;
   });
   await openPicker(page);
   await search(page, 'disease');
-  await page.locator('cedar-term-picker .row.pick, cedar-term-picker .rowhead').first().click();
 
-  // Narrow through the panel, the way an author would.
-  await page.locator('cedar-term-picker .adder').click();
+  // Whatever the unnarrowed list is, it is folded rows with a twist apiece.
+  const rows = page.locator('cedar-term-picker .rowhead');
+  const before = await rows.count();
+  expect(before).toBeGreaterThan(0);
+
+  await page.locator('cedar-term-picker .narrowing .adder').click();
   await page.locator('cedar-term-picker .candidate', { hasText: 'DOID' }).click();
+  await page.locator('cedar-term-picker .narrowing button', { hasText: 'done' }).click();
 
-  const nodes = page.locator('cedar-term-picker .tree.scoped .node');
-  await expect(nodes).toHaveCount(3);
-  // Rooted, and each step indented under the one above rather than listed flat.
-  await expect(nodes.nth(0)).toContainText('disease');
-  await expect(nodes.nth(1)).toContainText('lower respiratory tract disease');
-  await expect(nodes.nth(2)).toContainText('lung disease');
-  const depths = await nodes.evaluateAll((els) =>
-    els.map((el) => parseFloat(getComputedStyle(el).paddingLeft)),
-  );
-  expect(depths[0]).toBeLessThan(depths[1]);
-  expect(depths[1]).toBeLessThan(depths[2]);
+  // Narrowed, it is the same rows holding less — not a different presentation. A tree drawn here
+  // instead meant the list an author was reading was replaced by another kind of thing.
+  await expect(page.locator('cedar-term-picker .narrowing')).toContainText('DOID');
+  await expect(rows).toHaveCount(3);
+  await expect(rows.first()).toContainText('in 1 ontology');
+  await expect(page.locator('cedar-term-picker .tree.scoped')).toHaveCount(0);
 });
 
 test('a node bigger than one read scrolls on rather than ending early', async ({ page }) => {
