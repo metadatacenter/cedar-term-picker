@@ -272,7 +272,7 @@ button {
     padding: 0 0.45rem;
     border: 1px solid var(--ctp-color-border);
     border-radius: 3px;
-    background: var(--ctp-color-background);
+    background: #fff;
     color: inherit;
   }
 }
@@ -486,11 +486,17 @@ button {
 // Where the term sits, drawn as the ontology draws it, and walkable from there. The indent is the
 // structure; the spine is the chain the search landed on, and everything else is what an author
 // opened to see beside it.
+// On the panel's own ground rather than the panel's tint, so the ontology's shape reads as a thing
+// in its own right instead of as more of the detail block it sits in — the release list above it is
+// tinted, and two tinted blocks running together were hard to tell apart.
 .tree {
   list-style: none;
   margin: 0 0 0.2rem;
-  padding: 0;
+  padding: 0.25rem 0.35rem;
   max-height: 14rem;
+  background: #fff;
+  border: 1px solid var(--ctp-color-border);
+  border-radius: 3px;
   @include scrolls;
 }
 
@@ -838,32 +844,8 @@ mark {
 // That a row opens onto something. In the primary colour and at the head of the row, under the
 // twist of the group heading it sits below, so the two read as the same sign at the same depth —
 // these rows had nothing at all.
-// The way past a node's cap: name what is wanted, or read on. Indented with the children it acts
-// on, so it reads as part of the node rather than as chrome belonging to the panel.
-.node.narrow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-top: 2px;
-  padding-bottom: 4px;
-}
 
-.within {
-  flex: 0 1 20rem;
-  min-width: 0;
-  height: 26px;
-  font-size: var(--ctp-font-size-small);
-  padding: 0 0.4rem;
-  border: 1px solid var(--ctp-color-border);
-  border-radius: 3px;
-  background: var(--ctp-color-background);
-  color: inherit;
-}
 
-.of.more {
-  flex: 0 0 auto;
-  cursor: pointer;
-}
 
 // A pin naming an extraction a later one corrected. Marked rather than alarming: the pin resolves,
 // and an author may well have meant that exact reading.
