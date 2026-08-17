@@ -583,6 +583,15 @@ button {
 
   // The tree has no term to define, so it takes the whole width rather than sitting in the value
   // column with an empty label beside it.
+  // Prose, so it wraps and reads as a sentence — every other cell here is a name or a figure and
+  // is kept to one line.
+  .meaning {
+    white-space: normal;
+    line-height: 1.4;
+    padding-bottom: 0.15rem;
+    color: var(--ctp-color-text);
+  }
+
   .wide {
     grid-column: 1 / -1;
   }

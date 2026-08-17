@@ -115,6 +115,14 @@ export interface ClassHit extends HitBase {
   readonly path?: readonly TermRef[];
   /** Every other name the source records for it: synonyms, other languages, alternative labels. */
   readonly names?: readonly MatchedLabel[];
+  /**
+   * What the source says the term means, where it says anything.
+   *
+   * The evidence that settles a choice between terms of one name — GENEPIO offers "disease" from
+   * three upstream vocabularies and a label cannot tell them apart. Absent for about half the
+   * corpus, which asserts no definition at all.
+   */
+  readonly definition?: string;
 }
 
 export interface BranchHit extends HitBase {

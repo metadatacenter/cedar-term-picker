@@ -104,6 +104,15 @@
         </dd>
       }
 
+      <!--
+        What the source says it means, above everything else the panel holds. It is the one thing
+        that settles a choice between terms of one name, where a label, a parent and an accession
+        have all failed to — so it leads rather than sitting under the tree.
+      -->
+      @if (definitionOf(hit); as meaning) {
+        <dd class="wide meaning">{{ meaning }}</dd>
+      }
+
       @if (hit.matchedLabels?.length) {
         <dt>Matched</dt>
         <dd>

@@ -866,6 +866,11 @@ export class TermPicker {
     return `${count.toLocaleString()} ${count === 1 ? 'concept' : 'concepts'}`;
   }
 
+  /** What a source says a term means, where it says anything. Only a class carries one. */
+  protected definitionOf(hit: Hit): string {
+    return hit.type === 'class' ? (hit.definition ?? '') : '';
+  }
+
   /**
    * The other names a term goes by, capped at what a panel can hold.
    *
