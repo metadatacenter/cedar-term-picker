@@ -684,10 +684,12 @@ export class TermPicker {
       return 'latest';
     }
     // A snapshot with neither a declared version nor an effective date is a release the source
-    // never named — 67 of the 448 ontologies a query for "disease" reaches. Calling it "latest"
-    // would say a release was unpinned when the row is reading a particular one; the history panel
-    // is where its hash identifies it.
-    return version.declaredVersion ?? version.effectiveDate?.slice(0, 10) ?? 'unversioned';
+    // never named — 67 of the 448 ontologies a query for "disease" reaches. Nothing, rather than a
+    // word saying so: "unversioned" filled the column on every one of those rows with the absence
+    // of a fact, where a blank says the same and reads as blank. Calling it "latest" would be
+    // worse still, saying a release was unpinned when the row is reading a particular one; the
+    // history panel is where its hash identifies it.
+    return version.declaredVersion ?? version.effectiveDate?.slice(0, 10) ?? '';
   }
 
   protected isPinned(acronym: string): boolean {

@@ -6,11 +6,13 @@
     that moves an ontology one release without saying which release it reached asked an author to
     recognise a `›` and then to count, and the history says both in one click.
   -->
-  <span
-    class="version"
-    [class.pinned]="isPinned(acronym)"
-    [title]="'Version ' + versionOf(acronym)"
-  >{{ elide(versionOf(acronym), 20, 8) }}</span>
+  <!-- Empty where the source named no release, which is a cell holding nothing rather than a word. -->
+  @if (versionOf(acronym); as version) {
+    <span class="version" [class.pinned]="isPinned(acronym)" [title]="'Version ' + version">{{
+      elide(version, 20, 8) }}</span>
+  } @else {
+    <span class="version"></span>
+  }
   @if (versionCount(acronym); as count) {
     <button
       type="button"
@@ -236,7 +238,9 @@
           <span class="who">{{ chosen.acronym }}</span>
           <span class="meta inline">
             @if (chosen.pinned) {
-              · {{ elide(chosen.version, 20, 8) }}
+              @if (chosen.version) {
+                · {{ elide(chosen.version, 20, 8) }}
+              }
               @if (chosen.effectiveDate && chosen.effectiveDate !== chosen.version) {
                 · {{ chosen.effectiveDate }}
               }
