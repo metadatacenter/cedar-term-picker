@@ -901,12 +901,32 @@ export class TermPicker {
     if (twins.length < 2) {
       return '';
     }
-    const parent = TermPicker.parentOf(hit);
-    const shared = twins.filter((other) => TermPicker.parentOf(other) === parent).length > 1;
-    if (parent !== '' && !shared) {
-      return `under ${parent}`;
-    }
-    return TermPicker.shortId(this.termIriOf(hit));
+    return TermPicker.byParent(twins) ? `under ${TermPicker.parentOf(hit)}` : TermPicker.shortId(this.termIriOf(hit));
+  }
+
+  /**
+   * Whether the row is told apart by an identifier rather than by a parent.
+   *
+   * The two read differently and should look different: an identifier drawn from the tail of an IRI
+   * is sometimes a word — CHEAR's three rows are told apart as DOID:4, Disease and disease — and set
+   * in the same face as a parent's name it reads as one, saying the label again rather than
+   * identifying the term.
+   */
+  protected distinguishedById(hits: readonly Hit[], hit: Hit): boolean {
+    const twins = hits.filter((other) => other.sourceAcronym === hit.sourceAcronym);
+    return twins.length > 1 && !TermPicker.byParent(twins);
+  }
+
+  /**
+   * One choice for a whole set of twins, not one a row.
+   *
+   * Deciding per row gave BAO's two rows a parent on one and an identifier on the other, so the
+   * column held two kinds of thing and answered neither "which parent" nor "which term". Parents are
+   * used only where they tell every twin apart.
+   */
+  private static byParent(twins: readonly Hit[]): boolean {
+    const parents = twins.map((other) => TermPicker.parentOf(other));
+    return parents.every((parent) => parent !== '') && new Set(parents).size === parents.length;
   }
 
   private static parentOf(hit: Hit): string {

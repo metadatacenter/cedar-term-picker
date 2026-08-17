@@ -461,7 +461,13 @@
                       <span class="meta inline dim from">· {{ from }}</span>
                     }
                     @if (distinguisher(group.hits, hit); as apart) {
-                      <span class="meta inline dim under" [title]="apart">&nbsp;· {{ apart }}</span>
+                      <span class="meta inline dim under" [title]="apart">&nbsp;·
+                        @if (distinguishedById(group.hits, hit)) {
+                          <code class="hash">{{ apart }}</code>
+                        } @else {
+                          {{ apart }}
+                        }
+                      </span>
                     }
                     @if (hit.replacedBy) {
                       <span class="meta inline dim">
@@ -519,7 +525,13 @@
                       <span class="meta inline dim from">· {{ from }}</span>
                     }
                     @if (distinguisher(group.hits, hit); as apart) {
-                      <span class="meta inline dim under" [title]="apart">&nbsp;· {{ apart }}</span>
+                      <span class="meta inline dim under" [title]="apart">&nbsp;·
+                        @if (distinguishedById(group.hits, hit)) {
+                          <code class="hash">{{ apart }}</code>
+                        } @else {
+                          {{ apart }}
+                        }
+                      </span>
                     }
                   </span>
                   <span class="meta inline">
