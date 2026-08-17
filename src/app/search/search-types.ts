@@ -51,6 +51,14 @@ export interface VersionInfo {
   readonly id?: string;
   readonly effectiveDate?: string;
   readonly declaredVersion?: string;
+  /**
+   * Whether a later extraction of the same source bytes exists.
+   *
+   * Only ever set on a version a request pinned: the offered list holds the current extraction of
+   * each release. A pin written before one was superseded still resolves, because a published
+   * template has to keep meaning what it meant — so this is a thing to say, not to correct.
+   */
+  readonly superseded?: boolean;
 }
 
 /** How one source answered, said once rather than repeated on every hit from it. */
@@ -257,4 +265,6 @@ export interface Selection {
   /** The rest of what a pinned constraint records: the release's date and its content hash. */
   readonly effectiveDate?: string;
   readonly id?: string;
+  /** Whether a later extraction of the pinned release's bytes has since corrected it. */
+  readonly superseded?: boolean;
 }

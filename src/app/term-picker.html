@@ -278,6 +278,14 @@
               @if (chosen.id) {
                 · <code class="hash">{{ chosen.id }}</code>
               }
+              <!--
+                A release the store has since re-read. The pin still resolves and is left alone —
+                a published template has to keep meaning what it meant — so this says what it is
+                rather than moving the author off it.
+              -->
+              @if (chosen.superseded) {
+                · <span class="stale" title="A later reading of these same source bytes exists. This pin still resolves.">superseded</span>
+              }
             } @else {
               · latest
             }

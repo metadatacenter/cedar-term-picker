@@ -796,6 +796,13 @@ mark {
   cursor: pointer;
 }
 
+// A pin naming an extraction a later one corrected. Marked rather than alarming: the pin resolves,
+// and an author may well have meant that exact reading.
+.stale {
+  color: var(--ctp-color-warning);
+  font-style: italic;
+}
+
 .opener {
   color: var(--ctp-color-primary);
   font-size: var(--ctp-font-size-small);

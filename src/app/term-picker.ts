@@ -971,7 +971,13 @@ export class TermPicker {
     const version = TermPicker.nameOf(pinned ?? this.sourceOf(acronym)?.version);
     // The date and the hash only where one was chosen: they are what a pinned constraint records
     // beside the declared version, and an unpinned one records none of the three.
-    const of = { effectiveDate: pinned?.effectiveDate?.slice(0, 10), id: pinned?.id?.slice(0, 12) };
+    const of = {
+      effectiveDate: pinned?.effectiveDate?.slice(0, 10),
+      id: pinned?.id?.slice(0, 12),
+      // A pin can name an extraction a later one has corrected. It still resolves, so this is
+      // something to say rather than something to fix underneath the author.
+      superseded: this.sourceOf(acronym)?.version?.superseded === true,
+    };
     switch (hit.type) {
       case 'ontology':
         return {
