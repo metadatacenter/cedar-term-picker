@@ -1118,8 +1118,11 @@ export class TermPicker {
    * of the node's children and the term being looked for is usually not among them — filtering
    * what arrived would search the part an author can already see.
    */
-  protected async filterNode(acronym: string, iri: string, text: string): Promise<void> {
+  protected filterNode(acronym: string, iri: string, text: string): void {
     const key = this.nodeKey(acronym, iri);
+    // The typed text lands at once, so the box and the count it drives stay with the author; only
+    // the read waits. Debounced on the same delay as the search box above it, for the same reason:
+    // a word is several keystrokes and each one would otherwise be a query.
     this.nodeFilters.update((held) => {
       const next = new Map(held);
       if (text.trim() === '') {
@@ -1129,8 +1132,15 @@ export class TermPicker {
       }
       return next;
     });
-    await this.readChildren(acronym, iri, text, 0, false);
+    clearTimeout(this.filterDebounce.get(key));
+    this.filterDebounce.set(key,
+      setTimeout(() => void this.readChildren(acronym, iri, text, 0, false), DEBOUNCE_MS));
   }
+
+  /** One pending read a node, so typing in two open nodes does not cancel either. */
+  private readonly filterDebounce = new Map<string, ReturnType<typeof setTimeout>>();
+
+  private readonly nodeInFlight = new Map<string, AbortController>();
 
   /**
    * Adds the next page of children to a node, keeping the ones already drawn.
@@ -1156,9 +1166,14 @@ export class TermPicker {
   private async readChildren(acronym: string, iri: string, filter: string, offset: number,
                              append: boolean): Promise<void> {
     const key = this.nodeKey(acronym, iri);
+    // Cancel rather than let a slower earlier read land on top of a faster later one: "ru" answered
+    // after "rust" would put back the wider list the author had already narrowed past.
+    this.nodeInFlight.get(key)?.abort();
+    const attempt = new AbortController();
+    this.nodeInFlight.set(key, attempt);
     try {
       const found = await this.client.hierarchy(acronym, iri, this.pinned().get(acronym)?.id,
-        undefined, filter, offset);
+        attempt.signal, filter, offset);
       if (found === null) {
         return;
       }

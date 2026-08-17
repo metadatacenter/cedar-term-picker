@@ -558,8 +558,9 @@ test('a node too big to read can be narrowed, or read on through', async ({ page
   await expect(terms).toHaveCount(50);
   await expect(tree.locator('.node').first()).toContainText('70 more not shown');
 
-  // Naming what is wanted asks the store, so a term outside the first fifty is still found.
-  await tree.locator('.within').fill('rust');
+  // Naming what is wanted asks the store, so a term outside the first fifty is still found. Typed a
+  // character at a time, because a word is several keystrokes and only the last one should be asked.
+  await tree.locator('.within').pressSequentially('rust', { delay: 40 });
   await expect(terms).toHaveCount(3);
   await expect(tree.locator('.node.narrow')).toContainText('3 of 120');
   await expect(terms.first()).toHaveText('rust 3');
