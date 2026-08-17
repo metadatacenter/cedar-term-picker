@@ -525,7 +525,11 @@ test('narrowing changes what the rows hold, not how they are drawn', async ({ pa
 
   await page.locator('cedar-term-picker .narrowing .adder').click();
   await page.locator('cedar-term-picker .candidate', { hasText: 'DOID' }).click();
+  // No bulk reset while the panel is open: that is where one ontology is added or removed at a
+  // time, and a reset beside the way out of it is a second exit doing something quite different.
+  await expect(page.locator('cedar-term-picker .narrowing .quiet')).toHaveCount(0);
   await page.locator('cedar-term-picker .narrowing button', { hasText: 'done' }).click();
+  await expect(page.locator('cedar-term-picker .narrowing .quiet')).toHaveText('clear');
 
   // Narrowed, it is the same rows holding less — not a different presentation. A tree drawn here
   // instead meant the list an author was reading was replaced by another kind of thing.

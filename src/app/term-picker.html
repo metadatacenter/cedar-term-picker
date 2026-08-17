@@ -310,8 +310,13 @@
         Removing the last chip already searches everything, so this is a bulk reset and nothing
         more. Plain text, because it is worth having once several ontologies are on and worth
         nothing before that.
+
+        Gone while the panel is open: that is where an ontology is added and removed one at a time,
+        and a bulk reset beside the way out of it is a second exit doing something quite different.
       -->
-      <button type="button" class="quiet" (click)="clearNarrowing()">clear</button>
+      @if (!choosingNarrowing()) {
+        <button type="button" class="quiet" (click)="clearNarrowing()">clear</button>
+      }
     } @else {
       <span class="meta inline">Searching every ontology</span>
       <button type="button" class="chip adder" (click)="openNarrowing()">
