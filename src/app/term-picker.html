@@ -53,11 +53,9 @@
 
       @if (hit.type === 'class' || hit.type === 'branch') {
         <!--
-          Named like every other part of the panel. On its own ground the tree stands as a box of
-          its own, and a box of terms with nothing saying what it is is a puzzle — the sections
-          around it have said what they are all along.
+          Unlabelled, unlike the sections around it: a tree of terms under the row it belongs to
+          reads as what it is, and a caption on it was a line of chrome saying so again.
         -->
-        <dt>Where it sits</dt>
         <dd class="wide">
           @if (hierarchyOf(hit)) {
             <ol class="tree" (scroll)="onTreeScroll($event, hit)">
