@@ -264,7 +264,8 @@ button {
   margin-top: 0.4rem;
 
   input {
-    flex: 1 1 auto;
+    // Sized to what is typed into it — an acronym or a word of a name — rather than to the panel.
+    flex: 0 1 22rem;
     min-width: 0;
     height: 28px;
     font-size: var(--ctp-font-size-small);
@@ -273,6 +274,22 @@ button {
     border-radius: 3px;
     background: var(--ctp-color-background);
     color: inherit;
+  }
+}
+
+// Naming the column, once, above the list. The release panel heads its columns the same way, and
+// for the same reason: a row of bare figures beside a name explains nothing.
+.candidates-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.15rem;
+  padding: 0 0.4rem;
+  font-size: var(--ctp-font-size-small);
+  color: var(--ctp-color-muted);
+
+  .grow {
+    flex: 1 1 auto;
   }
 }
 

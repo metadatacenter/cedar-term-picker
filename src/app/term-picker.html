@@ -333,10 +333,21 @@
         aria-label="Find an ontology to narrow to"
         (input)="narrowingFilter.set($any($event.target).value)"
       />
-      @if (narrowingFilter()) {
-        <span class="meta inline">{{ visibleCandidates().length }} of {{ candidates().length }}</span>
-      }
     </label>
+    <!--
+      The column on the right is how many of each ontology's terms the query matched, which is the
+      whole reason the list is in this order — and it was a bare figure until it was named.
+    -->
+    <p class="candidates-head">
+      <span class="grow">
+        @if (narrowingFilter()) {
+          {{ visibleCandidates().length }} of {{ candidates().length }} ontologies
+        } @else {
+          {{ candidates().length }} {{ candidates().length === 1 ? 'ontology' : 'ontologies' }}
+        }
+      </span>
+      <span>matching terms</span>
+    </p>
     <div class="candidates">
       @for (candidate of visibleCandidates(); track candidate.sourceAcronym) {
         <button
