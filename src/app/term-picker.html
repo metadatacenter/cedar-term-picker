@@ -88,31 +88,6 @@
                     <span class="meta inline">· reading…</span>
                   }
                 </li>
-                <!--
-                  One line for a node the store will not hand over whole: what is being shown of what
-                  there is, a box to narrow it, and a way to read further. Said once — the count used
-                  to be repeated on the node's own label, which was the same fact in two places above
-                  the list it was about.
-
-                  Narrowing leads, because paging alphabetically through 280 siblings is a way of not
-                  finding something, and the word an author remembers finds it at once.
-                -->
-                @if (row.open && (worthNarrowing(row) || row.filter)) {
-                  <li class="node narrow" [style.padding-left.rem]="(row.depth + 1) * 0.9">
-                    <span class="twist"></span>
-                    <input
-                      type="search"
-                      class="within"
-                      [value]="row.filter"
-                      [attr.aria-label]="'Search the children of ' + row.label"
-                      placeholder="search these"
-                      (input)="filterNode(row.acronym, row.iri, $any($event.target).value)"
-                    />
-                    <span class="meta inline">{{ shownUnder(row).toLocaleString() }} of {{
-                      (row.filter ? (row.matchCount ?? 0) : (row.childCount ?? 0)).toLocaleString() }}{{
-                      row.filter ? ' matching' : '' }}</span>
-                  </li>
-                }
               }
             </ol>
           } @else if (hierarchyOf(hit) === null) {

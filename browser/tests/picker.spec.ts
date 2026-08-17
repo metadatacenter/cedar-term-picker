@@ -523,25 +523,22 @@ test('narrowed to one ontology, the terms are drawn where they sit in it', async
   expect(depths[1]).toBeLessThan(depths[2]);
 });
 
-test('a node too big to read can be narrowed, or read on through', async ({ page }) => {
+test('a node bigger than one read scrolls on rather than ending early', async ({ page }) => {
   const ALL = Array.from({ length: 120 }, (_, i) => ({
     termIri: `http://ncit/c${i}`,
-    termLabel: i % 40 === 3 ? `rust ${i}` : `term ${String(i).padStart(3, '0')}`,
+    termLabel: `term ${String(i).padStart(3, '0')}`,
     hasChildren: false,
     descendantCount: 0,
   }));
   await stubSearch(page, () => MELANOMA);
   await stubHierarchy(page, (query) => {
-    const filter = query.get('filter');
     const offset = Number(query.get('offset') ?? 0);
-    const matching = filter ? ALL.filter((c) => c.termLabel.includes(filter)) : ALL;
     return {
       sourceAcronym: query.get('sourceAcronym'),
       termIri: query.get('termIri'),
       termLabel: 'Melanoma',
-      children: matching.slice(offset, offset + 50),
+      children: ALL.slice(offset, offset + 50),
       childCount: ALL.length,
-      matchCount: filter ? matching.length : undefined,
       offset,
       descendantCount: ALL.length,
     };
@@ -553,35 +550,23 @@ test('a node too big to read can be narrowed, or read on through', async ({ page
 
   const tree = page.locator('cedar-term-picker .detail .tree');
   // The term the panel is about is a row too; these assertions are about its children.
-  const terms = tree.locator('.node:not(.narrow):not(.self) .term');
-  // Fifty of a hundred and twenty, and the node says so rather than passing them off as all of them.
-  await expect(terms).toHaveCount(50);
-  await expect(tree.locator('.node.narrow')).toContainText('50 of 120');
-
-  // Naming what is wanted asks the store, so a term outside the first fifty is still found. Typed a
-  // character at a time, because a word is several keystrokes and only the last one should be asked.
-  await tree.locator('.within').pressSequentially('rust', { delay: 40 });
-  await expect(terms).toHaveCount(3);
-  await expect(tree.locator('.node.narrow')).toContainText('3 of 3 matching');
-  await expect(terms.first()).toHaveText('rust 3');
-  await expect(terms.last()).toHaveText('rust 83');
-
-  // Clearing it puts the node back as it was, rather than leaving it narrowed to nothing.
-  await tree.locator('.within').fill('');
+  const terms = tree.locator('.node:not(.self) .term');
   await expect(terms).toHaveCount(50);
 
-  // The other way through: scrolling the tree reads on, appending rather than replacing, so the
-  // scrollbar reaches the end of the node rather than the end of what was fetched.
-  const toBottom = () => tree.evaluate((el: HTMLElement) => {
-    el.scrollTop = el.scrollHeight;
-    el.dispatchEvent(new Event('scroll'));
-  });
+  // A tree scrolls what has been fetched, so without this its scrollbar ends at fifty of a hundred
+  // and twenty and the rest of the node is unreachable.
+  const toBottom = () =>
+    tree.evaluate((el: HTMLElement) => {
+      el.scrollTop = el.scrollHeight;
+      el.dispatchEvent(new Event('scroll'));
+    });
   await toBottom();
   await expect(terms).toHaveCount(100);
+  // Appended rather than replaced: what was already read stays where it was.
   await expect(terms.first()).toHaveText('term 000');
   await toBottom();
   await expect(terms).toHaveCount(120);
-  await expect(tree.locator('.node.narrow')).toContainText('120 of 120');
+  await expect(terms.last()).toHaveText('term 119');
 });
 
 test('a marked term shows what it is offering', async ({ page }) => {

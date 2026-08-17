@@ -1106,46 +1106,6 @@ export class TermPicker {
   }
 
   /**
-   * What each open node's children are being narrowed to.
-   *
-   * Per node rather than one box for the tree: a filter answers "which of this node's children did
-   * I mean", and two nodes open at once are two separate questions.
-   */
-  private readonly nodeFilters = signal<ReadonlyMap<string, string>>(new Map());
-
-  protected nodeFilterOf(acronym: string, iri: string): string {
-    return this.nodeFilters().get(this.nodeKey(acronym, iri)) ?? '';
-  }
-
-  /**
-   * Narrows a node's children to those whose label contains what was typed.
-   *
-   * Asked of the store rather than filtered here, because what is held is at most the first fifty
-   * of the node's children and the term being looked for is usually not among them — filtering
-   * what arrived would search the part an author can already see.
-   */
-  protected filterNode(acronym: string, iri: string, text: string): void {
-    const key = this.nodeKey(acronym, iri);
-    // The typed text lands at once, so the box and the count it drives stay with the author; only
-    // the read waits. Debounced on the same delay as the search box above it, for the same reason:
-    // a word is several keystrokes and each one would otherwise be a query.
-    this.nodeFilters.update((held) => {
-      const next = new Map(held);
-      if (text.trim() === '') {
-        next.delete(key);
-      } else {
-        next.set(key, text);
-      }
-      return next;
-    });
-    clearTimeout(this.filterDebounce.get(key));
-    this.filterDebounce.set(
-      key,
-      setTimeout(() => void this.readChildren(acronym, iri, text, 0, false), DEBOUNCE_MS),
-    );
-  }
-
-  /**
    * Reads on when a tree is scrolled near its end, as the results list does.
    *
    * A tree scrolls what has been fetched, which is at most fifty children — so its scrollbar ended
@@ -1167,79 +1127,42 @@ export class TermPicker {
     }
   }
 
-  /**
-   * How many children the store hands over at a time, which is what makes a node worth narrowing.
-   *
-   * The server's own limit, named here so the line that offers the narrowing can stay for as long
-   * as the node is bigger than one read — including after the last of it has been scrolled in,
-   * where a box that vanished at the moment it became reachable would be worse than none.
-   */
-  private static readonly CHILD_PAGE = 50;
-
-  /** Whether a node holds more than one read, and so gets a way to narrow it. */
-  protected worthNarrowing(row: TreeRow): boolean {
-    return (row.childCount ?? 0) > TermPicker.CHILD_PAGE;
-  }
-
-  /** How many of a node's children are drawn, which is what the count beside it is counting. */
-  protected shownUnder(row: TreeRow): number {
-    return (row.filter ? (row.matchCount ?? 0) : (row.childCount ?? 0)) - row.hidden;
-  }
-
-  /** One pending read a node, so typing in two open nodes does not cancel either. */
-  private readonly filterDebounce = new Map<string, ReturnType<typeof setTimeout>>();
-
+  /** One read in flight a node, so a scroll that overtakes an earlier one does not race it. */
   private readonly nodeInFlight = new Map<string, AbortController>();
 
-  /**
-   * Adds the next page of children to a node, keeping the ones already drawn.
-   *
-   * The fallback to the filter: an author who wants to read down the list rather than name what
-   * they are after can, and the count beside it says how much is left.
-   */
-  protected async showMore(acronym: string, iri: string): Promise<void> {
+  /** Adds the next page of a node's children, keeping the ones already drawn. */
+  private async showMore(acronym: string, iri: string): Promise<void> {
     const held = this.nodes().get(this.nodeKey(acronym, iri));
     if (!held) {
       return;
     }
-    await this.readChildren(acronym, iri, this.nodeFilterOf(acronym, iri), held.children?.length ?? 0, true);
+    await this.readChildren(acronym, iri, held.children?.length ?? 0);
   }
 
   /**
-   * Reads a node's children at a filter and an offset, either replacing what is held or adding to it.
+   * Reads the next page of a node's children and adds them to the ones already drawn.
    *
-   * The node keeps its own path and counts; only the children change, so narrowing or extending a
-   * node does not redraw the tree around it.
+   * The node keeps its own path and counts; only the children change, so extending a node does not
+   * redraw the tree around it.
    */
-  private async readChildren(
-    acronym: string,
-    iri: string,
-    filter: string,
-    offset: number,
-    append: boolean,
-  ): Promise<void> {
+  private async readChildren(acronym: string, iri: string, offset: number): Promise<void> {
     const key = this.nodeKey(acronym, iri);
-    // Cancel rather than let a slower earlier read land on top of a faster later one: "ru" answered
-    // after "rust" would put back the wider list the author had already narrowed past.
+    // One read a node: a scroll that reaches the end twice in quick succession would otherwise ask
+    // for the same page twice and draw it twice.
     this.nodeInFlight.get(key)?.abort();
     const attempt = new AbortController();
     this.nodeInFlight.set(key, attempt);
     try {
-      const found = await this.client.hierarchy(
-        acronym,
-        iri,
-        this.pinned().get(acronym)?.id,
-        attempt.signal,
-        filter,
-        offset,
-      );
+      const found = await this.client.hierarchy(acronym, iri, this.pinned().get(acronym)?.id, attempt.signal, offset);
       if (found === null) {
         return;
       }
       this.nodes.update((held) => {
         const previous = held.get(key);
-        const children = append ? [...(previous?.children ?? []), ...(found.children ?? [])] : (found.children ?? []);
-        return new Map(held).set(key, { ...found, children });
+        return new Map(held).set(key, {
+          ...found,
+          children: [...(previous?.children ?? []), ...(found.children ?? [])],
+        });
       });
     } catch {
       // Narrowing is a refinement of what is already on screen. Failing to read it leaves the node
@@ -1336,10 +1259,7 @@ export class TermPicker {
         // else is known about it.
         hasChildren: (onSpine && iri !== tree.termIri) || known?.hasChildren === true || (held?.childCount ?? 0) > 0,
         descendantCount: known?.descendantCount ?? held?.descendantCount ?? 0,
-        hidden: (held?.matchCount ?? held?.childCount ?? 0) - (held?.children?.length ?? 0),
-        childCount: held?.childCount ?? 0,
-        matchCount: held?.matchCount,
-        filter: this.nodeFilters().get(this.nodeKey(acronym, iri)) ?? '',
+        hidden: (held?.childCount ?? 0) - (held?.children?.length ?? 0),
       });
       const next = onSpine ? (spine[spine.indexOf(iri) + 1] ?? null) : null;
       // The path always continues. Closing an ancestor hides what stands beside the path, not the

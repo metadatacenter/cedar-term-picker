@@ -45,15 +45,11 @@ export class TerminologyClient {
     termIri: string,
     versionId?: string,
     signal?: AbortSignal,
-    filter?: string,
     offset?: number,
   ): Promise<Hierarchy | null> {
     const query = new URLSearchParams({ sourceAcronym, termIri });
     if (versionId) {
       query.set('versionId', versionId);
-    }
-    if (filter && filter.trim() !== '') {
-      query.set('filter', filter.trim());
     }
     if (offset) {
       query.set('offset', String(offset));
