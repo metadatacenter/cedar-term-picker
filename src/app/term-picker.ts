@@ -866,9 +866,17 @@ export class TermPicker {
     return `${count.toLocaleString()} ${count === 1 ? 'concept' : 'concepts'}`;
   }
 
-  /** What a source says a term means, where it says anything. Only a class carries one. */
+  /**
+   * What a source says the selected term means, where it says anything.
+   *
+   * The selection rather than the marked row: a tree is how an author reaches most terms, and a
+   * definition left on the row they opened would describe the ancestor rather than the term they
+   * are choosing. Falls back to the row when the selection is elsewhere.
+   */
   protected definitionOf(hit: Hit): string {
-    return hit.type === 'class' ? (hit.definition ?? '') : '';
+    const picked = this.picked();
+    const showing = picked !== null && picked.sourceAcronym === hit.sourceAcronym ? picked : hit;
+    return showing.type === 'class' ? (showing.definition ?? '') : '';
   }
 
   /**
@@ -1275,6 +1283,7 @@ export class TermPicker {
         hasChildren: (onSpine && iri !== tree.termIri) || known?.hasChildren === true || (held?.childCount ?? 0) > 0,
         descendantCount: known?.descendantCount ?? held?.descendantCount ?? 0,
         hidden: (held?.childCount ?? 0) - (held?.children?.length ?? 0),
+        definition: known?.definition ?? (iri === tree.termIri ? tree.definition : undefined),
       });
       const next = onSpine ? (spine[spine.indexOf(iri) + 1] ?? null) : null;
       // The path always continues. Closing an ancestor hides what stands beside the path, not the
@@ -1320,6 +1329,7 @@ export class TermPicker {
       obsolete: false,
       hasChildren: row.hasChildren,
       descendantCount: row.descendantCount,
+      definition: row.definition,
     };
   }
 

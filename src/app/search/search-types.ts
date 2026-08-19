@@ -216,6 +216,8 @@ export interface Hierarchy {
   /** Where the returned children start, so the rest can be asked for. */
   readonly offset?: number;
   readonly descendantCount: number;
+  /** What the source says the term itself means, where it says anything. */
+  readonly definition?: string;
 }
 
 export interface HierarchyChild {
@@ -223,6 +225,8 @@ export interface HierarchyChild {
   readonly termLabel: string;
   readonly hasChildren: boolean;
   readonly descendantCount: number;
+  /** What the source says it means, where it says anything. */
+  readonly definition?: string;
 }
 
 /** One line of the tree drawn under a marked term. */
@@ -240,6 +244,8 @@ export interface TreeRow {
   readonly loading: boolean;
   readonly hasChildren: boolean;
   readonly descendantCount: number;
+  /** What the source says this term means, so the panel can state the one selected. */
+  readonly definition?: string;
   /** Children the server held back, since a node can have hundreds. */
   readonly hidden: number;
   /** In a scoped tree: whether this node is one of the query's matches or a step on the way to one. */
