@@ -273,4 +273,6 @@ export interface Selection {
   readonly id?: string;
   /** Whether a later extraction of the pinned release's bytes has since corrected it. */
   readonly superseded?: boolean;
+  /** What the source says the chosen term means, where it says anything. */
+  readonly definition?: string;
 }

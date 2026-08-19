@@ -102,6 +102,7 @@ interface ClassOptions {
   readonly obsolete?: boolean;
   readonly matched?: { label: string; language?: string };
   readonly descendantCount?: number;
+  readonly definition?: string;
 }
 
 export function classHit(acronym: string, label: string, options: ClassOptions = {}): object {
@@ -119,6 +120,7 @@ export function classHit(acronym: string, label: string, options: ClassOptions =
     matchedLabels: options.matched ? [options.matched] : undefined,
     path: options.under ? [{ termIri: `http://${acronym.toLowerCase()}/parent`, termLabel: options.under }] : undefined,
     names: options.names,
+    definition: options.definition,
   };
 }
 

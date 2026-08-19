@@ -884,19 +884,6 @@ export class TermPicker {
   }
 
   /**
-   * What a source says the selected term means, where it says anything.
-   *
-   * The selection rather than the marked row: a tree is how an author reaches most terms, and a
-   * definition left on the row they opened would describe the ancestor rather than the term they
-   * are choosing. Falls back to the row when the selection is elsewhere.
-   */
-  protected definitionOf(hit: Hit): string {
-    const picked = this.picked();
-    const showing = picked !== null && picked.sourceAcronym === hit.sourceAcronym ? picked : hit;
-    return showing.type === 'class' ? (showing.definition ?? '') : '';
-  }
-
-  /**
    * The other names a term goes by, capped at what a panel can hold.
    *
    * Capped because a source decides what a synonym is, and some decide oddly: BPT records
@@ -1014,6 +1001,7 @@ export class TermPicker {
     const of = {
       effectiveDate: pinned?.effectiveDate?.slice(0, 10),
       id: pinned?.id?.slice(0, 12),
+      definition: hit.type === 'class' ? hit.definition : undefined,
       // A pin can name an extraction a later one has corrected. It still resolves, so this is
       // something to say rather than something to fix underneath the author.
       superseded: this.sourceOf(acronym)?.version?.superseded === true,

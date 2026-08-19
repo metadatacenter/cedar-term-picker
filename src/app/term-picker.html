@@ -51,15 +51,6 @@
         }}</dd>
       }
 
-      <!--
-        What the source says the selected term means — above the tree, not below it. The tree scrolls
-        within its own box, so a definition after it sat off the bottom of the panel at exactly the
-        moment an author was clicking rows and wanting to read one.
-      -->
-      @if (definitionOf(hit); as meaning) {
-        <dd class="wide meaning">{{ meaning }}</dd>
-      }
-
       @if (hit.type === 'class' || hit.type === 'branch') {
         <!--
           Unlabelled, unlike the sections around it: a tree of terms under the row it belongs to
@@ -286,10 +277,17 @@
             }
           </span>
         </p>
+        <!--
+          What the source says the chosen term means. Here rather than in the panel below: the bar is
+          where an author reads what they have settled on, and the panel is where they were looking
+          for it. Kept to one line with the whole of it on hover, so the bar stays the height it was.
+        -->
+        <p class="meaning" [title]="chosen.definition ?? ''">{{ chosen.definition }}</p>
       } @else {
         <span class="label">&nbsp;</span>
         <p class="phrase">&nbsp;</p>
         <p class="about">&nbsp;</p>
+        <p class="meaning">&nbsp;</p>
       }
     </div>
     <!--

@@ -138,11 +138,23 @@
   padding-right: 1.6rem;
 
   .phrase,
-  .about {
+  .about,
+  .meaning {
     margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  // One line, with the whole of it on hover, and the line held whether or not there is one to show.
+  // A definition is prose: left to wrap it would set the bar's height from its longest sentence, and
+  // left to appear only when present it would move everything below it as the selection changed.
+  .meaning {
+    font-size: var(--ctp-font-size-small);
+    color: var(--ctp-color-muted);
+    line-height: 1.25;
+    height: 1.25em;
+    padding-bottom: 0.35rem;
   }
 
   // Sits on the input's baseline opposite it, rather than floating clear of its own caption.
@@ -151,7 +163,7 @@
   }
 
   .about {
-    padding: 0.1rem 0 0.35rem;
+    padding: 0.1rem 0 0.2rem;
   }
 
   strong {
@@ -698,7 +710,8 @@ button {
   border-radius: 0;
   color: inherit;
   text-align: left;
-  padding: 0.35rem 0.2rem;
+  // Room before the twist. At 0.2rem a group's label began three pixels from the panel edge.
+  padding: 0.35rem 0.55rem;
   font-size: var(--ctp-font-size);
 }
 
@@ -732,8 +745,10 @@ button {
   color: var(--ctp-color-muted);
 }
 
+// The compact group heading. Shorter than a row, but starting where one does: at 0.2rem its twist
+// sat three pixels from the panel edge, and the tint behind a selected row began there too.
 .oneline {
-  padding: 0.25rem 0.2rem;
+  padding: 0.25rem 0.55rem;
 }
 
 .ellipsis {
@@ -896,7 +911,9 @@ mark {
   display: grid;
   grid-template-columns: subgrid;
   align-items: center;
-  padding: 0.3rem 0;
+  // Room before the first glyph, matching the group head above it. At zero a child's tint and its
+  // opening mark began hard against the panel edge.
+  padding: 0.3rem 0.55rem;
   border-bottom: 1px solid var(--ctp-color-border);
 
   &:last-child {

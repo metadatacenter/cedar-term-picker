@@ -36,7 +36,10 @@ const MELANOMA = {
           under: 'Melanocytic Neoplasm',
           names: [{ label: 'Cutaneous melanoma' }, { label: 'mélanome', language: 'fr' }],
         }),
-        classHit('DOID', 'melanoma', { descendantCount: 31 }),
+        classHit('DOID', 'melanoma', {
+          descendantCount: 31,
+          definition: 'A cell type cancer that has_material_basis_in abnormally proliferating cells derived from melanocytes.',
+        }),
         classHit('OCHV', '6188', { matched: { label: 'HIV disease', language: 'en' } }),
       ],
       { totalCount: 5439, distinctLabelCount: 2552 },
@@ -885,3 +888,29 @@ test('the release count opens the whole history, and choosing from it pins', asy
   expect((chosen[1] as { version?: unknown }).version).toBeUndefined();
 });
 
+
+test('the bar says what the source means by the term, without changing size to say it', async ({ page }) => {
+  // A definition is the evidence that settles a choice between terms of one name, so it belongs with
+  // the term the author has settled on rather than in the panel they were searching in.
+  await stubSearch(page, () => MELANOMA);
+  await stubHierarchy(page, () => null);
+  await openPicker(page);
+  await search(page, 'melanoma');
+
+  const chosen = page.locator('cedar-term-picker .chosen');
+  const before = await page.locator('cedar-term-picker .tabs').boundingBox();
+
+  const rows = page.locator('cedar-term-picker .row.pick, cedar-term-picker .child.pick');
+  await page.locator('cedar-term-picker .rowhead').first().click();
+  await rows.filter({ hasText: 'DOID' }).first().click();
+  await expect(chosen.locator('.meaning')).toContainText('abnormally proliferating cells');
+  // And nowhere else: it was above the tree, where the panel's own scrolling put it out of sight.
+  await expect(page.locator('cedar-term-picker .detail .meaning')).toHaveCount(0);
+
+  // The line is held whether or not there is one to show. NCIT asserts no definition here, and a
+  // line that came and went with the selection would move every row below it as an author clicked.
+  await rows.filter({ hasText: 'NCIT' }).first().click();
+  await expect(chosen.locator('.meaning')).toHaveText('');
+  const after = await page.locator('cedar-term-picker .tabs').boundingBox();
+  expect(after!.y).toBe(before!.y);
+});
