@@ -296,6 +296,10 @@ export class TermPicker {
       this.expanded.set(null);
       this.topUp(this.activeTab());
       this.error.set(null);
+      // The panel offers what this query reaches, so a query that has just changed has to refill it.
+      if (this.choosingNarrowing()) {
+        void this.loadCandidates();
+      }
     } catch (failure: unknown) {
       if (controller.signal.aborted) {
         return;
@@ -451,8 +455,21 @@ export class TermPicker {
     if (!this.choosingNarrowing() || this.candidates().length > 0) {
       return;
     }
+    await this.loadCandidates();
+  }
+
+  /**
+   * The ontologies the current query reaches, for the narrowing panel to offer.
+   *
+   * Its own method because two things need it: opening the panel, and a search finishing while the
+   * panel is already open. The candidates rank against the query, so a new query discards them —
+   * and with the panel open and nothing refilling it, an author watched it empty itself and say
+   * there was no search, in the middle of one.
+   */
+  private async loadCandidates(): Promise<void> {
     const query = this.text().trim();
     if (query.length === 0) {
+      this.candidates.set([]);
       return;
     }
     // Every ontology the query reaches, not the first page of them: the list is filtered in the

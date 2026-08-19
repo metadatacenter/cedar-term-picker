@@ -384,6 +384,10 @@
       } @empty {
         @if (candidates().length > 0) {
           <p class="empty">No ontology here goes by that.</p>
+        } @else if (searching()) {
+          <p class="empty">Looking…</p>
+        } @else if (text().trim().length > 0) {
+          <p class="empty">No ontology holds a term matching that search.</p>
         } @else {
           <p class="empty">Nothing to narrow to — search for something first.</p>
         }
