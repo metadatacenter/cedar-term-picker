@@ -51,6 +51,15 @@
         }}</dd>
       }
 
+      <!--
+        What the source says the selected term means — above the tree, not below it. The tree scrolls
+        within its own box, so a definition after it sat off the bottom of the panel at exactly the
+        moment an author was clicking rows and wanting to read one.
+      -->
+      @if (definitionOf(hit); as meaning) {
+        <dd class="wide meaning">{{ meaning }}</dd>
+      }
+
       @if (hit.type === 'class' || hit.type === 'branch') {
         <!--
           Unlabelled, unlike the sections around it: a tree of terms under the row it belongs to
@@ -102,15 +111,6 @@
             <span class="meta inline">reading…</span>
           }
         </dd>
-      }
-
-      <!--
-        What the source says it means, above everything else the panel holds. It is the one thing
-        that settles a choice between terms of one name, where a label, a parent and an accession
-        have all failed to — so it leads rather than sitting under the tree.
-      -->
-      @if (definitionOf(hit); as meaning) {
-        <dd class="wide meaning">{{ meaning }}</dd>
       }
 
       @if (hit.matchedLabels?.length) {
