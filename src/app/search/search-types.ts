@@ -275,4 +275,6 @@ export interface Selection {
   readonly superseded?: boolean;
   /** What the source says the chosen term means, where it says anything. */
   readonly definition?: string;
+  /** What addresses it: the term's own IRI, a branch's root, or the ontology's. */
+  readonly iri?: string;
 }

@@ -139,11 +139,19 @@
 
   .phrase,
   .about,
-  .meaning {
+  .meaning,
+  .iri {
     margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  // Every line starts at the same place. The acronym carries a left margin in a result row, where it
+  // follows a label; here it opens the line, and the indent read as the source being a note on the
+  // term above rather than half of the constraint.
+  .who {
+    margin-left: 0;
   }
 
   // One line, with the whole of it on hover, and the line held whether or not there is one to show.
@@ -152,9 +160,39 @@
   .meaning {
     font-size: var(--ctp-font-size-small);
     color: var(--ctp-color-muted);
-    line-height: 1.25;
-    height: 1.25em;
+    line-height: 1.5;
+    height: 1.5em;
     padding-bottom: 0.35rem;
+  }
+
+  // The IRI itself, in the face the hash already uses on the line above. The namespace gives way
+  // and the local name does not: an ellipsis at the end of the line would eat the only part of an
+  // IRI that identifies the term.
+  .iri {
+    display: flex;
+    // Tall enough for what is in it, and the same box as the line below. A monospace face wants more
+    // than 1.25 line boxes, and at 1.25 the fixed height that keeps the bar still was clipping the
+    // descenders off the namespace.
+    font-size: var(--ctp-font-size-small);
+    line-height: 1.5;
+    height: 1.5em;
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--ctp-color-muted);
+    }
+
+    .ns {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .local {
+      flex: 0 0 auto;
+      color: var(--ctp-color-text);
+    }
   }
 
   // Sits on the input's baseline opposite it, rather than floating clear of its own caption.
@@ -739,6 +777,13 @@ button {
   margin-left: 0.4rem;
   font-size: var(--ctp-font-size-small);
   color: var(--ctp-color-heading);
+}
+
+// A "·"-prefixed note, standing after whatever it qualifies. Angular strips the whitespace between
+// two elements, so without a margin the separator hugs the word before it — "BioAssay Ontology·
+// BioPortal". The one exception carries no separator and needs no room.
+.dim:not(.ellipsis) {
+  margin-left: 0.25rem;
 }
 
 .dim {

@@ -278,15 +278,25 @@
           </span>
         </p>
         <!--
-          What the source says the chosen term means. Here rather than in the panel below: the bar is
-          where an author reads what they have settled on, and the panel is where they were looking
-          for it. Kept to one line with the whole of it on hover, so the bar stays the height it was.
+          What addresses the term, under the release that holds it. The label is what an author
+          recognises and this is what the field will hold, and two terms of one name are told apart by
+          nothing else. The namespace gives way to the ellipsis, never the local name.
+        -->
+        <p class="iri" [title]="chosen.iri ?? ''">
+          <code class="ns">{{ namespaceOf(chosen.iri ?? '') }}</code
+          ><code class="local">{{ localNameOf(chosen.iri ?? '') }}</code>
+        </p>
+        <!--
+          What the source says the term means, last of the four and often nothing at all: half the
+          corpus asserts no definition, and a blank line reads as the end of the bar rather than as a
+          gap in the middle of it. One line, with the whole of it on hover.
         -->
         <p class="meaning" [title]="chosen.definition ?? ''">{{ chosen.definition }}</p>
       } @else {
         <span class="label">&nbsp;</span>
         <p class="phrase">&nbsp;</p>
         <p class="about">&nbsp;</p>
+        <p class="iri">&nbsp;</p>
         <p class="meaning">&nbsp;</p>
       }
     </div>
@@ -476,7 +486,7 @@
                       <span class="meta inline dim from">· {{ from }}</span>
                     }
                     @if (distinguisher(group.hits, hit); as apart) {
-                      <span class="meta inline dim under" [title]="apart">&nbsp;·
+                      <span class="meta inline dim under" [title]="apart">·
                         @if (distinguishedById(group.hits, hit)) {
                           <code class="hash">{{ apart }}</code>
                         } @else {
@@ -540,7 +550,7 @@
                       <span class="meta inline dim from">· {{ from }}</span>
                     }
                     @if (distinguisher(group.hits, hit); as apart) {
-                      <span class="meta inline dim under" [title]="apart">&nbsp;·
+                      <span class="meta inline dim under" [title]="apart">·
                         @if (distinguishedById(group.hits, hit)) {
                           <code class="hash">{{ apart }}</code>
                         } @else {
@@ -623,7 +633,7 @@
               <span class="meta inline dim from">· {{ from }}</span>
             }
             @if (labelsOf(hit.matchedTerms); as matched) {
-              <span class="meta inline dim"> · {{ matched }}</span>
+              <span class="meta inline dim">· {{ matched }}</span>
             }
           </span>
           <span class="meta inline">{{ hit.termCount }} values</span>

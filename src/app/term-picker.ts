@@ -866,6 +866,41 @@ export class TermPicker {
   }
 
   /** The ontology's own IRI, which is what an ontology constraint records in place of a term. */
+  /**
+   * What addresses the chosen thing, as a constraint records it.
+   *
+   * A term is its own IRI, a branch and a value set are the root everything under them hangs from,
+   * and an ontology is the ontology. The label is what an author reads and this is what is stored,
+   * so the bar says both rather than leaving the second to be inferred from the first.
+   */
+  /**
+   * An IRI split where its local name begins, so the bar can hold the two apart.
+   *
+   * The namespace is what an IRI has most of and the local name is what identifies the term, so a
+   * plain ellipsis at the end of the line takes the only part worth reading. Split at the last
+   * separator and the layout can collapse the first half and keep the second whole.
+   */
+  protected namespaceOf(iri: string): string {
+    return iri.slice(0, iri.length - this.localNameOf(iri).length);
+  }
+
+  protected localNameOf(iri: string): string {
+    const cut = Math.max(iri.lastIndexOf('/'), iri.lastIndexOf('#'));
+    return cut < 0 ? iri : iri.slice(cut + 1);
+  }
+
+  private iriOf(hit: Hit): string {
+    switch (hit.type) {
+      case 'class':
+        return hit.termIri;
+      case 'branch':
+      case 'valueSet':
+        return hit.termBaseIri;
+      default:
+        return this.sourceIriOf(hit);
+    }
+  }
+
   protected sourceIriOf(hit: Hit): string {
     return this.sourceOf(hit.sourceAcronym)?.sourceIri ?? '';
   }
@@ -1002,6 +1037,7 @@ export class TermPicker {
       effectiveDate: pinned?.effectiveDate?.slice(0, 10),
       id: pinned?.id?.slice(0, 12),
       definition: hit.type === 'class' ? hit.definition : undefined,
+      iri: this.iriOf(hit),
       // A pin can name an extraction a later one has corrected. It still resolves, so this is
       // something to say rather than something to fix underneath the author.
       superseded: this.sourceOf(acronym)?.version?.superseded === true,
