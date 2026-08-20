@@ -189,9 +189,10 @@
       white-space: nowrap;
     }
 
+    // Held whole while the namespace is elided. Drawn no differently: in a monospace face the darker
+    // colour read as weight, and an IRI is one string rather than a phrase with a stressed half.
     .local {
       flex: 0 0 auto;
-      color: var(--ctp-color-text);
     }
   }
 
