@@ -96,8 +96,18 @@
                 </li>
               }
             </ol>
-          } @else if (hierarchyOf(hit) === null) {
-            <span class="meta inline">the store holds no hierarchy for this term</span>
+          } @else if (hierarchyRefusal(hit); as refusal) {
+            <!--
+              The store's own sentence rather than a summary of it. One line covered every case and
+              said the store holds no hierarchy for the term, which was wrong for a request that
+              failed and wrong in a subtler way for a term absent from the pinned release alone: the
+              release is the reason the tree is missing, and an author who cannot see that goes
+              looking for a broken ingest. A failure is said as a failure, so it is not read as an
+              answer about what the store holds.
+            -->
+            <span class="meta inline">{{
+              refusal.answered ? refusal.reason : 'the hierarchy could not be read: ' + refusal.reason
+            }}</span>
           } @else {
             <span class="meta inline">reading…</span>
           }

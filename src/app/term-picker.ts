@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FontRegistrar } from './font-registrar/font-registrar';
-import { TerminologyClient } from './search/terminology-client';
+import { HierarchyOutcome, TerminologyClient } from './search/terminology-client';
 import {
   BranchHit,
   ClassHit,
@@ -236,8 +236,13 @@ export class TermPicker {
   /** Version histories, fetched once per ontology when a row first steps. */
   private readonly histories = signal<ReadonlyMap<string, readonly VersionInfo[]>>(new Map());
 
-  /** Where each marked term sits, once read. A held null is a term the store does not hold. */
-  private readonly hierarchies = signal<ReadonlyMap<string, Hierarchy | null>>(new Map());
+  /**
+   * Where each marked term sits, once read, or why there is no tree.
+   *
+   * The outcome rather than the tree: a term absent from the pinned release and a request that
+   * failed are different things to tell an author, and both used to be one held null.
+   */
+  private readonly hierarchies = signal<ReadonlyMap<string, HierarchyOutcome>>(new Map());
 
   /** What each opened node of a tree holds, read as it opens. */
   private readonly nodes = signal<ReadonlyMap<string, Hierarchy | null>>(new Map());
@@ -1114,26 +1119,48 @@ export class TermPicker {
       return;
     }
     const iri = this.termIriOf(hit);
+    let outcome: HierarchyOutcome;
     try {
-      const found = await this.client.hierarchy(hit.sourceAcronym, iri, this.pinned().get(hit.sourceAcronym)?.id);
-      this.hierarchies.update((held) => new Map(held).set(key, found));
-      // The term itself opens, since what is under it is the first thing an author looks at. Its
-      // ancestors stay closed: opening one shows what else is beside the path, which is a question
-      // asked of one ancestor at a time and not of all of them at once.
-      if (found) {
-        this.openNodes.update((nodes) => new Set(nodes).add(this.nodeKey(hit.sourceAcronym, iri)));
-        this.nodes.update((held) => new Map(held).set(this.nodeKey(hit.sourceAcronym, iri), found));
-      }
-      return;
-    } catch {
-      // A hierarchy is context, not the answer. Failing to read it leaves the panel without it
-      // rather than replacing the results with an error the author cannot act on.
-      this.hierarchies.update((held) => new Map(held).set(key, null));
+      outcome = await this.client.hierarchy(hit.sourceAcronym, iri, this.pinned().get(hit.sourceAcronym)?.id);
+    } catch (error) {
+      // A hierarchy is context, not the answer, so a failure leaves the panel without it rather
+      // than replacing the results. What it must not do is claim the store holds nothing: nothing
+      // was read, and the row says so instead.
+      outcome = { kind: 'failed', reason: error instanceof Error ? error.message : String(error) };
     }
+    this.hierarchies.update((held) => new Map(held).set(key, outcome));
+    if (outcome.kind !== 'found') {
+      return;
+    }
+    // The term itself opens, since what is under it is the first thing an author looks at. Its
+    // ancestors stay closed: opening one shows what else is beside the path, which is a question
+    // asked of one ancestor at a time and not of all of them at once.
+    this.openNodes.update((nodes) => new Set(nodes).add(this.nodeKey(hit.sourceAcronym, iri)));
+    this.nodes.update((held) => new Map(held).set(this.nodeKey(hit.sourceAcronym, iri), outcome.hierarchy));
   }
 
-  protected hierarchyOf(hit: Hit): Hierarchy | null | undefined {
+  private hierarchyOutcomeOf(hit: Hit): HierarchyOutcome | undefined {
     return this.hierarchies().get(`${this.keyOf(hit)}\u0000${this.pinned().get(hit.sourceAcronym)?.id ?? ''}`);
+  }
+
+  /** The tree, where one was read. */
+  protected hierarchyOf(hit: Hit): Hierarchy | undefined {
+    const outcome = this.hierarchyOutcomeOf(hit);
+    return outcome?.kind === 'found' ? outcome.hierarchy : undefined;
+  }
+
+  /**
+   * Why there is no tree, or null while one is still being read.
+   *
+   * `answered` separates the store having said what it holds from a request that never got an
+   * answer. The row says different things about the two, and it used to say the first about both.
+   */
+  protected hierarchyRefusal(hit: Hit): { readonly answered: boolean; readonly reason: string } | null {
+    const outcome = this.hierarchyOutcomeOf(hit);
+    if (outcome === undefined || outcome.kind === 'found') {
+      return null;
+    }
+    return { answered: outcome.kind === 'absent', reason: outcome.reason };
   }
 
   /**
@@ -1217,10 +1244,11 @@ export class TermPicker {
     const attempt = new AbortController();
     this.nodeInFlight.set(key, attempt);
     try {
-      const found = await this.client.hierarchy(acronym, iri, this.pinned().get(acronym)?.id, attempt.signal, offset);
-      if (found === null) {
+      const outcome = await this.client.hierarchy(acronym, iri, this.pinned().get(acronym)?.id, attempt.signal, offset);
+      if (outcome.kind !== 'found') {
         return;
       }
+      const found = outcome.hierarchy;
       this.nodes.update((held) => {
         const previous = held.get(key);
         return new Map(held).set(key, {
@@ -1242,8 +1270,8 @@ export class TermPicker {
       return;
     }
     try {
-      const found = await this.client.hierarchy(acronym, iri, this.pinned().get(acronym)?.id);
-      this.nodes.update((held) => new Map(held).set(key, found));
+      const outcome = await this.client.hierarchy(acronym, iri, this.pinned().get(acronym)?.id);
+      this.nodes.update((held) => new Map(held).set(key, outcome.kind === 'found' ? outcome.hierarchy : null));
     } catch {
       this.nodes.update((held) => new Map(held).set(key, null));
     }
@@ -1269,11 +1297,12 @@ export class TermPicker {
     if (this.termIriOf(marked) === picked.termIri) {
       return;
     }
-    const found = await this.client.hierarchy(acronym, picked.termIri, this.pinned().get(acronym)?.id);
-    if (found === null) {
+    const outcome = await this.client.hierarchy(acronym, picked.termIri, this.pinned().get(acronym)?.id);
+    if (outcome.kind !== 'found') {
       this.picked.set(marked);
       return;
     }
+    const found = outcome.hierarchy;
     this.picked.set({ ...picked, termLabel: found.termLabel });
     // Open the chain down to it. Only the steps at or below the row's own term are in this tree;
     // the ones above it are the row's ancestors, already drawn.

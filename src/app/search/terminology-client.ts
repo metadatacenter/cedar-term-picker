@@ -37,8 +37,13 @@ export class TerminologyClient {
    * Where one term sits in its ontology.
    *
    * Its own call rather than part of a search: a page of results is twenty-five terms and an author
-   * asks this of one. Returns null when the store does not hold the term, which is an answer rather
-   * than a failure — a proxied source has no hierarchy to give.
+   * asks this of one.
+   *
+   * The three outcomes are distinct because two of them are answers and one is not. A 404 is the
+   * store saying what it holds, and it says which of the several reasons applies — a release nothing
+   * answers to, a release that does not contain the term, a term the index does not hold — so the
+   * server's own sentence is carried through rather than replaced by a guess. Any other status is a
+   * failure, and a failure is not evidence about the store's contents.
    */
   async hierarchy(
     sourceAcronym: string,
@@ -46,7 +51,7 @@ export class TerminologyClient {
     versionId?: string,
     signal?: AbortSignal,
     offset?: number,
-  ): Promise<Hierarchy | null> {
+  ): Promise<HierarchyOutcome> {
     const query = new URLSearchParams({ sourceAcronym, termIri });
     if (versionId) {
       query.set('versionId', versionId);
@@ -55,16 +60,35 @@ export class TerminologyClient {
       query.set('offset', String(offset));
     }
     const response = await fetch(`${this.endpoint}/hierarchy?${query}`, { signal });
-    if (response.status === 404) {
-      return null;
-    }
     const body: unknown = await response.json().catch(() => null);
-    if (!response.ok) {
-      throw new Error(refusalMessage(body) ?? `The terminology server answered ${response.status}.`);
+    if (response.status === 404) {
+      return {
+        kind: 'absent',
+        reason: refusalMessage(body) ?? `The store holds no ${termIri} in ${sourceAcronym}.`,
+      };
     }
-    return body as Hierarchy;
+    if (!response.ok) {
+      return {
+        kind: 'failed',
+        reason: refusalMessage(body) ?? `The terminology server answered ${response.status}.`,
+      };
+    }
+    return { kind: 'found', hierarchy: body as Hierarchy };
   }
 }
+
+/**
+ * What a hierarchy request produced.
+ *
+ * `absent` and `failed` are kept apart because only the first says anything about the store. They
+ * were one `null`, so a dropped connection and a term genuinely outside a pinned release reached the
+ * author as the same sentence about what the store holds — and for a release identifier nothing
+ * matched, that sentence was about a term nothing had looked for.
+ */
+export type HierarchyOutcome =
+  | { readonly kind: 'found'; readonly hierarchy: Hierarchy }
+  | { readonly kind: 'absent'; readonly reason: string }
+  | { readonly kind: 'failed'; readonly reason: string };
 
 function refusalMessage(body: unknown): string | null {
   if (body === null || typeof body !== 'object') {

@@ -914,3 +914,49 @@ test('the bar says what the source means by the term, without changing size to s
   const after = await page.locator('cedar-term-picker .tabs').boundingBox();
   expect(after!.y).toBe(before!.y);
 });
+
+/*
+ * Why a tree is missing, in the store's own words.
+ *
+ * A term absent from a pinned release, a release nothing answers to and a request that failed were
+ * one sentence: "the store holds no hierarchy for this term". The first of those is the interesting
+ * one — ICO's 2020 release predates its import of MONDO, so a term the three later releases hold is
+ * genuinely outside that one, and an author told only that the store holds nothing goes looking for
+ * a broken ingest instead of stepping the release forward.
+ */
+
+test('a term outside the pinned release says which release, not that the store is empty', async ({ page }) => {
+  await stubSearch(page, () => MELANOMA);
+  await stubHierarchy(page, () => ({
+    status: 404,
+    errorMessage: 'Release 4d5f70524a48 of ICO does not contain http://purl.obolibrary.org/obo/MONDO_0000001. '
+      + 'Another release of the same source may contain it.',
+  }));
+  await openPicker(page);
+  await search(page, 'melanoma');
+
+  await page.locator('cedar-term-picker .rowhead').first().click();
+  await page.locator('cedar-term-picker .child', { hasText: 'NCIT' }).click();
+
+  const detail = page.locator('cedar-term-picker .detail');
+  await expect(detail).toContainText('does not contain');
+  await expect(detail).toContainText('Another release of the same source may contain it');
+  // The old sentence claimed something about the store that the store had not said.
+  await expect(detail).not.toContainText('holds no hierarchy');
+});
+
+test('a hierarchy that could not be read is reported as a failure, not as an answer', async ({ page }) => {
+  await stubSearch(page, () => MELANOMA);
+  await stubHierarchy(page, () => ({ status: 500, errorMessage: 'the index is being rebuilt' }));
+  await openPicker(page);
+  await search(page, 'melanoma');
+
+  await page.locator('cedar-term-picker .rowhead').first().click();
+  await page.locator('cedar-term-picker .child', { hasText: 'NCIT' }).click();
+
+  const detail = page.locator('cedar-term-picker .detail');
+  // Said as a failure: nothing was read, so nothing is known here about what the store holds.
+  await expect(detail).toContainText('could not be read');
+  await expect(detail).toContainText('the index is being rebuilt');
+  await expect(detail).not.toContainText('holds no');
+});

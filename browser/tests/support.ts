@@ -28,8 +28,29 @@ export async function stubHierarchy(page: Page, reply: (query: URLSearchParams) 
       await route.fulfill({ status: 404, json: { errorMessage: 'no such term' } });
       return;
     }
+    // A refusal the server explains, or a failure. The picker says different things about the two,
+    // so a test needs to be able to provoke either without stubbing the whole endpoint again.
+    if (isRefusal(body)) {
+      await route.fulfill({ status: body.status, json: { errorMessage: body.errorMessage } });
+      return;
+    }
     await route.fulfill({ json: body as object });
   });
+}
+
+/** A status and the sentence the terminology server sends with it. */
+export interface HierarchyRefusal {
+  readonly status: number;
+  readonly errorMessage: string;
+}
+
+function isRefusal(body: unknown): body is HierarchyRefusal {
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    typeof (body as HierarchyRefusal).status === 'number' &&
+    typeof (body as HierarchyRefusal).errorMessage === 'string'
+  );
 }
 
 export async function stubSearch(
