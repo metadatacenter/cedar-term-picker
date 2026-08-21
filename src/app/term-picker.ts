@@ -1211,7 +1211,7 @@ export class TermPicker {
     if (tree.scrollHeight - tree.scrollTop - tree.clientHeight >= tree.clientHeight) {
       return;
     }
-    const truncated = this.treeRows(hit).filter((row) => row.hidden > 0 && row.open);
+    const truncated = this.treeRows(hit).filter((row) => row.total > row.shown && row.open);
     const last = truncated[truncated.length - 1];
     if (last) {
       void this.showMore(last.acronym, last.iri);
@@ -1297,18 +1297,18 @@ export class TermPicker {
     if (this.termIriOf(marked) === picked.termIri) {
       return;
     }
-    const outcome = await this.client.hierarchy(acronym, picked.termIri, this.pinned().get(acronym)?.id);
-    if (outcome.kind !== 'found') {
+    // Read it the way the panel reads any focus term, so the tree the new release draws is held
+    // under the same key the panel looks it up by. Fetching it directly here left the re-rooted
+    // panel waiting on a read that had already happened and been thrown away.
+    await this.readHierarchy(picked);
+    const found = this.hierarchyOf(picked);
+    if (found === undefined) {
+      // The release does not hold the term, or the read failed. Either way the row's own term is
+      // the one every release of it has, so the panel falls back to where the author started.
       this.picked.set(marked);
       return;
     }
-    const found = outcome.hierarchy;
     this.picked.set({ ...picked, termLabel: found.termLabel });
-    // Open the chain down to it. Only the steps at or below the row's own term are in this tree;
-    // the ones above it are the row's ancestors, already drawn.
-    for (const step of found.path ?? []) {
-      await this.openNode(acronym, step.termIri);
-    }
   }
 
   /**
@@ -1352,7 +1352,8 @@ export class TermPicker {
         // else is known about it.
         hasChildren: (onSpine && iri !== tree.termIri) || known?.hasChildren === true || (held?.childCount ?? 0) > 0,
         descendantCount: known?.descendantCount ?? held?.descendantCount ?? 0,
-        hidden: (held?.childCount ?? 0) - (held?.children?.length ?? 0),
+        shown: held?.children?.length ?? 0,
+        total: held?.childCount ?? 0,
         definition: known?.definition ?? (iri === tree.termIri ? tree.definition : undefined),
       });
       const next = onSpine ? (spine[spine.indexOf(iri) + 1] ?? null) : null;
@@ -1403,9 +1404,66 @@ export class TermPicker {
     };
   }
 
-  /** Picks a term from the tree. The panel stays where it is: the tree is where it was found. */
+  /**
+   * Picks a term from the tree, and makes the tree about it.
+   *
+   * The panel used to stay rooted at the row the author searched into, on the grounds that the tree
+   * is where the term was found. But the row is only where they started: an author who has walked
+   * down to `anemia` is asking about anemia, and leaving the panel's children, counts and paging
+   * addressed to `disease` left the subject of the panel and the subject of the selection as two
+   * different terms. Re-rooting keeps the ancestors above, so the way back is one click on the step
+   * they came from and nothing is lost by moving.
+   */
   protected pickNode(hit: Hit, row: TreeRow): void {
-    this.picked.set(this.nodeAsHit(hit, row));
+    const picked = this.nodeAsHit(hit, row);
+    this.picked.set(picked);
+    // The re-rooted tree is this term's own, which may not have been read yet: the parent said
+    // whether it has children, not what they are.
+    void this.readHierarchy(picked);
+  }
+
+  /**
+   * Which term the panel's tree is about: the one last clicked inside it, else the row's own.
+   *
+   * A row and a pick can name different sources — an author marks a row in NCIT and picks one in
+   * DOID from a group — so the pick only takes over its own source's panel.
+   */
+  protected treeFocus(hit: Hit): Hit {
+    const picked = this.picked();
+    if (picked === null || picked.type !== 'class' || picked.sourceAcronym !== hit.sourceAcronym) {
+      return hit;
+    }
+    if (hit.type !== 'class' && hit.type !== 'branch') {
+      return hit;
+    }
+    return this.termIriOf(picked) === this.termIriOf(hit) ? hit : picked;
+  }
+
+  /**
+   * Why the selection cannot be recorded, or null when it can.
+   *
+   * A pinned constraint names a term, a source and a release, and the store has to hold that term in
+   * that release or the constraint resolves to nothing for everyone who reads it later. Stepping to
+   * a release the term is missing from is a fair thing to do while looking — ICO's 2020 release
+   * predates its import of MONDO — so the step is allowed and the recording is not.
+   *
+   * Only for a release the author pinned. An unpinned constraint records no release and is resolved
+   * at publish time, so there is nothing here to be inconsistent with.
+   */
+  protected unrecordable(hit: Hit | null): string | null {
+    if (hit === null || (hit.type !== 'class' && hit.type !== 'branch')) {
+      return null;
+    }
+    if (!this.pinned().has(hit.sourceAcronym)) {
+      return null;
+    }
+    const outcome = this.hierarchyOutcomeOf(hit);
+    return outcome?.kind === 'absent' ? outcome.reason : null;
+  }
+
+  /** The same, for whatever is currently selected, which is what the bar is about. */
+  protected selectionBlocked(): string | null {
+    return this.unrecordable(this.picked());
   }
 
   protected isPicked(row: TreeRow): boolean {
@@ -1428,6 +1486,11 @@ export class TermPicker {
   }
 
   protected choose(hit: Hit): void {
+    // Refused rather than emitted: the bar already says why, so a double-click that does nothing is
+    // explained on screen rather than being a control that silently misbehaves.
+    if (this.unrecordable(hit) !== null) {
+      return;
+    }
     const version = hit.type === 'class' ? undefined : this.pinned().get(hit.sourceAcronym);
     this.selected.emit(version === undefined ? hit : { ...hit, version });
   }

@@ -57,9 +57,15 @@
           reads as what it is, and a caption on it was a line of chrome saying so again.
         -->
         <dd class="wide">
-          @if (hierarchyOf(hit)) {
-            <ol class="tree" (scroll)="onTreeScroll($event, hit)">
-              @for (row of treeRows(hit); track row.key) {
+          <!--
+            The tree is about the term last clicked in it, not the row the author searched into.
+            `focus` is that term, and it is the row's own until something inside is clicked, so
+            every read below — the tree, its rows, its paging, its refusal — addresses one subject.
+          -->
+          @let focus = treeFocus(hit);
+          @if (hierarchyOf(focus)) {
+            <ol class="tree" (scroll)="onTreeScroll($event, focus)">
+              @for (row of treeRows(focus); track row.key) {
                 <li
                   class="node"
                   [class.self]="row.self"
@@ -93,10 +99,20 @@
                   @if (row.loading) {
                     <span class="meta inline">· reading…</span>
                   }
+                  <!--
+                    An open node says how much of itself is on screen. Without it a capped list reads
+                    as everything the node has: DOID's "disease" shows 50 of 194 children, and a
+                    reader who scanned them for a term and did not find it concluded the release did
+                    not hold it. Scrolling fetches the rest, so this is a statement about now rather
+                    than a limit.
+                  -->
+                  @if (row.open && row.total > row.shown) {
+                    <span class="meta inline">· {{ row.shown }} of {{ row.total }}</span>
+                  }
                 </li>
               }
             </ol>
-          } @else if (hierarchyRefusal(hit); as refusal) {
+          } @else if (hierarchyRefusal(focus); as refusal) {
             <!--
               The store's own sentence rather than a summary of it. One line covered every case and
               said the store holds no hierarchy for the term, which was wrong for a request that
@@ -237,6 +253,15 @@
         <p class="phrase">
           <strong [title]="chosen.what">{{ elide(chosen.what, 72, 20) }}</strong>
         </p>
+        <!--
+          Said before the author tries to commit it, not after. A pinned constraint names a term, a
+          source and a release together, and a release that does not hold the term resolves to
+          nothing for whoever reads the template later — so the selection stays on screen, keeps its
+          release, and cannot be recorded until one of the two changes.
+        -->
+        @if (selectionBlocked(); as blocked) {
+          <p class="blocked" role="status">{{ blocked }}</p>
+        }
         <!--
           The source and the release, under the term rather than beside it. Together they are the
           constraint, and a term long enough to need eliding was pushing them off the line.

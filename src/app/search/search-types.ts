@@ -246,8 +246,15 @@ export interface TreeRow {
   readonly descendantCount: number;
   /** What the source says this term means, so the panel can state the one selected. */
   readonly definition?: string;
-  /** Children the server held back, since a node can have hundreds. */
-  readonly hidden: number;
+  /**
+   * How many of this node's children are on screen, and how many it has.
+   *
+   * Both, rather than only the number held back: a capped list that does not say it is capped reads
+   * as the whole of what the node has, and a reader who scans it and does not find a term concludes
+   * the release lacks it. DOID's "disease" has 194 children and 50 arrive at a time.
+   */
+  readonly shown: number;
+  readonly total: number;
   /** In a scoped tree: whether this node is one of the query's matches or a step on the way to one. */
   readonly match?: boolean;
 }

@@ -398,32 +398,57 @@ test('opening a fold selects the first row it opens onto', async ({ page }) => {
   await expect(page.locator('cedar-term-picker .detail')).toHaveCount(0);
 });
 
-test('a term picked from the tree becomes the selection, and the panel stays open', async ({ page }) => {
+test('a term picked from the tree becomes what the tree is about, ancestors kept above', async ({ page }) => {
+  const amelanotic = 'http://ncit/Amelanotic';
   await stubSearch(page, () => MELANOMA);
-  await stubHierarchy(page, (query) => ({
-    sourceAcronym: query.get('sourceAcronym'),
-    termIri: query.get('termIri'),
-    termLabel: 'Melanoma',
-    children: [
-      { termIri: 'http://ncit/Amelanotic', termLabel: 'Amelanotic Melanoma', hasChildren: false, descendantCount: 0 },
-    ],
-    childCount: 1,
-    descendantCount: 321,
-  }));
+  // Labels follow the IRI asked for, so the test can tell which term the panel is addressing.
+  // Amelanotic answers with Melanoma above it, which is what re-rooting has to keep on screen.
+  await stubHierarchy(page, (query) =>
+    query.get('termIri') === amelanotic
+      ? {
+          sourceAcronym: query.get('sourceAcronym'),
+          termIri: amelanotic,
+          termLabel: 'Amelanotic Melanoma',
+          path: [{ termIri: 'http://ncit/Melanoma', termLabel: 'Melanoma' }],
+          children: [
+            { termIri: 'http://ncit/Spitzoid', termLabel: 'Spitzoid Melanoma', hasChildren: false, descendantCount: 0 },
+          ],
+          childCount: 1,
+          descendantCount: 4,
+        }
+      : {
+          sourceAcronym: query.get('sourceAcronym'),
+          termIri: query.get('termIri'),
+          termLabel: 'Melanoma',
+          children: [
+            { termIri: amelanotic, termLabel: 'Amelanotic Melanoma', hasChildren: true, descendantCount: 4 },
+          ],
+          childCount: 1,
+          descendantCount: 321,
+        },
+  );
   await openPicker(page);
   await search(page, 'melanoma');
   await page.locator('cedar-term-picker .rowhead').first().click();
   await page.locator('cedar-term-picker .child', { hasText: 'NCIT' }).click();
 
   const chosen = page.locator('cedar-term-picker .chosen');
+  const tree = page.locator('cedar-term-picker .tree');
   await expect(chosen).toContainText('Melanoma');
+  // The row the author searched into is the subject to begin with.
+  await expect(tree.locator('.node.self')).toContainText('Melanoma');
 
-  // Clicking a term in the tree selects it, and the tree it was found in stays open.
-  const child = page.locator('cedar-term-picker .tree .node', { hasText: 'Amelanotic Melanoma' });
-  await child.locator('.term').click();
+  await tree.locator('.node', { hasText: 'Amelanotic Melanoma' }).locator('.term').click();
+
+  // The clicked term is now both the selection and what the tree is about. The row it was reached
+  // from is only where the author started, so the panel no longer addresses it.
   await expect(chosen).toContainText('Amelanotic Melanoma');
-  await expect(child).toHaveClass(/picked/);
-  await expect(page.locator('cedar-term-picker .tree')).toBeVisible();
+  await expect(tree.locator('.node.self')).toContainText('Amelanotic Melanoma');
+  // Its own children are what hangs below it now.
+  await expect(tree).toContainText('Spitzoid Melanoma');
+  // And the way back is on screen: the step it came from stands above it.
+  await expect(tree.locator('.node').first()).toContainText('Melanoma');
+  await expect(tree).toBeVisible();
 });
 
 test('a term selected in one release is looked for in the next, and falls back when it is gone', async ({ page }) => {
@@ -959,4 +984,87 @@ test('a hierarchy that could not be read is reported as a failure, not as an ans
   await expect(detail).toContainText('could not be read');
   await expect(detail).toContainText('the index is being rebuilt');
   await expect(detail).not.toContainText('holds no');
+});
+
+test('a capped list of children says how much of itself is on screen', async ({ page }) => {
+  await stubSearch(page, () => MELANOMA);
+  // 3 of 194, the shape of DOID's "disease": the panel must not present the three as the whole of
+  // what the node has, which is how a reader concludes a term is missing from a release.
+  await stubHierarchy(page, (query) => ({
+    sourceAcronym: query.get('sourceAcronym'),
+    termIri: query.get('termIri'),
+    termLabel: 'Melanoma',
+    children: [
+      { termIri: 'http://ncit/A', termLabel: 'Amelanotic Melanoma', hasChildren: false, descendantCount: 0 },
+      { termIri: 'http://ncit/B', termLabel: 'Balloon Cell Melanoma', hasChildren: false, descendantCount: 0 },
+      { termIri: 'http://ncit/C', termLabel: 'Cutaneous Melanoma', hasChildren: false, descendantCount: 0 },
+    ],
+    childCount: 194,
+    descendantCount: 321,
+  }));
+  await openPicker(page);
+  await search(page, 'melanoma');
+  await page.locator('cedar-term-picker .rowhead').first().click();
+  await page.locator('cedar-term-picker .child', { hasText: 'NCIT' }).click();
+
+  await expect(page.locator('cedar-term-picker .tree .node.self')).toContainText('3 of 194');
+});
+
+test('a term the pinned release does not hold cannot be recorded', async ({ page }) => {
+  // The case the fall-back cannot cover: it is the row's own term that the pinned release lacks, so
+  // there is nothing safer to fall back to. ICO is the real example — its 2020 release predates its
+  // import of MONDO, and the index the search answered from holds the term at the current release.
+  await stubSearch(page, (body) =>
+    body.includeVersions
+      ? {
+          sources: [
+            source('NCIT', {
+              name: 'National Cancer Institute Thesaurus',
+              versionCount: 2,
+              declaredVersion: '26.07d',
+              versions: [
+                { id: 'hash-new', declaredVersion: '26.07d' },
+                { id: 'hash-old', declaredVersion: '26.06e' },
+              ],
+            }),
+          ],
+          results: { ontology: results([]) },
+        }
+      : MELANOMA,
+  );
+  await stubHierarchy(page, (query) =>
+    query.get('versionId') === 'hash-old'
+      ? { status: 404, errorMessage: 'Release hash-old of NCIT does not contain ' + query.get('termIri') + '.' }
+      : {
+          sourceAcronym: 'NCIT',
+          termIri: query.get('termIri'),
+          termLabel: 'Melanoma',
+          children: [],
+          childCount: 0,
+          descendantCount: 0,
+        },
+  );
+  await openPicker(page);
+  await page.evaluate(() => {
+    const host = window as unknown as { picks: number };
+    host.picks = 0;
+    document.querySelector('cedar-term-picker')?.addEventListener('selected', () => (host.picks += 1));
+  });
+  await search(page, 'melanoma');
+  await page.locator('cedar-term-picker .rowhead').first().click();
+  const ncit = page.locator('cedar-term-picker .child', { hasText: 'NCIT' });
+  await ncit.click();
+  await ncit.locator('button.of').click();
+
+  // Pin the release that does not hold it.
+  await page.locator('cedar-term-picker .release').nth(1).click();
+
+  const chosen = page.locator('cedar-term-picker .chosen');
+  // The selection stays on screen and keeps the release the author chose, and says why it is stuck.
+  await expect(chosen).toContainText('Melanoma');
+  await expect(chosen.locator('.blocked')).toContainText('does not contain');
+
+  // Committing is refused: a constraint naming a term its release lacks resolves to nothing later.
+  await ncit.dblclick();
+  expect(await page.evaluate(() => (window as unknown as { picks: number }).picks)).toBe(0);
 });

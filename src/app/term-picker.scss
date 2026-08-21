@@ -205,6 +205,15 @@
     padding: 0.1rem 0 0.2rem;
   }
 
+  // Why the selection cannot be recorded. Quiet, at the size of the rest of the bar's detail: it
+  // states a condition of the release the author chose, not a mistake they made, and the sentence
+  // it carries comes from the store.
+  .blocked {
+    padding: 0.1rem 0 0.2rem;
+    font-size: var(--ctp-font-size-small);
+    color: var(--ctp-color-muted);
+  }
+
   strong {
     color: var(--ctp-color-heading);
     font-weight: 500;
