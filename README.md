@@ -1,5 +1,7 @@
 # CEDAR Term Picker
 
+[![Test](https://github.com/metadatacenter/cedar-term-picker/actions/workflows/test.yml/badge.svg?branch=develop)](https://github.com/metadatacenter/cedar-term-picker/actions/workflows/test.yml)
+
 A reusable Web Component for choosing what constrains a CEDAR field: an
 ontology, a branch of one, an individual term, or a value set.
 
