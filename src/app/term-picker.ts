@@ -49,14 +49,22 @@ export const TERM_PICKER_TAG = 'cedar-term-picker';
 const DEBOUNCE_MS = 250;
 
 /**
- * How long a query too short to search corpus-wide waits, and what counts as too short.
+ * The shortest query the whole corpus is searched for, and how long one below it waits before the
+ * rule is mentioned.
  *
- * The server will not search every ontology for one character, and says so. Sent on the ordinary
- * delay, that answer arrived while an author was still typing the second character, so the rule was
- * explained before they had a chance to break it. A short query waits longer: rest at one character
- * and it is still explained, type on and it is never mentioned.
+ * Not a validation rule but a cost: a corpus-wide search ranks every name it matched, and the first
+ * few characters match most of them. Measured 2026-08-26 against the served corpus, typing towards
+ * "cellular" costs 4,200 ms at "ce" and 2,512 at "cel", then falls to 539 at "cellu" and stays
+ * there. The expense is concentrated in exactly the characters an author passes through on the way
+ * to what they meant, so the query is not sent until they have arrived.
+ *
+ * Narrowing to a source lifts it. A scoped search reads only that ontology and answers in tens of
+ * milliseconds, so an author looking for a two-letter code narrows first and types it freely.
+ *
+ * The wait exists so the rule is explained to someone who stopped, not to someone still typing:
+ * rest below the floor and it is said, type on and it is never mentioned.
  */
-const SHORT_QUERY = 2;
+const MIN_CORPUS_QUERY = 3;
 const SHORT_QUERY_MS = 900;
 
 /** Labels per page for the folding tabs, rows per page for the rest. */
@@ -262,10 +270,30 @@ export class TermPicker {
   constructor() {
     effect(() => {
       const query = this.text().trim();
+      const belowFloor = query.length > 0 && query.length < MIN_CORPUS_QUERY && this.narrowedTo().length === 0;
       clearTimeout(this.debounce);
-      const wait = query.length < SHORT_QUERY && this.narrowedTo().length === 0 ? SHORT_QUERY_MS : DEBOUNCE_MS;
-      this.debounce = setTimeout(() => void this.run(query), wait);
+      this.debounce = setTimeout(
+        () => (belowFloor ? this.declineCorpusWide() : void this.run(query)),
+        belowFloor ? SHORT_QUERY_MS : DEBOUNCE_MS,
+      );
     });
+  }
+
+  /**
+   * Says why nothing was searched, without asking.
+   *
+   * The server would refuse a one-character corpus-wide search and explain itself, but it allows
+   * two, and this declines at three. Answering here rather than being told keeps one rule with one
+   * wording, and spares the request that was only ever going to be expensive or refused.
+   */
+  private declineCorpusWide(): void {
+    this.inFlight?.abort();
+    this.response.set(null);
+    this.searching.set(false);
+    this.error.set(
+      `A corpus-wide search needs at least ${MIN_CORPUS_QUERY} characters. ` +
+        'Narrow to an ontology to search it with fewer.',
+    );
   }
 
   private async run(query: string, keepCandidates = false): Promise<void> {

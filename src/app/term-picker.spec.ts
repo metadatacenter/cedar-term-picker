@@ -305,6 +305,37 @@ describe('TermPicker', () => {
     expect(shadow(fixture).querySelector('.narrowing')?.textContent).toContain('every ontology');
   });
 
+  it('does not search the whole corpus for the characters typed on the way to a word', async () => {
+    // The first few characters match most of the corpus, so they are the expensive ones and the
+    // least likely to be what the author meant. Nothing is asked until the query is long enough.
+    const fixture = TestBed.createComponent(TermPicker);
+    fixture.componentRef.setInput('query', 'ce');
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await fixture.whenStable();
+
+    expect(client.lastQuery).toBeNull();
+    expect(shadow(fixture).querySelector('.notice')?.textContent).toContain('at least 3 characters');
+  });
+
+  it('searches a short query once it is narrowed to a source', async () => {
+    // A scoped search reads one ontology, so the cost the floor exists for is not there. An author
+    // hunting a two-letter code narrows first and types it freely.
+    const fixture = TestBed.createComponent(TermPicker);
+    fixture.componentRef.setInput('query', 'melanoma');
+    await fixture.whenStable();
+    await settle();
+    await fixture.whenStable();
+
+    fixture.componentInstance['toggleNarrowing']('NCIT');
+    fixture.componentRef.setInput('query', 'ce');
+    await settle();
+    await fixture.whenStable();
+
+    expect(client.lastQuery?.query).toBe('ce');
+    expect(client.lastQuery?.sources).toEqual([{ sourceAcronym: 'NCIT' }]);
+  });
+
   it('tells the host when the author closes without choosing', async () => {
     const fixture = TestBed.createComponent(TermPicker);
     await fixture.whenStable();
