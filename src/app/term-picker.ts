@@ -296,6 +296,22 @@ export class TermPicker {
     );
   }
 
+  /**
+   * The signal of the query being answered, so a request made alongside the search dies with it.
+   *
+   * Not a new controller: a page or a candidate list is fetched *for* the current query, and
+   * starting its own would cancel the search it was asked beside. Cancelling is the search's job,
+   * and it does it whenever the query changes.
+   */
+  private alongside(): AbortSignal | undefined {
+    return this.inFlight?.signal;
+  }
+
+  /** Whether the query a request was made for is still the one on screen. */
+  private stale(query: string): boolean {
+    return this.text().trim() !== query;
+  }
+
   private async run(query: string, keepCandidates = false): Promise<void> {
     // Cancel rather than let a slower earlier query land on top of a faster later one.
     this.inFlight?.abort();
@@ -510,14 +526,21 @@ export class TermPicker {
     // server serves at most 200 a page, so this asks for pages until the list is complete — three
     // requests for a query reaching 448 — and an ontology hit is an acronym and two counts.
     const found: OntologyHit[] = [];
+    const signal = this.alongside();
     for (let page = 1; found.length < NARROWING_LIMIT; page++) {
-      const response = await this.client.search({
-        query,
-        types: ['ontology'],
-        ontologyOrder: 'matches',
-        page,
-        pageSize: NARROWING_PAGE,
-      });
+      const response = await this.client.search(
+        {
+          query,
+          types: ['ontology'],
+          ontologyOrder: 'matches',
+          page,
+          pageSize: NARROWING_PAGE,
+        },
+        signal,
+      );
+      if (this.stale(query)) {
+        return;
+      }
       const batch = (response.results.ontology?.collection ?? []).filter(isOntologyHit);
       found.push(...batch);
       this.response.update((current) =>
@@ -595,13 +618,19 @@ export class TermPicker {
     this.searching.set(true);
     this.loadingMore.set(true);
     try {
-      const next = await this.client.search({
-        query,
-        types: [kind],
-        page,
-        pageSize: PAGE_SIZE,
-        sources: this.sourceSelectors(),
-      });
+      const next = await this.client.search(
+        {
+          query,
+          types: [kind],
+          page,
+          pageSize: PAGE_SIZE,
+          sources: this.sourceSelectors(),
+        },
+        this.alongside(),
+      );
+      if (this.stale(query)) {
+        return;
+      }
       const results = next.results[kind];
       const arrived = results?.collection ?? [];
       if (arrived.length < PAGE_SIZE) {

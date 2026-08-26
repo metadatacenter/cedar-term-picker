@@ -63,8 +63,25 @@ class StubClient {
     },
   };
 
+  /** Set to hold the next answer open, so a test can drive an interleaving the clock cannot. */
+  hold: { promise: Promise<void>; release: () => void } | null = null;
+
+  /** Holds every answer from now until the returned function is called. */
+  holdAnswers(): () => void {
+    let release!: () => void;
+    const promise = new Promise<void>((resolve) => (release = resolve));
+    this.hold = { promise, release };
+    return () => {
+      this.hold = null;
+      release();
+    };
+  }
+
   async search(query: SearchQuery): Promise<SearchResponse> {
     this.lastQuery = query;
+    if (this.hold) {
+      await this.hold.promise;
+    }
     return this.response;
   }
 }
@@ -334,6 +351,28 @@ describe('TermPicker', () => {
 
     expect(client.lastQuery?.query).toBe('ce');
     expect(client.lastQuery?.sources).toEqual([{ sourceAcronym: 'NCIT' }]);
+  });
+
+  it('does not let a page fetched for an older query land on a newer one', async () => {
+    // The stub answers instantly, so the interleaving this guards against cannot arise by timing.
+    // Drive it directly: ask for more, change the query underneath, and let the answer arrive.
+    const fixture = TestBed.createComponent(TermPicker);
+    fixture.componentRef.setInput('query', 'melanoma');
+    await fixture.whenStable();
+    await settle();
+    await fixture.whenStable();
+
+    const release = client.holdAnswers();
+    const pending = fixture.componentInstance['loadMore']('class');
+    // The author types on while page two is still in the air.
+    fixture.componentRef.setInput('query', 'carcinoma');
+    release();
+    await pending;
+    await fixture.whenStable();
+
+    // Page two was fetched for melanoma and the box now says carcinoma, so it must not be appended:
+    // the page counter is what the append advances, and the stub's fixed answer hides a row count.
+    expect(fixture.componentInstance['pageOf']('class')).toBe(1);
   });
 
   it('tells the host when the author closes without choosing', async () => {
