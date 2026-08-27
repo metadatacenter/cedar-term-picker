@@ -527,29 +527,39 @@ export class TermPicker {
     // requests for a query reaching 448 — and an ontology hit is an acronym and two counts.
     const found: OntologyHit[] = [];
     const signal = this.alongside();
-    for (let page = 1; found.length < NARROWING_LIMIT; page++) {
-      const response = await this.client.search(
-        {
-          query,
-          types: ['ontology'],
-          ontologyOrder: 'matches',
-          page,
-          pageSize: NARROWING_PAGE,
-        },
-        signal,
-      );
-      if (this.stale(query)) {
+    try {
+      for (let page = 1; found.length < NARROWING_LIMIT; page++) {
+        const response = await this.client.search(
+          {
+            query,
+            types: ['ontology'],
+            ontologyOrder: 'matches',
+            page,
+            pageSize: NARROWING_PAGE,
+          },
+          signal,
+        );
+        if (this.stale(query)) {
+          return;
+        }
+        const batch = (response.results.ontology?.collection ?? []).filter(isOntologyHit);
+        found.push(...batch);
+        this.response.update((current) =>
+          current === null ? current : { ...current, sources: mergeSources(current.sources, response.sources) },
+        );
+        // A short page is the end of the list, which is the same test the results tabs use.
+        if (batch.length < NARROWING_PAGE) {
+          break;
+        }
+      }
+    } catch (failure: unknown) {
+      // An aborted fetch died with its query; run() refills the panel for the new one. Anything
+      // else is a real failure the author should see instead of a panel that quietly stays empty.
+      if (signal?.aborted || this.stale(query)) {
         return;
       }
-      const batch = (response.results.ontology?.collection ?? []).filter(isOntologyHit);
-      found.push(...batch);
-      this.response.update((current) =>
-        current === null ? current : { ...current, sources: mergeSources(current.sources, response.sources) },
-      );
-      // A short page is the end of the list, which is the same test the results tabs use.
-      if (batch.length < NARROWING_PAGE) {
-        break;
-      }
+      this.error.set(failure instanceof Error ? failure.message : 'The search failed.');
+      return;
     }
     this.candidates.set(found);
   }
@@ -617,6 +627,7 @@ export class TermPicker {
     const page = this.pageOf(kind) + 1;
     this.searching.set(true);
     this.loadingMore.set(true);
+    const signal = this.alongside();
     try {
       const next = await this.client.search(
         {
@@ -626,7 +637,7 @@ export class TermPicker {
           pageSize: PAGE_SIZE,
           sources: this.sourceSelectors(),
         },
-        this.alongside(),
+        signal,
       );
       if (this.stale(query)) {
         return;
@@ -653,11 +664,19 @@ export class TermPicker {
       });
       this.pages.update((pages) => ({ ...pages, [kind]: page }));
     } catch (failure: unknown) {
+      // An aborted page died with its query, and its rejection is not this query's error.
+      if (signal?.aborted) {
+        return;
+      }
       this.error.set(failure instanceof Error ? failure.message : 'The search failed.');
     } finally {
-      this.searching.set(false);
       this.loadingMore.set(false);
-      this.topUp(kind);
+      // The superseding search set `searching` for its own query and owns it now; clearing it here
+      // would blank the indicator in the middle of that search.
+      if (!signal?.aborted) {
+        this.searching.set(false);
+        this.topUp(kind);
+      }
     }
   }
 

@@ -77,10 +77,22 @@ class StubClient {
     };
   }
 
-  async search(query: SearchQuery): Promise<SearchResponse> {
+  async search(query: SearchQuery, signal?: AbortSignal): Promise<SearchResponse> {
     this.lastQuery = query;
     if (this.hold) {
-      await this.hold.promise;
+      // A held answer honors its abort signal the way fetch does, so a spec can drive the
+      // interleaving where a request dies while it is still in the air.
+      await Promise.race([
+        this.hold.promise,
+        new Promise<never>((_resolve, reject) => {
+          const abort = () => reject(new DOMException('The user aborted a request.', 'AbortError'));
+          if (signal?.aborted) {
+            abort();
+          } else {
+            signal?.addEventListener('abort', abort, { once: true });
+          }
+        }),
+      ]);
     }
     return this.response;
   }
@@ -373,6 +385,51 @@ describe('TermPicker', () => {
     // Page two was fetched for melanoma and the box now says carcinoma, so it must not be appended:
     // the page counter is what the append advances, and the stub's fixed answer hides a row count.
     expect(fixture.componentInstance['pageOf']('class')).toBe(1);
+  });
+
+  it("an aborted page fetch is not reported as the new query's failure", async () => {
+    const fixture = TestBed.createComponent(TermPicker);
+    fixture.componentRef.setInput('query', 'melanoma');
+    await fixture.whenStable();
+    await settle();
+    await fixture.whenStable();
+
+    const release = client.holdAnswers();
+    const pending = fixture.componentInstance['loadMore']('class');
+    // The author types on and the debounce elapses, so the new search aborts the page in the air.
+    fixture.componentRef.setInput('query', 'carcinoma');
+    await settle();
+    await pending;
+
+    // The rejection was the abort, not an error of the query on screen — and the new search set
+    // `searching` for itself, so the dead page must not blank it mid-search.
+    expect(fixture.componentInstance['error']()).toBeNull();
+    expect(fixture.componentInstance['searching']()).toBe(true);
+
+    release();
+    await fixture.whenStable();
+    expect(fixture.componentInstance['error']()).toBeNull();
+    expect(fixture.componentInstance['pageOf']('class')).toBe(1);
+  });
+
+  it('an aborted candidate load is swallowed rather than left to reject unhandled', async () => {
+    const fixture = TestBed.createComponent(TermPicker);
+    fixture.componentRef.setInput('query', 'melanoma');
+    await fixture.whenStable();
+    await settle();
+    await fixture.whenStable();
+
+    const release = client.holdAnswers();
+    // Rejecting would make this await throw, which is exactly what an author's template handler
+    // cannot do anything with.
+    const pending = fixture.componentInstance['openNarrowing']();
+    fixture.componentRef.setInput('query', 'carcinoma');
+    await settle();
+    await pending;
+
+    release();
+    await fixture.whenStable();
+    expect(fixture.componentInstance['error']()).toBeNull();
   });
 
   it('tells the host when the author closes without choosing', async () => {
