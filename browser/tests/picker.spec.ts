@@ -708,8 +708,14 @@ test('a click marks a row and a second act chooses it', async ({ page }) => {
   expect((chosen[0] as { sourceAcronym: string }).sourceAcronym).toBe('NCIT');
 
   // Enter reaches the same decision, because a double click has no keyboard equivalent.
+  // Enter opens the row rather than committing it: a keyboard gets the look a double click gave a
+  // mouse for free, and the panel it opens carries the control that writes the constraint.
   await rows.first().focus();
   await rows.first().press('Enter');
+  expect(chosen).toHaveLength(1);
+  await expect(rows.first()).toHaveClass(/marked/);
+
+  await page.locator('cedar-term-picker .use').first().click();
   expect((chosen[1] as { sourceAcronym: string }).sourceAcronym).toBe('MELO');
 });
 

@@ -164,6 +164,13 @@
       }
 
     </dl>
+    <!--
+      The commit, where a keyboard can reach it, and after the detail rather than before: Enter on a
+      row opens this panel instead of writing the constraint, so an author who cannot use a mouse
+      gets the look that a double click gave a mouse for free, and the control sits where the reading
+      ends. Double click still commits, being quicker for someone who can already see the choice.
+    -->
+    <button type="button" class="use" (click)="choose(hit)">Use this term</button>
   }
 </ng-template>
 
@@ -438,11 +445,13 @@
     </div>
   }
 
-  <nav class="tabs">
+  <nav class="tabs" role="tablist">
     @for (tab of tabs; track tab) {
       <button
         type="button"
         class="tab"
+        role="tab"
+        [attr.aria-selected]="activeTab() === tab"
         [class.active]="activeTab() === tab"
         (click)="showTab(tab)"
       >
@@ -460,7 +469,7 @@
     a search runs: rendering it into existence pushed the results down a line at the moment an
     author was reading them.
   -->
-  <p class="working" [class.idle]="!searching()">searching…</p>
+  <p class="working" [class.idle]="!searching()" role="status" aria-live="polite">searching…</p>
 
   @if (error(); as message) {
     <p class="notice">{{ message }}</p>
@@ -478,7 +487,12 @@
     @case ('class') {
       @for (group of labelGroups(); track group.label) {
         <div class="row group" [class.open]="expanded() === group.label">
-          <button type="button" class="rowhead oneline" (click)="toggle(group.label, group.hits)">
+          <button
+              type="button"
+              class="rowhead oneline"
+              [attr.aria-expanded]="expanded() === group.label"
+              (click)="toggle(group.label, group.hits)"
+            >
             <span class="twist">{{ expanded() === group.label ? '▾' : '▸' }}</span>
             <span class="grow ellipsis">
               <span class="title" [class.obsolete]="group.hits[0].obsolete" [title]="group.label">{{
@@ -508,9 +522,12 @@
                   class="child oneline pick"
                   tabindex="0"
                   [class.marked]="isSelected(hit)"
+                  role="option"
+                  [attr.aria-selected]="isSelected(hit)"
+                  [attr.aria-expanded]="isMarked(hit)"
                   (click)="mark(hit)"
                   (dblclick)="choose(hit)"
-                  (keydown.enter)="choose(hit)"
+                  (keydown.enter)="mark(hit)"
                 >
                   <span class="grow ellipsis">
                     <ng-container *ngTemplateOutlet="opener; context: { $implicit: hit }" />
@@ -572,9 +589,12 @@
                   class="child oneline pick"
                   tabindex="0"
                   [class.marked]="isSelected(hit)"
+                  role="option"
+                  [attr.aria-selected]="isSelected(hit)"
+                  [attr.aria-expanded]="isMarked(hit)"
                   (click)="mark(hit)"
                   (dblclick)="choose(hit)"
-                  (keydown.enter)="choose(hit)"
+                  (keydown.enter)="mark(hit)"
                 >
                   <span class="grow ellipsis">
                     <ng-container *ngTemplateOutlet="opener; context: { $implicit: hit }" />
@@ -619,9 +639,12 @@
           class="row oneline pick"
           tabindex="0"
           [class.marked]="isSelected(hit)"
+          role="option"
+          [attr.aria-selected]="isSelected(hit)"
+          [attr.aria-expanded]="isMarked(hit)"
           (click)="mark(hit)"
           (dblclick)="choose(hit)"
-          (keydown.enter)="choose(hit)"
+          (keydown.enter)="mark(hit)"
         >
           <span class="grow ellipsis">
             @let parts = splitName(hit.sourceAcronym);
@@ -657,9 +680,12 @@
           class="row oneline pick"
           tabindex="0"
           [class.marked]="isSelected(hit)"
+          role="option"
+          [attr.aria-selected]="isSelected(hit)"
+          [attr.aria-expanded]="isMarked(hit)"
           (click)="mark(hit)"
           (dblclick)="choose(hit)"
-          (keydown.enter)="choose(hit)"
+          (keydown.enter)="mark(hit)"
         >
           <span class="grow ellipsis">
             <span class="title" [title]="hit.termBaseLabel">{{ elide(hit.termBaseLabel) }}</span>
