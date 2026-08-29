@@ -23,11 +23,22 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "isolatedModules": true,
-    "skipLibCheck": true,
+    /*
+     * No `skipLibCheck`, which CEE also declines: the declarations in node_modules
+     * are checked rather than trusted.
+     */
     "importHelpers": true,
     "sourceMap": true,
     "declaration": false,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    /*
+     * Angular requires this false, and TypeScript defaults it to true whenever the
+     * target is ES2022 or higher. With it true a class field declaration is emitted
+     * as a constructor-time `Object.defineProperty`, which overwrites what Angular
+     * has already assigned to an input — so a bound input silently reverts to
+     * whatever the field declares.
+     */
+    "useDefineForClassFields": false
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
