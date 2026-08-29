@@ -46,14 +46,14 @@ A host may set these ten custom properties on the element, and they are the whol
 
 ```css
 cedar-term-picker {
-  --ctp-color-primary: #0f7686;      /* buttons, the active tab, the focus ring */
-  --ctp-color-on-primary: #ffffff;   /* text on the primary */
-  --ctp-color-heading: #0b3938;      /* row titles and labels */
+  --ctp-color-primary: #0f7686; /* buttons, the active tab, the focus ring */
+  --ctp-color-on-primary: #ffffff; /* text on the primary */
+  --ctp-color-heading: #0b3938; /* row titles and labels */
   --ctp-color-text: rgba(0, 0, 0, 0.87);
-  --ctp-color-muted: #555555;        /* counts, versions, everything supporting */
-  --ctp-color-surface: #f5f5f5;      /* the panel behind expanded rows */
+  --ctp-color-muted: #555555; /* counts, versions, everything supporting */
+  --ctp-color-surface: #f5f5f5; /* the panel behind expanded rows */
   --ctp-color-border: #d7e0df;
-  --ctp-color-warning: #856404;      /* obsolete terms, sources that were not searched */
+  --ctp-color-warning: #856404; /* obsolete terms, sources that were not searched */
   --ctp-font-family: 'CEE Roboto', 'Helvetica Neue', sans-serif;
   --ctp-font-size: 14px;
 }
@@ -91,14 +91,15 @@ its `cancelled` event. Nothing on that page ships.
 
 ## Building and Testing
 
-| Command | What it does |
-|---|---|
-| `npm run build:production` | the custom-element bundle, into `dist/cedar-term-picker` |
-| `npm test` | unit tests, through the Angular CLI's Vitest builder |
-| `npm run lint` | ESLint over TypeScript and templates, Prettier included |
-| `npm run typecheck` | `tsc` over every file under `src/` |
-| `npm run test:ci` | the gate: lint, typecheck, tests, then the production build |
-| `npm run audit:prod` | advisories against what actually ships |
+| Command                    | What it does                                                                                   |
+| -------------------------- | ---------------------------------------------------------------------------------------------- |
+| `npm run build:production` | the custom-element bundle, into `dist/cedar-term-picker`                                       |
+| `npm test`                 | unit tests, through the Angular CLI's Vitest builder                                           |
+| `npm run lint`             | ESLint over TypeScript and templates, Prettier included                                        |
+| `npm run typecheck`        | `tsc` over every file under `src/`                                                             |
+| `npm run dist`             | the distribution: one script, its declarations, and a staged package                           |
+| `npm run test:ci`          | the gate: lint, typecheck, tests, the production build, the browser tests and the distribution |
+| `npm run audit:prod`       | advisories against what actually ships                                                         |
 
 GitHub Actions runs the gate on push and pull request. The build is zoneless, so
 change detection runs on signals rather than on `zone.js` patching the browser's
@@ -109,6 +110,44 @@ Fuller development notes are in
 [VERSIONING-RUNBOOK.md](https://github.com/metadatacenter/cedar-development/blob/develop/ops/VERSIONING-RUNBOOK.md),
 which covers running, building and releasing the picker alongside the store it
 reads.
+
+## Packaging
+
+```shell
+npm run dist
+```
+
+Builds the picker, flattens Angular's module output into one classic script with
+esbuild, holds it to its size ceiling, and stages
+`dist-npm/cedar-term-picker/` from those exact bytes. The staging step builds
+nothing of its own — it copies the file the size gate measured — and verifies the
+result byte for byte afterwards.
+
+A host loads the script with a plain `<script>` tag and then has
+`<cedar-term-picker>`. Two properties and two events are the whole contract:
+
+```html
+<cedar-term-picker id="picker"></cedar-term-picker>
+<script src="cedar-term-picker.js"></script>
+<script>
+  const picker = document.getElementById('picker');
+  picker.terminologyBaseUrl = 'https://terminology.metadatacenter.org/';
+  picker.query = 'melanoma';
+  picker.addEventListener('selected', (event) => console.log(event.detail));
+  picker.addEventListener('cancelled', () => picker.remove());
+</script>
+```
+
+`terminologyBaseUrl` is what makes the picker embeddable at all. Unset, it asks
+its own origin for `/search`, which is what the development server's proxy
+answers and what no host page has.
+
+Which registry a package belongs to is derived from its version rather than
+passed at publish time: a version carrying `-dev.` names the CEDAR Nexus under
+`@org.metadatacenter`, anything else is a release for public npmjs, unscoped. A
+snapshot therefore cannot reach npmjs by forgetting a flag.
+
+Nothing has been published on either channel yet.
 
 ## Browser Support
 

@@ -42,9 +42,10 @@ jobs:
           npm --prefix browser ci
           ./browser/node_modules/.bin/playwright install --with-deps chromium
 
-      # Lint, typecheck, unit tests, the production build, then the browser tests against that
-      # build — each stage more expensive than the last, so a failure a cheaper check could have
-      # caught is reported by that check.
+      # Lint, typecheck, unit tests, packaging tests, the production build, the browser tests
+      # against that build, and then the distribution staged from those exact bytes — each stage
+      # more expensive than the last, so a failure a cheaper check could have caught is reported by
+      # that check.
       - name: Run the gate
         run: npm run test:ci
 

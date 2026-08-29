@@ -9,8 +9,22 @@ import { Hierarchy, SearchQuery, SearchResponse } from './search-types';
  */
 @Injectable({ providedIn: 'root' })
 export class TerminologyClient {
-  /** Same-origin, so the dev server's proxy sends it on and no CORS question arises. */
-  private readonly endpoint = '/search';
+  /**
+   * Where the terminology server's version-aware search lives.
+   *
+   * Same-origin by default, so the dev server's proxy sends it on and no CORS
+   * question arises. A host embedding the picker in its own page is not on the
+   * terminology server's origin and has no such proxy, so it names the base
+   * instead and this hangs off it — the path is the picker's, in the way CEE's
+   * `bioportal/integrated-search` is CEE's, and a host free to move it could only
+   * move it somewhere nothing answers.
+   */
+  private endpoint = '/search';
+
+  /** Point the client at a host-named terminology server. Must end in a slash. */
+  setBaseUrl(baseUrl: string | null): void {
+    this.endpoint = baseUrl === null ? '/search' : `${baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`}search`;
+  }
 
   /**
    * Runs a search, or reports why the server would not.

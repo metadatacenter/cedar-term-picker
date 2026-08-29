@@ -1,8 +1,7 @@
 {
   "name": "cedar-term-picker",
   "description": "A reusable Web Component for choosing what constrains a CEDAR field.",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0-dev.20260829.7cff9fb3",
   "engines": {
     "node": "^24.15.0"
   },
@@ -16,9 +15,16 @@
     "lint": "ng lint",
     "typecheck": "tsc -p tsconfig.eslint.json --noEmit",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
-    "test:ci": "npm run lint && npm run typecheck && npm test && npm run build:production && npm run test:browser:prebuilt",
+    "test:ci": "npm run lint && npm run typecheck && npm test && npm run test:packaging && npm run build:production && npm run test:browser:prebuilt && npm run bundle && npm run check:size && npm run package:npm",
     "test:browser": "npm run build:production && npm --prefix browser test",
-    "test:browser:prebuilt": "npm --prefix browser test"
+    "test:browser:prebuilt": "npm --prefix browser test",
+    "types:public": "tsc -p tsconfig.public-api.json",
+    "bundle": "node scripts/make-bundle.mjs",
+    "check:size": "node scripts/check-bundle-size.mjs",
+    "package:npm": "npm run types:public && node scripts/stage-npm-package.mjs && npm run check:npm-package",
+    "check:npm-package": "node scripts/check-npm-package.mjs",
+    "test:packaging": "node --test scripts/npm-package.test.mjs",
+    "dist": "npm run build:production && npm run bundle && npm run check:size && npm run package:npm"
   },
   "dependencies": {
     "@angular/common": "^22.1.0",
@@ -37,6 +43,7 @@
     "@eslint/js": "^9.39.5",
     "@types/node": "^24.9.2",
     "angular-eslint": "^22.1.0",
+    "esbuild": "^0.25.12",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.6",
@@ -46,5 +53,14 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.66.0",
     "vitest": "^4.1.10"
-  }
+  },
+  "license": "BSD-2-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/metadatacenter/cedar-term-picker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/metadatacenter/cedar-term-picker/issues"
+  },
+  "homepage": "https://github.com/metadatacenter/cedar-term-picker#readme"
 }

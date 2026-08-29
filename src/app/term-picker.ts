@@ -130,6 +130,15 @@ export class TermPicker {
   /** The query the picker opens on, so a host can seed it from the field's name. */
   readonly query = input('');
 
+  /**
+   * Where the terminology server is, for a host that is not on its origin.
+   *
+   * Unset, the picker asks its own origin for `/search`, which is what the
+   * development server's proxy answers. A page embedding the picker has no such
+   * proxy, so it names the base and the picker hangs its own path off it.
+   */
+  readonly terminologyBaseUrl = input<string | null>(null);
+
   /** The constraint the author chose, in the shape the template will store. */
   readonly selected = output<SelectedConstraint>();
 
@@ -268,6 +277,11 @@ export class TermPicker {
   private inFlight?: AbortController;
 
   constructor() {
+    // A host that names a terminology server does so before the first search, and
+    // may change it; either way the client follows the input rather than reading
+    // it once at construction.
+    effect(() => this.client.setBaseUrl(this.terminologyBaseUrl()));
+
     effect(() => {
       const query = this.text().trim();
       const belowFloor = query.length > 0 && query.length < MIN_CORPUS_QUERY && this.narrowedTo().length === 0;

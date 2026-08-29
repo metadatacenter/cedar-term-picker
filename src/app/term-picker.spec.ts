@@ -7,6 +7,13 @@ import { SearchQuery, SearchResponse } from './search/search-types';
 /** A client that answers from a fixture, so these specs need no server. */
 class StubClient {
   lastQuery: SearchQuery | null = null;
+  /** Recorded rather than ignored: the picker sets this from its input on every change. */
+  baseUrl: string | null = null;
+
+  setBaseUrl(baseUrl: string | null): void {
+    this.baseUrl = baseUrl;
+  }
+
   response: SearchResponse = {
     query: 'melanoma',
     sources: [
