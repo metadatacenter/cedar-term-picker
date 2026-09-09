@@ -55,7 +55,7 @@
         <td>
           <span>{{ c.ontologyId || c.sourceId }}</span
           ><small
-            >{{ c.sourceSystem || 'bioportal' }} · {{ c.version?.declaredVersion || c.version?.id || 'latest' }}</small
+            > · {{ c.sourceSystem || 'bioportal' }} · {{ c.version?.declaredVersion || c.version?.id || 'latest' }}</small
           >
         </td>
         <td class="constraint-row-actions">
@@ -65,8 +65,9 @@
             [attr.aria-label]="'Remove constraint ' + (i + 1)"
             title="Remove constraint"
           >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-              <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+            <!-- Same Font Awesome trash glyph as the Groups/Permissions dialogs. -->
+            <svg viewBox="0 0 1408 1536" width="14" height="15" fill="currentColor" aria-hidden="true">
+              <path transform="translate(0 1408) scale(1 -1)" d="M512 160v704q0 14 -9 23t-23 9h-64q-14 0 -23 -9t-9 -23v-704q0 -14 9 -23t23 -9h64q14 0 23 9t9 23zM768 160v704q0 14 -9 23t-23 9h-64q-14 0 -23 -9t-9 -23v-704q0 -14 9 -23t23 -9h64q14 0 23 9t9 23zM1024 160v704q0 14 -9 23t-23 9h-64q-14 0 -23 -9t-9 -23v-704 q0 -14 9 -23t23 -9h64q14 0 23 9t9 23zM480 1152h448l-48 117q-7 9 -17 11h-317q-10 -2 -17 -11zM1408 1120v-64q0 -14 -9 -23t-23 -9h-96v-948q0 -83 -47 -143.5t-113 -60.5h-832q-66 0 -113 58.5t-47 141.5v952h-96q-14 0 -23 9t-9 23v64q0 14 9 23t23 9h309l70 167 q15 37 54 63t79 26h320q40 0 79 -26t54 -63l70 -167h309q14 0 23 -9t9 -23z" />
             </svg>
           </button>
         </td>
