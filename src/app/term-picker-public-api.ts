@@ -27,7 +27,7 @@ export type {
   VersionSelector,
 } from './search/search-types';
 
-import type { SelectedConstraint } from './search/search-types';
+import type { SelectedConstraint, SourceSelector } from './search/search-types';
 
 /**
  * The picker, as a host sees it.
@@ -38,6 +38,10 @@ import type { SelectedConstraint } from './search/search-types';
  */
 export interface CedarTermPickerElement extends HTMLElement {
   query: string;
+  /** Term mode only emits individual terms, for a field's default value. */
+  selectionMode: 'constraint' | 'term';
+  /** Fixed vocabulary scope; empty means search all sources. */
+  sources: readonly SourceSelector[];
   terminologyBaseUrl: string | null;
 
   /*

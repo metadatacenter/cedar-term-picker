@@ -31,8 +31,8 @@ ranking ontologies by what they hold, narrowing to the ones an author names,
 paging through the rest, and stepping a constraint back through an ontology's
 releases.
 
-It is not embedded anywhere yet. The component runs in its own development
-host, and putting it in the Template Designer is later work.
+The embeddable designer uses it for vocabulary constraints and controlled-term
+default values. It also runs in its own development host.
 
 Planned work, and the decisions already taken, are tracked with the rest of
 versioning in
@@ -124,7 +124,8 @@ nothing of its own — it copies the file the size gate measured — and verifie
 result byte for byte afterwards.
 
 A host loads the script with a plain `<script>` tag and then has
-`<cedar-term-picker>`. Two properties and two events are the whole contract:
+`<cedar-term-picker>`. Properties configure its search and selection mode; two events report selection
+and cancellation:
 
 ```html
 <cedar-term-picker id="picker"></cedar-term-picker>
@@ -141,6 +142,14 @@ A host loads the script with a plain `<script>` tag and then has
 `terminologyBaseUrl` is what makes the picker embeddable at all. Unset, it asks
 its own origin for `/search`, which is what the development server's proxy
 answers and what no host page has.
+
+For a default value, set `selectionMode = 'term'`. Only individual terms can be
+selected in this mode; ontology, branch and value-set constraint tabs are hidden.
+Set `sources = [{ sourceAcronym: 'DOID' }]` to fix the vocabulary scope. Entries
+accept the same optional `version` selector as search requests. The default mode
+is `'constraint'`, and an empty source list searches all sources. A host using a
+term as a field default must also verify it against the field's constraints;
+source scoping alone does not enforce branch or value-set membership.
 
 Which registry a package belongs to is derived from its version rather than
 passed at publish time: a version carrying `-dev.` names the CEDAR Nexus under

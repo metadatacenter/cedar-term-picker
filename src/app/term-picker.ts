@@ -130,6 +130,11 @@ export class TermPicker {
   /** The query the picker opens on, so a host can seed it from the field's name. */
   readonly query = input('');
 
+  /** A default is one term; constraint authoring also offers branches and vocabularies. */
+  readonly selectionMode = input<'constraint' | 'term'>('constraint');
+  /** Optional fixed search scope supplied by a host's field constraint. */
+  readonly sources = input<readonly SourceSelector[]>([]);
+
   /**
    * Where the terminology server is, for a host that is not on its origin.
    *
@@ -270,7 +275,9 @@ export class TermPicker {
   /** The ontology whose release history is open beneath its row. One at a time. */
   protected readonly historyFor = signal<string | null>(null);
 
-  protected readonly tabs = TAB_ORDER;
+  protected readonly tabs = computed<readonly SearchKind[]>(() =>
+    this.selectionMode() === 'term' ? ['class'] : TAB_ORDER,
+  );
   protected readonly tabLabels = TAB_LABELS;
 
   private debounce?: ReturnType<typeof setTimeout>;
@@ -283,8 +290,11 @@ export class TermPicker {
     effect(() => this.client.setBaseUrl(this.terminologyBaseUrl()));
 
     effect(() => {
+      if (this.selectionMode() === 'term') this.activeTab.set('class');
       const query = this.text().trim();
-      const belowFloor = query.length > 0 && query.length < MIN_CORPUS_QUERY && this.narrowedTo().length === 0;
+      const sources = this.sources();
+      const belowFloor =
+        query.length > 0 && query.length < MIN_CORPUS_QUERY && this.narrowedTo().length === 0 && sources.length === 0;
       clearTimeout(this.debounce);
       this.debounce = setTimeout(
         () => (belowFloor ? this.declineCorpusWide() : void this.run(query)),
@@ -343,7 +353,12 @@ export class TermPicker {
     this.error.set(null);
     try {
       const response = await this.client.search(
-        { query, pageSize: PAGE_SIZE, sources: this.sourceSelectors() },
+        {
+          query,
+          pageSize: PAGE_SIZE,
+          sources: this.sourceSelectors(),
+          ...(this.selectionMode() === 'term' ? { types: ['class'] as const } : {}),
+        },
         controller.signal,
       );
       this.response.set(response);
@@ -476,7 +491,14 @@ export class TermPicker {
     return this.response()?.results[kind]?.collection ?? [];
   }
 
+  /** A field's fixed release applies to browsing as well as search. */
+  private hierarchyVersion(acronym: string): string | undefined {
+    const fixed = this.sources().find((source) => source.sourceAcronym === acronym)?.version;
+    return fixed && fixed !== 'latest' ? fixed.id : this.pinned().get(acronym)?.id;
+  }
+
   private sourceSelectors(): readonly SourceSelector[] | undefined {
+    if (this.sources().length) return this.sources();
     const acronyms = this.narrowedTo();
     return acronyms.length === 0 ? undefined : acronyms.map((sourceAcronym) => ({ sourceAcronym }));
   }
@@ -1204,14 +1226,14 @@ export class TermPicker {
   private async readHierarchy(hit: ClassHit | BranchHit): Promise<void> {
     // Keyed by release as well as by term: a hierarchy belongs to a release, so stepping an
     // ontology back asks again rather than redrawing the shape the current one happens to have.
-    const key = `${this.keyOf(hit)}\u0000${this.pinned().get(hit.sourceAcronym)?.id ?? ''}`;
+    const key = `${this.keyOf(hit)}\u0000${this.hierarchyVersion(hit.sourceAcronym) ?? ''}`;
     if (this.hierarchies().has(key)) {
       return;
     }
     const iri = this.termIriOf(hit);
     let outcome: HierarchyOutcome;
     try {
-      outcome = await this.client.hierarchy(hit.sourceAcronym, iri, this.pinned().get(hit.sourceAcronym)?.id);
+      outcome = await this.client.hierarchy(hit.sourceAcronym, iri, this.hierarchyVersion(hit.sourceAcronym));
     } catch (error) {
       // A hierarchy is context, not the answer, so a failure leaves the panel without it rather
       // than replacing the results. What it must not do is claim the store holds nothing: nothing
@@ -1230,7 +1252,7 @@ export class TermPicker {
   }
 
   private hierarchyOutcomeOf(hit: Hit): HierarchyOutcome | undefined {
-    return this.hierarchies().get(`${this.keyOf(hit)}\u0000${this.pinned().get(hit.sourceAcronym)?.id ?? ''}`);
+    return this.hierarchies().get(`${this.keyOf(hit)}\u0000${this.hierarchyVersion(hit.sourceAcronym) ?? ''}`);
   }
 
   /** The tree, where one was read. */
@@ -1261,7 +1283,7 @@ export class TermPicker {
    * redrawn from what the other release holds.
    */
   private nodeKey(acronym: string, iri: string): string {
-    return `${acronym}\u0000${iri}\u0000${this.pinned().get(acronym)?.id ?? ''}`;
+    return `${acronym}\u0000${iri}\u0000${this.hierarchyVersion(acronym) ?? ''}`;
   }
 
   protected isNodeOpen(acronym: string, iri: string): boolean {
@@ -1334,7 +1356,7 @@ export class TermPicker {
     const attempt = new AbortController();
     this.nodeInFlight.set(key, attempt);
     try {
-      const outcome = await this.client.hierarchy(acronym, iri, this.pinned().get(acronym)?.id, attempt.signal, offset);
+      const outcome = await this.client.hierarchy(acronym, iri, this.hierarchyVersion(acronym), attempt.signal, offset);
       if (outcome.kind !== 'found') {
         return;
       }
@@ -1360,7 +1382,7 @@ export class TermPicker {
       return;
     }
     try {
-      const outcome = await this.client.hierarchy(acronym, iri, this.pinned().get(acronym)?.id);
+      const outcome = await this.client.hierarchy(acronym, iri, this.hierarchyVersion(acronym));
       this.nodes.update((held) => new Map(held).set(key, outcome.kind === 'found' ? outcome.hierarchy : null));
     } catch {
       this.nodes.update((held) => new Map(held).set(key, null));
@@ -1541,10 +1563,14 @@ export class TermPicker {
    * at publish time, so there is nothing here to be inconsistent with.
    */
   protected unrecordable(hit: Hit | null): string | null {
+    if (hit && this.selectionMode() === 'term' && hit.type !== 'class')
+      return 'Choose a single term for the default value.';
+    if (hit && this.sources().length && !this.sources().some((source) => source.sourceAcronym === hit.sourceAcronym))
+      return 'Choose a term from the field vocabulary.';
     if (hit === null || (hit.type !== 'class' && hit.type !== 'branch')) {
       return null;
     }
-    if (!this.pinned().has(hit.sourceAcronym)) {
+    if (!this.hierarchyVersion(hit.sourceAcronym)) {
       return null;
     }
     const outcome = this.hierarchyOutcomeOf(hit);
@@ -1570,6 +1596,7 @@ export class TermPicker {
 
   /** How many releases this ontology has, when it has more than the one on the row. */
   protected versionCount(acronym: string): number | undefined {
+    if (this.selectionMode() === 'term') return undefined;
     const source = this.sourceOf(acronym);
     const count = source?.versionCount ?? 1;
     return source?.pinnable === true && count > 1 ? count : undefined;

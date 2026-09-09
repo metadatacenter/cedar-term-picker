@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { TermPicker } from './term-picker';
 import { TAB_ORDER } from './search/search-types';
@@ -121,6 +122,34 @@ describe('TermPicker', () => {
     // The search is debounced, so a spec has to wait the debounce out rather than the microtask.
     await new Promise((resolve) => setTimeout(resolve, 400));
   }
+
+  it('offers only terms and searches the fixed source when collecting a default', async () => {
+    const fixture = TestBed.createComponent(TermPicker);
+    fixture.componentRef.setInput('selectionMode', 'term');
+    fixture.componentRef.setInput('sources', [{ sourceAcronym: 'NCIT' }]);
+    fixture.componentRef.setInput('query', 'me');
+    await fixture.whenStable();
+    await settle();
+    await fixture.whenStable();
+    expect(shadow(fixture).querySelectorAll('.tab')).toHaveLength(1);
+    expect(client.lastQuery?.types).toEqual(['class']);
+    expect(client.lastQuery?.sources).toEqual([{ sourceAcronym: 'NCIT' }]);
+    expect(shadow(fixture).querySelector('.narrowing')?.textContent).toContain('NCIT');
+  });
+
+  it('refuses vocabulary selections in term mode', async () => {
+    const fixture = TestBed.createComponent(TermPicker);
+    fixture.componentRef.setInput('selectionMode', 'term');
+    await fixture.whenStable();
+    const selected = vi.fn();
+    fixture.componentInstance.selected.subscribe(selected);
+    // Exercise the final guard, including a stale row from a previous selection mode.
+    const picker = fixture.componentInstance as unknown as { choose(hit: unknown): void };
+    picker.choose({ type: 'ontology', sourceAcronym: 'NCIT' });
+    expect(selected).not.toHaveBeenCalled();
+    picker.choose({ type: 'class', sourceAcronym: 'NCIT', termIri: 'urn:term', termLabel: 'Term' });
+    expect(selected).toHaveBeenCalledOnce();
+  });
 
   it('names the four kinds a query answers', async () => {
     const fixture = TestBed.createComponent(TermPicker);
