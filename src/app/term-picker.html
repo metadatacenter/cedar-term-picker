@@ -340,7 +340,16 @@
           without re-reading the phrasing. It also retires the "Everything under" / "Every term in"
           prefixes the phrase used to carry, which said the same thing twice.
         -->
-      <span class="label">Selected {{ chosen.noun }}</span>
+      <div class="selection-heading">
+        <span class="label">Selected {{ chosen.noun }}</span>
+        @if (selectionMode() === 'constraints') {
+          @if (picked(); as hit) {
+            <button type="button" [disabled]="!!selectionBlocked()" (click)="choose(hit)">
+              {{ editing() !== null ? 'Replace in table' : 'Add to table' }}
+            </button>
+          }
+        }
+      </div>
       <p class="phrase">
         <strong [title]="chosen.what">{{ elide(chosen.what, 72, 20) }}</strong>
       </p>

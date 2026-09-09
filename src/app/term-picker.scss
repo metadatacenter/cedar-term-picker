@@ -1206,3 +1206,12 @@ mark {
   color: var(--ctp-color-muted);
   summary { cursor: pointer; }
 }
+
+.selection-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  grid-column: 1 / -1;
+  button:disabled { opacity: 0.4; cursor: default; }
+}
