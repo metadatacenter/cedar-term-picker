@@ -1235,3 +1235,22 @@ mark {
   dt { font-weight: 400; color: var(--ctp-color-muted); }
   dd { margin: 0; min-width: 0; }
 }
+
+.selection-detail { display: contents; }
+.set-mode .selection-detail {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  background: var(--ctp-color-surface);
+  .detail { grid-column: 1; margin: 0; }
+  .use {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0 6px 0 0;
+    background: var(--ctp-color-primary);
+    color: var(--ctp-color-on-primary);
+  }
+  .use:disabled { opacity: 0.4; cursor: default; }
+}

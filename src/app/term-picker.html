@@ -28,6 +28,7 @@
       @for (c of draft().constraints; track $index; let i = $index) {
       <tr>
         <td>
+          @if (c.sourceType === 'ontology-branch') {
           <details>
             <summary><span class="constraint-kind">{{ constraintKind(c) }}</span> {{ constraintLabel(c) }}</summary>
             <dl>
@@ -50,6 +51,11 @@
             /></label>
             }
           </details>
+          } @else {
+            <span [title]="(c.uri || c.sourceId || '') + '\nSource: ' + (c.iri || c.ontologyId || c.sourceId || '') + '\nVersion: ' + (c.version?.id || 'latest')">
+              <span class="constraint-kind">{{ constraintKind(c) }}</span> {{ constraintLabel(c) }}
+            </span>
+          }
         </td>
         <td>
           <span>{{ c.ontologyId || c.sourceId }}</span
@@ -135,6 +141,7 @@
       an author is deciding about, and the decision is a term IRI written into a template — so the
       IRI is here in full, beside the things that say whether it is the right concept.
     -->
+  <div class="selection-detail">
   <dl class="detail">
     @if (hit.type === 'ontology' || hit.type === 'valueSet') {
     <dt>{{ hit.type === 'ontology' ? 'Ontology IRI' : 'Value set IRI' }}</dt>
@@ -243,15 +250,10 @@
     </dd>
     }
   </dl>
-  <!--
-      The commit, where a keyboard can reach it, and after the detail rather than before: Enter on a
-      row opens this panel instead of writing the constraint, so an author who cannot use a mouse
-      gets the look that a double click gave a mouse for free, and the control sits where the reading
-      ends. Double click still commits, being quicker for someone who can already see the choice.
-    -->
-  <button type="button" class="use" (click)="choose(hit)">
-    {{ selectionMode() === 'constraints' ? 'Add to table' : 'Use this term' }}
+  <button type="button" class="use" [disabled]="!!selectionBlocked()" (click)="choose(picked() || hit)">
+    {{ selectionMode() === 'constraints' ? 'Select' : 'Use this term' }}
   </button>
+  </div>
   }
 </ng-template>
 
@@ -340,7 +342,7 @@
         @if (selectionMode() === 'constraints') {
           @if (picked(); as hit) {
             <button type="button" [disabled]="!!selectionBlocked()" (click)="choose(hit)">
-              Add to table
+              Select
             </button>
           }
         }
