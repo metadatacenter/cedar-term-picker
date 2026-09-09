@@ -485,7 +485,6 @@ button {
   &.marked:hover {
     background: var(--ctp-color-tint);
   }
-
 }
 
 // Dismissal. A glyph rather than a word: it is the one control on the bar that answers nothing, and
@@ -1002,8 +1001,6 @@ mark {
   margin: 0.75rem 0 0;
 }
 
-
-
 .empty {
   color: var(--ctp-color-muted);
   font-size: var(--ctp-font-size-small);
@@ -1029,4 +1026,135 @@ mark {
 .use:focus-visible {
   outline: 2px solid var(--cedar-focus, #1f6feb);
   outline-offset: 2px;
+}
+
+// Compact bordered rows and quiet column headings follow the Groups and Permissions dialogs.
+.constraint-set {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--ctp-color-border);
+  max-height: 38vh;
+  @include scrolls;
+  h2 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 500;
+  }
+  h3 {
+    margin: 18px 0 6px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  p {
+    margin: 6px 0 12px;
+    color: var(--ctp-color-muted);
+  }
+  p,
+  label,
+  dd,
+  dt {
+    font-size: 13px;
+  }
+  button {
+    margin: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    border: 1px solid var(--ctp-color-border);
+    border-radius: 3px;
+    background: white;
+    color: var(--ctp-color-primary);
+  }
+  button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  button:hover:enabled {
+    background: var(--ctp-color-surface);
+  }
+  input {
+    width: 80px;
+    padding: 5px;
+    border: 1px solid var(--ctp-color-border);
+  }
+  select {
+    padding: 6px;
+    max-width: 100%;
+  }
+  dt {
+    font-weight: 500;
+  }
+  dd {
+    margin: 4px 0 10px;
+    overflow-wrap: anywhere;
+  }
+  .use {
+    background: var(--ctp-color-primary);
+    color: white;
+  }
+}
+.constraint-table {
+  width: 100%;
+  border: 1px solid #ccc;
+  border-collapse: collapse;
+  table-layout: fixed;
+  th {
+    padding: 8px 12px;
+    color: #666;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+  }
+  th:first-child {
+    width: 48%;
+  }
+  th:last-child {
+    width: 112px;
+  }
+  td {
+    padding: 8px 12px;
+    border-top: 1px solid #ccc;
+    min-height: 42px;
+    font-size: 13px;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+  small {
+    display: block;
+    color: #666;
+    padding-top: 3px;
+  }
+  summary {
+    cursor: pointer;
+  }
+  .constraint-row-actions {
+    white-space: nowrap;
+    text-align: right;
+    padding-left: 0;
+  }
+  .constraint-row-actions button {
+    border: 0;
+    padding: 4px 6px;
+    margin: 0;
+    font-size: 18px;
+  }
+  .constraint-empty {
+    color: #666;
+    padding: 18px 12px;
+  }
+}
+.constraint-kind {
+  font-size: 11px;
+  color: #666;
+  background: #eef1f2;
+  border-radius: 3px;
+  padding: 2px 5px;
+  margin-right: 5px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

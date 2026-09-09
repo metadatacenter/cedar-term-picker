@@ -1,3 +1,5 @@
+export type { ControlledTermSet, ControlledTermConfig, ControlledTermAction } from './search/constraint-set';
+import type { ControlledTermSet } from './search/constraint-set';
 /**
  * The contract an embedding page programs against.
  *
@@ -39,7 +41,8 @@ import type { SelectedConstraint, SourceSelector } from './search/search-types';
 export interface CedarTermPickerElement extends HTMLElement {
   query: string;
   /** Term mode only emits individual terms, for a field's default value. */
-  selectionMode: 'constraint' | 'term';
+  selectionMode: 'constraint' | 'constraints' | 'term';
+  constraintSet: ControlledTermSet;
   /** Fixed vocabulary scope; empty means search all sources. */
   sources: readonly SourceSelector[];
   terminologyBaseUrl: string | null;
@@ -57,6 +60,16 @@ export interface CedarTermPickerElement extends HTMLElement {
   addEventListener<K extends keyof HTMLElementEventMap>(
     type: K,
     listener: (this: HTMLElement, event: HTMLElementEventMap[K]) => unknown,
+    options?: boolean | AddEventListenerOptions,
+  ): void;
+  addEventListener(
+    type: 'constraintsChanged',
+    listener: (event: CustomEvent<void>) => void,
+    options?: boolean | AddEventListenerOptions,
+  ): void;
+  addEventListener(
+    type: 'constraintsSelected',
+    listener: (event: CustomEvent<ControlledTermSet>) => void,
     options?: boolean | AddEventListenerOptions,
   ): void;
   addEventListener(

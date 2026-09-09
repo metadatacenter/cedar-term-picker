@@ -134,7 +134,9 @@ and cancellation:
   const picker = document.getElementById('picker');
   picker.terminologyBaseUrl = 'https://terminology.metadatacenter.org/';
   picker.query = 'melanoma';
-  picker.addEventListener('selected', (event) => console.log(event.detail));
+  picker.selectionMode = 'constraints';
+  picker.constraintSet = { constraints: [], actions: [] };
+  picker.addEventListener('constraintsSelected', (event) => console.log(event.detail));
   picker.addEventListener('cancelled', () => picker.remove());
 </script>
 ```
@@ -143,13 +145,24 @@ and cancellation:
 its own origin for `/search`, which is what the development server's proxy
 answers and what no host page has.
 
-For a default value, set `selectionMode = 'term'`. Only individual terms can be
-selected in this mode; ontology, branch and value-set constraint tabs are hidden.
-Set `sources = [{ sourceAcronym: 'DOID' }]` to fix the vocabulary scope. Entries
-accept the same optional `version` selector as search requests. The default mode
-is `'constraint'`, and an empty source list searches all sources. A host using a
-term as a field default must also verify it against the field's constraints;
-source scoping alone does not enforce branch or value-set membership.
+To assemble a field's complete constraint set, set `selectionMode = 'constraints'`
+and assign `constraintSet = { constraints: [], actions: [] }` (or the existing set).
+Selections add to the draft. Its tables let authors inspect, replace and remove
+individual entries, edit branch depth, and arrange the constraint list. Term
+exclusions (`delete`) and result positions (`move`, zero-based) are separate actions.
+`constraintsSelected` emits the complete draft when **Apply constraints** is pressed;
+`constraintsChanged` signals that the draft has changed (for invalidating pending
+host validation). `cancelled` leaves the host's original set unchanged. The import-free
+`ControlledTermSet`, `ControlledTermConfig` and `ControlledTermAction` declarations
+ship with the public API. Serialization belongs to the host's model library.
+
+The default `selectionMode = 'constraint'` retains the single-selection `selected`
+event for existing hosts. For a field default use `selectionMode = 'term'`, which
+only emits individual terms. `sources` accepts source systems, acronyms and version
+selectors. When several scopes are supplied, a vocabulary/release selector searches
+one at a time, including distinct pins of the same ontology. An empty list searches
+all sources. The host must verify a chosen default against the complete field
+constraints and actions; vocabulary scoping alone does not enforce membership.
 
 Which registry a package belongs to is derived from its version rather than
 passed at publish time: a version carrying `-dev.` names the CEDAR Nexus under

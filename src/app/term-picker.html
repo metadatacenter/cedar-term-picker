@@ -1,3 +1,187 @@
+@if (selectionMode() === 'term' && sources().length > 1) {
+<label class="constraint-set"
+  >Search vocabulary and release
+  <select [value]="scopeIndex()" (change)="scopeIndex.set(numberOf($event))">
+    @for (source of sources(); track $index) {
+    <option [value]="$index">
+      {{ source.sourceSystem || 'bioportal' }} · {{ source.sourceAcronym }} · {{ source.version === 'latest' ? 'latest'
+      : source.version?.id || 'latest' }}
+    </option>
+    }
+  </select>
+</label>
+} @if (selectionMode() === 'constraints') {
+<section class="constraint-set" aria-label="Field constraints">
+  <h2>Field constraints</h2>
+  <p>Add terms, branches, ontologies and value sets, then apply the complete set.</p>
+  <table class="constraint-table">
+    <thead>
+      <tr>
+        <th scope="col">Constraint</th>
+        <th scope="col">Source and release</th>
+        <th scope="col">Arrange</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of draft().constraints; track $index; let i = $index) {
+      <tr>
+        <td>
+          <details>
+            <summary><span class="constraint-kind">{{ constraintKind(c) }}</span> {{ constraintLabel(c) }}</summary>
+            <dl>
+              <dt>Identifier</dt>
+              <dd>{{ c.uri || c.branchRootId || c.sourceId }}</dd>
+              <dt>Source identity</dt>
+              <dd>{{ c.iri || 'Not recorded' }}</dd>
+              <dt>Version pin</dt>
+              <dd>{{ c.version?.id || 'Latest' }} {{ c.version?.effectiveDate }}</dd>
+            </dl>
+            @if (c.sourceType === 'ontology-branch') {
+            <label
+              >Maximum depth
+              <input
+                type="number"
+                min="0"
+                step="1"
+                [value]="c.searchDepth"
+                (change)="updateConstraint(i, { searchDepth: numberOf($event) })"
+            /></label>
+            }
+            <button type="button" (click)="editConstraint(i)">Replace constraint {{ i + 1 }}</button>
+          </details>
+        </td>
+        <td>
+          <span>{{ c.ontologyId || c.sourceId }}</span
+          ><small
+            >{{ c.sourceSystem || 'bioportal' }} · {{ c.version?.declaredVersion || c.version?.id || 'latest' }}</small
+          >
+        </td>
+        <td class="constraint-row-actions">
+          <button
+            type="button"
+            [disabled]="adjacentConstraint(i, -1) < 0"
+            (click)="moveConstraint(i, -1)"
+            aria-label="Move constraint earlier"
+            title="Move constraint earlier"
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            [disabled]="adjacentConstraint(i, 1) < 0"
+            (click)="moveConstraint(i, 1)"
+            aria-label="Move constraint later"
+            title="Move constraint later"
+          >
+            ↓
+          </button>
+          <button
+            type="button"
+            (click)="removeConstraint(i)"
+            [attr.aria-label]="'Remove constraint ' + (i + 1)"
+            title="Remove constraint"
+          >
+            ×
+          </button>
+        </td>
+      </tr>
+      } @empty {
+      <tr>
+        <td colspan="3" class="constraint-empty">No constraints yet. Search below to add one.</td>
+      </tr>
+      }
+    </tbody>
+  </table>
+  @if (editing() !== null) {
+  <p role="status">Choose a replacement for constraint {{ editing()! + 1 }}.</p>
+  <button type="button" (click)="editing.set(null)">Add instead</button>
+  }
+  <h3>Term exclusions and ordering</h3>
+  <p>
+    These actions affect the allowed terms and their result positions. The arrows above arrange constraints of the same
+    kind.
+  </p>
+  @if (draft().actions.length) {
+  <table class="constraint-table">
+    <thead>
+      <tr>
+        <th scope="col">Term action</th>
+        <th scope="col">Result position</th>
+        <th scope="col"><span class="sr-only">Remove</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (a of draft().actions; track $index; let i = $index) {
+      <tr>
+        <td>
+          <details>
+            <summary>
+              <span class="constraint-kind"
+                >{{ a.action === 'delete' ? 'Exclude' : a.action === 'move' ? 'Move' : a.action }}</span
+              >
+              {{ a.termUri }}
+            </summary>
+            <p>{{ a.source }} · {{ a.sourceUri }} · {{ a.type }}</p>
+          </details>
+        </td>
+        <td>
+          @if (a.action === 'move') {
+          <label
+            ><span class="sr-only">Result position (zero-based)</span
+            ><input type="number" min="0" step="1" [value]="a.to" (change)="updateAction(i, { to: numberOf($event) })"
+          /></label>
+          } @else { — }
+        </td>
+        <td class="constraint-row-actions">
+          <button
+            type="button"
+            (click)="removeAction(i)"
+            [attr.aria-label]="'Remove action ' + (i + 1)"
+            title="Remove action"
+          >
+            ×
+          </button>
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+  }
+  <button
+    type="button"
+    [disabled]="draft().constraints.length === 0"
+    (click)="actionMode.set('delete'); editing.set(null)"
+  >
+    Exclude a term
+  </button>
+  <button
+    type="button"
+    [disabled]="draft().constraints.length === 0"
+    (click)="actionMode.set('move'); editing.set(null)"
+  >
+    Set a term's result position
+  </button>
+  @if (actionMode(); as mode) {
+  <label
+    >Within constraint
+    <select [value]="actionConstraint()" (change)="actionConstraint.set(numberOf($event))">
+      @for (c of draft().constraints; track $index) {
+      <option [value]="$index">{{ constraintLabel(c) }}</option>
+      }
+    </select>
+  </label>
+  <p role="status">Choose the term to {{ mode === 'delete' ? 'exclude' : 'move' }}.</p>
+  @if (mode === 'move') {
+  <label
+    >Result position (zero-based)
+    <input type="number" min="0" [value]="actionPosition()" (change)="actionPosition.set(numberOf($event))"
+  /></label>
+  }
+  <button type="button" (click)="actionMode.set(null)">Cancel action</button>
+  }
+  <button type="button" class="use" (click)="applyConstraints()">Apply constraints</button>
+</section>
+}
 <ctp-font-registrar />
 
 <ng-template #stepper let-acronym>
@@ -8,21 +192,23 @@
   -->
   <!-- Empty where the source named no release, which is a cell holding nothing rather than a word. -->
   @if (versionOf(acronym); as version) {
-    <span class="version" [class.pinned]="isPinned(acronym)" [title]="'Version ' + version">{{
-      elide(version, 20, 8) }}</span>
+  <span class="version" [class.pinned]="isPinned(acronym)" [title]="'Version ' + version"
+    >{{ elide(version, 20, 8) }}</span
+  >
   } @else {
-    <span class="version"></span>
-  }
-  @if (versionCount(acronym); as count) {
-    <button
-      type="button"
-      class="of"
-      [attr.aria-expanded]="isHistoryOpen(acronym)"
-      [title]="'Show all ' + count + ' releases of ' + acronym"
-      (click)="openHistory(acronym); $event.stopPropagation()"
-    >of {{ count }}<span class="caret">{{ isHistoryOpen(acronym) ? '▴' : '▾' }}</span></button>
+  <span class="version"></span>
+  } @if (versionCount(acronym); as count) {
+  <button
+    type="button"
+    class="of"
+    [attr.aria-expanded]="isHistoryOpen(acronym)"
+    [title]="'Show all ' + count + ' releases of ' + acronym"
+    (click)="openHistory(acronym); $event.stopPropagation()"
+  >
+    of {{ count }}<span class="caret">{{ isHistoryOpen(acronym) ? '▴' : '▾' }}</span>
+  </button>
   } @else {
-    <span class="of"></span>
+  <span class="of"></span>
   }
 </ng-template>
 
@@ -38,82 +224,81 @@
 
 <ng-template #detail let-hit>
   @if (isMarked(hit)) {
-    <!--
+  <!--
       What the marked row is actually offering. The rows above it are the shortlist; this is the one
       an author is deciding about, and the decision is a term IRI written into a template — so the
       IRI is here in full, beside the things that say whether it is the right concept.
     -->
-    <dl class="detail">
-      @if (hit.type === 'ontology' || hit.type === 'valueSet') {
-        <dt>{{ hit.type === 'ontology' ? 'Ontology IRI' : 'Value set IRI' }}</dt>
-        <dd class="iri" [title]="termIriOf(hit)">{{
-          hit.type === 'ontology' ? sourceIriOf(hit) : termIriOf(hit)
-        }}</dd>
-      }
-
-      @if (hit.type === 'class' || hit.type === 'branch') {
-        <!--
+  <dl class="detail">
+    @if (hit.type === 'ontology' || hit.type === 'valueSet') {
+    <dt>{{ hit.type === 'ontology' ? 'Ontology IRI' : 'Value set IRI' }}</dt>
+    <dd class="iri" [title]="termIriOf(hit)">{{ hit.type === 'ontology' ? sourceIriOf(hit) : termIriOf(hit) }}</dd>
+    } @if (hit.type === 'class' || hit.type === 'branch') {
+    <!--
           Unlabelled, unlike the sections around it: a tree of terms under the row it belongs to
           reads as what it is, and a caption on it was a line of chrome saying so again.
         -->
-        <dd class="wide">
-          <!--
+    <dd class="wide">
+      <!--
             The tree is about the term last clicked in it, not the row the author searched into.
             `focus` is that term, and it is the row's own until something inside is clicked, so
             every read below — the tree, its rows, its paging, its refusal — addresses one subject.
           -->
-          @let focus = treeFocus(hit);
-          @if (hierarchyOf(focus)) {
-            <ol class="tree" (scroll)="onTreeScroll($event, focus)">
-              @for (row of treeRows(focus); track row.key) {
-                <li
-                  class="node"
-                  [class.self]="row.self"
-                  [class.spine]="row.onSpine"
-                  [class.picked]="isPicked(row)"
-                  [style.padding-left.rem]="row.depth * 0.9"
-                >
-                  @if (row.hasChildren) {
-                    <button
-                      type="button"
-                      class="twist"
-                      [attr.aria-expanded]="row.open"
-                      [title]="(row.open ? 'Collapse ' : 'Expand ') + row.label"
-                      (click)="toggleNode(row.acronym, row.iri)"
-                    >{{ row.open ? '▾' : '▸' }}</button>
-                  } @else {
-                    <span class="twist"></span>
-                  }
-                  <!--
+      @let focus = treeFocus(hit); @if (hierarchyOf(focus)) {
+      <ol class="tree" (scroll)="onTreeScroll($event, focus)">
+        @for (row of treeRows(focus); track row.key) {
+        <li
+          class="node"
+          [class.self]="row.self"
+          [class.spine]="row.onSpine"
+          [class.picked]="isPicked(row)"
+          [style.padding-left.rem]="row.depth * 0.9"
+        >
+          @if (row.hasChildren) {
+          <button
+            type="button"
+            class="twist"
+            [attr.aria-expanded]="row.open"
+            [title]="(row.open ? 'Collapse ' : 'Expand ') + row.label"
+            (click)="toggleNode(row.acronym, row.iri)"
+          >
+            {{ row.open ? '▾' : '▸' }}
+          </button>
+          } @else {
+          <span class="twist"></span>
+          }
+          <!--
                     A click selects the term, which the bar then states; opening a node is the
                     twist's job. Selecting inside the tree leaves the panel where it is: the tree is
                     where the term was found, and closing it would take the context with it.
                   -->
-                  <button
-                    type="button"
-                    class="term"
-                    [title]="row.iri + ' — double click to use it'"
-                    (click)="pickNode(hit, row)"
-                    (dblclick)="chooseNode(hit, row)"
-                  >{{ row.label }}</button>
-                  @if (row.loading) {
-                    <span class="meta inline">· reading…</span>
-                  }
-                  <!--
+          <button
+            type="button"
+            class="term"
+            [title]="row.iri + ' — double click to use it'"
+            (click)="pickNode(hit, row)"
+            (dblclick)="chooseNode(hit, row)"
+          >
+            {{ row.label }}
+          </button>
+          @if (row.loading) {
+          <span class="meta inline">· reading…</span>
+          }
+          <!--
                     An open node says how much of itself is on screen. Without it a capped list reads
                     as everything the node has: DOID's "disease" shows 50 of 194 children, and a
                     reader who scanned them for a term and did not find it concluded the release did
                     not hold it. Scrolling fetches the rest, so this is a statement about now rather
                     than a limit.
                   -->
-                  @if (row.open && row.total > row.shown) {
-                    <span class="meta inline">· {{ row.shown }} of {{ row.total }}</span>
-                  }
-                </li>
-              }
-            </ol>
-          } @else if (hierarchyRefusal(focus); as refusal) {
-            <!--
+          @if (row.open && row.total > row.shown) {
+          <span class="meta inline">· {{ row.shown }} of {{ row.total }}</span>
+          }
+        </li>
+        }
+      </ol>
+      } @else if (hierarchyRefusal(focus); as refusal) {
+      <!--
               The store's own sentence rather than a summary of it. One line covered every case and
               said the store holds no hierarchy for the term, which was wrong for a request that
               failed and wrong in a subtler way for a term absent from the pinned release alone: the
@@ -121,103 +306,92 @@
               looking for a broken ingest. A failure is said as a failure, so it is not read as an
               answer about what the store holds.
             -->
-            <span class="meta inline">{{
-              refusal.answered ? refusal.reason : 'the hierarchy could not be read: ' + refusal.reason
-            }}</span>
-          } @else {
-            <span class="meta inline">reading…</span>
-          }
-        </dd>
+      <span class="meta inline"
+        >{{ refusal.answered ? refusal.reason : 'the hierarchy could not be read: ' + refusal.reason }}</span
+      >
+      } @else {
+      <span class="meta inline">reading…</span>
       }
-
-      @if (hit.matchedLabels?.length) {
-        <dt>Matched</dt>
-        <dd>
-          @for (name of hit.matchedLabels; track name.label) {
-            <span class="chip">{{ name.label }}@if (name.language) { · {{ name.language }}}</span>
-          }
-        </dd>
+    </dd>
+    } @if (hit.matchedLabels?.length) {
+    <dt>Matched</dt>
+    <dd>
+      @for (name of hit.matchedLabels; track name.label) {
+      <span class="chip">{{ name.label }}@if (name.language) { · {{ name.language }}}</span>
       }
-
-      @if (namesOf(hit); as names) {
-        <dt>Also called</dt>
-        <dd>
-          @for (name of names; track name.label) {
-            <span class="alias">{{ elide(name.label, 44, 12) }}@if (name.language) { · {{
-              name.language }}}</span>
-          }
-          @if (moreNames(hit); as more) {
-            <span class="meta inline">and {{ more }} more</span>
-          }
-        </dd>
+    </dd>
+    } @if (namesOf(hit); as names) {
+    <dt>Also called</dt>
+    <dd>
+      @for (name of names; track name.label) {
+      <span class="alias">{{ elide(name.label, 44, 12) }}@if (name.language) { · {{ name.language }}}</span>
+      } @if (moreNames(hit); as more) {
+      <span class="meta inline">and {{ more }} more</span>
       }
-
-      @if (hit.obsolete) {
-        <dt>Deprecated</dt>
-        <dd>
-          @if (hit.replacedBy) {
-            replaced by {{ hit.replacedBy.termLabel ?? hit.replacedBy.termIri }}
-          } @else {
-            the source names no replacement
-          }
-        </dd>
-      }
-
-    </dl>
-    <!--
+    </dd>
+    } @if (hit.obsolete) {
+    <dt>Deprecated</dt>
+    <dd>
+      @if (hit.replacedBy) { replaced by {{ hit.replacedBy.termLabel ?? hit.replacedBy.termIri }} } @else { the source
+      names no replacement }
+    </dd>
+    }
+  </dl>
+  <!--
       The commit, where a keyboard can reach it, and after the detail rather than before: Enter on a
       row opens this panel instead of writing the constraint, so an author who cannot use a mouse
       gets the look that a double click gave a mouse for free, and the control sits where the reading
       ends. Double click still commits, being quicker for someone who can already see the choice.
     -->
-    <button type="button" class="use" (click)="choose(hit)">Use this term</button>
+  <button type="button" class="use" (click)="choose(hit)">
+    {{ selectionMode() === 'constraints' ? (actionMode() ? 'Add term action' : editing() !== null ? 'Replace constraint'
+    : 'Add constraint') : 'Use this term' }}
+  </button>
   }
 </ng-template>
 
 <ng-template #history let-hit>
-  @let acronym = hit.sourceAcronym;
-  @if (isHistoryOpen(acronym)) {
-    <!--
+  @let acronym = hit.sourceAcronym; @if (isHistoryOpen(acronym)) {
+  <!--
       Every release, not the one the row happens to be reading. An author stepping blind through
       eight of them cannot tell which they have reached; the hash is what makes a pin reproducible
       and the effective date is what identifies a release to a person, so the panel shows both.
     -->
-    <div class="history">
-      @if (historyOf(acronym); as releases) {
-        <!--
+  <div class="history">
+    @if (historyOf(acronym); as releases) {
+    <!--
           The heading stays put while the list moves under it, which is what says the list moves.
           It also names the hash column: a bare row of hex beside a date explains nothing.
         -->
-        <p class="releases-head">
-          <span class="grow">{{ releases.length }} releases, newest first</span>
-          <span class="date">effective date</span>
-          <span class="hash">content hash</span>
-          <span class="tag"></span>
-        </p>
-        <ol class="releases">
-          @for (release of releases; track release.id; let i = $index) {
-            <li>
-              <button
-                type="button"
-                class="release"
-                [class.on]="isShowing(acronym, release, i)"
-                (click)="pinTo(hit, release, i)"
-              >
-                <span class="declared">{{ release.declaredVersion ?? 'no declared version' }}</span>
-                <span class="date" [title]="release.effectiveDate ?? ''">{{
-                  (release.effectiveDate ?? '').slice(0, 10)
-                }}</span>
-                <code class="hash" [title]="release.id">{{ shortHash(release.id) }}</code>
-                <span class="tag">{{ i === 0 ? 'latest' : '' }}</span>
-              </button>
-            </li>
-          }
-        </ol>
+    <p class="releases-head">
+      <span class="grow">{{ releases.length }} releases, newest first</span>
+      <span class="date">effective date</span>
+      <span class="hash">content hash</span>
+      <span class="tag"></span>
+    </p>
+    <ol class="releases">
+      @for (release of releases; track release.id; let i = $index) {
+      <li>
+        <button
+          type="button"
+          class="release"
+          [class.on]="isShowing(acronym, release, i)"
+          (click)="pinTo(hit, release, i)"
+        >
+          <span class="declared">{{ release.declaredVersion ?? 'no declared version' }}</span>
+          <span class="date" [title]="release.effectiveDate ?? ''"
+            >{{ (release.effectiveDate ?? '').slice(0, 10) }}</span
+          >
+          <code class="hash" [title]="release.id">{{ shortHash(release.id) }}</code>
+          <span class="tag">{{ i === 0 ? 'latest' : '' }}</span>
+        </button>
+      </li>
       }
-      @if (historyOf(acronym).length === 0) {
-        <p class="empty">Reading the releases…</p>
-      }
-    </div>
+    </ol>
+    } @if (historyOf(acronym).length === 0) {
+    <p class="empty">Reading the releases…</p>
+    }
+  </div>
   }
 </ng-template>
 
@@ -250,26 +424,26 @@
     -->
     <div class="chosen" [class.awaiting]="!selection()">
       @if (selection(); as chosen) {
-        <!--
+      <!--
           Named down to the kind. A constraint on one term and a constraint on everything under it
           are different constraints, and the heading is where an author can see which they made
           without re-reading the phrasing. It also retires the "Everything under" / "Every term in"
           prefixes the phrase used to carry, which said the same thing twice.
         -->
-        <span class="label">Selected {{ chosen.noun }}</span>
-        <p class="phrase">
-          <strong [title]="chosen.what">{{ elide(chosen.what, 72, 20) }}</strong>
-        </p>
-        <!--
+      <span class="label">Selected {{ chosen.noun }}</span>
+      <p class="phrase">
+        <strong [title]="chosen.what">{{ elide(chosen.what, 72, 20) }}</strong>
+      </p>
+      <!--
           Said before the author tries to commit it, not after. A pinned constraint names a term, a
           source and a release together, and a release that does not hold the term resolves to
           nothing for whoever reads the template later — so the selection stays on screen, keeps its
           release, and cannot be recorded until one of the two changes.
         -->
-        @if (selectionBlocked(); as blocked) {
-          <p class="blocked" role="status">{{ blocked }}</p>
-        }
-        <!--
+      @if (selectionBlocked(); as blocked) {
+      <p class="blocked" role="status">{{ blocked }}</p>
+      }
+      <!--
           The source and the release, under the term rather than beside it. Together they are the
           constraint, and a term long enough to need eliding was pushing them off the line.
 
@@ -280,66 +454,57 @@
           less whichever of the three the store never had, which is why a release that declares no
           version does not print its date twice.
         -->
-        <p class="about">
-          <span class="who">{{ chosen.acronym }}</span>
-          @if (authorityOf(chosen.acronym); as from) {
-            <span class="meta inline dim from">· {{ from }}</span>
+      <p class="about">
+        <span class="who">{{ chosen.acronym }}</span>
+        @if (authorityOf(chosen.acronym); as from) {
+        <span class="meta inline dim from">· {{ from }}</span>
+        }
+        <span class="meta inline">
+          @if (chosen.pinned) { @if (chosen.version) { · {{ elide(chosen.version, 20, 8) }} } @if (chosen.effectiveDate
+          && chosen.effectiveDate !== chosen.version) { · {{ chosen.effectiveDate }} } @if (chosen.id) { ·
+          <code class="hash">{{ chosen.id }}</code>
           }
-          <span class="meta inline">
-            @if (chosen.pinned) {
-              @if (chosen.version) {
-                · {{ elide(chosen.version, 20, 8) }}
-              }
-              @if (chosen.effectiveDate && chosen.effectiveDate !== chosen.version) {
-                · {{ chosen.effectiveDate }}
-              }
-              @if (chosen.id) {
-                · <code class="hash">{{ chosen.id }}</code>
-              }
-              <!--
+          <!--
                 A release the store has since re-read. The pin still resolves and is left alone —
                 a published template has to keep meaning what it meant — so this says what it is
                 rather than moving the author off it.
               -->
-              @if (chosen.superseded) {
-                · <span class="stale" title="A later reading of these same source bytes exists. This pin still resolves.">superseded</span>
-              }
-            } @else {
-              · latest
-            }
-            <!--
+          @if (chosen.superseded) { ·
+          <span class="stale" title="A later reading of these same source bytes exists. This pin still resolves."
+            >superseded</span
+          >
+          } } @else { · latest }
+          <!--
               How much a branch or a value set brings with it — the size of the constraint, which a
               term and a whole ontology have no need of. On this line rather than beside the name,
               because the name is the one part long enough to be elided and the bar holds a fixed
               two lines.
             -->
-            @if (chosen.descendants) {
-              · {{ chosen.descendants.toLocaleString() }} {{
-                chosen.descendants === 1 ? 'descendant' : 'descendants' }}
-            }
-          </span>
-        </p>
-        <!--
+          @if (chosen.descendants) { · {{ chosen.descendants.toLocaleString() }} {{ chosen.descendants === 1 ?
+          'descendant' : 'descendants' }} }
+        </span>
+      </p>
+      <!--
           What addresses the term, under the release that holds it. The label is what an author
           recognises and this is what the field will hold, and two terms of one name are told apart by
           nothing else. The namespace gives way to the ellipsis, never the local name.
         -->
-        <p class="iri" [title]="chosen.iri ?? ''">
-          <code class="ns">{{ namespaceOf(chosen.iri ?? '') }}</code
-          ><code class="local">{{ localNameOf(chosen.iri ?? '') }}</code>
-        </p>
-        <!--
+      <p class="iri" [title]="chosen.iri ?? ''">
+        <code class="ns">{{ namespaceOf(chosen.iri ?? '') }}</code
+        ><code class="local">{{ localNameOf(chosen.iri ?? '') }}</code>
+      </p>
+      <!--
           What the source says the term means, last of the four and often nothing at all: half the
           corpus asserts no definition, and a blank line reads as the end of the bar rather than as a
           gap in the middle of it. One line, with the whole of it on hover.
         -->
-        <p class="meaning" [title]="chosen.definition ?? ''">{{ chosen.definition }}</p>
+      <p class="meaning" [title]="chosen.definition ?? ''">{{ chosen.definition }}</p>
       } @else {
-        <span class="label">&nbsp;</span>
-        <p class="phrase">&nbsp;</p>
-        <p class="about">&nbsp;</p>
-        <p class="iri">&nbsp;</p>
-        <p class="meaning">&nbsp;</p>
+      <span class="label">&nbsp;</span>
+      <p class="phrase">&nbsp;</p>
+      <p class="about">&nbsp;</p>
+      <p class="iri">&nbsp;</p>
+      <p class="meaning">&nbsp;</p>
       }
     </div>
     <!--
@@ -353,34 +518,36 @@
       title="Close without choosing"
       aria-label="Close without choosing"
       (click)="onCancel()"
-    >✕</button>
+    >
+      ✕
+    </button>
   </header>
 
-  @if (sources().length) {
-    <div class="narrowing">
-      <span class="meta inline">Searching only</span>
-      @for (source of sources(); track source.sourceAcronym) {
-        <span class="chip">{{ source.sourceAcronym }}</span>
-      }
-    </div>
+  @if (effectiveSources().length) {
+  <div class="narrowing">
+    <span class="meta inline">Searching only</span>
+    @for (source of effectiveSources(); track $index) {
+    <span class="chip">{{ source.sourceAcronym }}</span>
+    }
+  </div>
   } @else {
   <div class="narrowing">
     @if (narrowedTo().length > 0) {
-      <span class="meta inline">Searching only</span>
-      @for (acronym of narrowedTo(); track acronym) {
-        <button type="button" class="chip removable" (click)="toggleNarrowing(acronym)">
-          {{ acronym }} <span class="x">×</span>
-        </button>
-      }
-      <!--
+    <span class="meta inline">Searching only</span>
+    @for (acronym of narrowedTo(); track acronym) {
+    <button type="button" class="chip removable" (click)="toggleNarrowing(acronym)">
+      {{ acronym }} <span class="x">×</span>
+    </button>
+    }
+    <!--
         Shaped like the chips beside it rather than as a button: adding an ontology and removing one
         are the same kind of act on the same strip, and two outlined boxes at the end of a row of
         chips read as controls of their own rather than as part of it.
       -->
-      <button type="button" class="chip adder" (click)="openNarrowing()">
-        {{ choosingNarrowing() ? 'done' : '+ ontology' }}
-      </button>
-      <!--
+    <button type="button" class="chip adder" (click)="openNarrowing()">
+      {{ choosingNarrowing() ? 'done' : '+ ontology' }}
+    </button>
+    <!--
         Removing the last chip already searches everything, so this is a bulk reset and nothing
         more. Plain text, because it is worth having once several ontologies are on and worth
         nothing before that.
@@ -388,87 +555,78 @@
         Gone while the panel is open: that is where an ontology is added and removed one at a time,
         and a bulk reset beside the way out of it is a second exit doing something quite different.
       -->
-      @if (!choosingNarrowing()) {
-        <button type="button" class="quiet" (click)="clearNarrowing()">clear</button>
-      }
-    } @else {
-      <span class="meta inline">Searching every ontology</span>
-      <button type="button" class="chip adder" (click)="openNarrowing()">
-        {{ choosingNarrowing() ? 'done' : 'narrow to…' }}
-      </button>
+    @if (!choosingNarrowing()) {
+    <button type="button" class="quiet" (click)="clearNarrowing()">clear</button>
+    } } @else {
+    <span class="meta inline">Searching every ontology</span>
+    <button type="button" class="chip adder" (click)="openNarrowing()">
+      {{ choosingNarrowing() ? 'done' : 'narrow to…' }}
+    </button>
     }
   </div>
 
   @if (choosingNarrowing()) {
-    <!--
+  <!--
       A way into a list of hundreds. The panel holds every ontology the query reaches, so this finds
       a row in it rather than running a search of its own — the counts stay counts of the query.
     -->
-    <label class="finder">
-      <input
-        type="search"
-        [value]="narrowingFilter()"
-        placeholder="Find an ontology by name or acronym; click to select"
-        aria-label="Find an ontology to narrow to"
-        (input)="narrowingFilter.set($any($event.target).value)"
-      />
-    </label>
-    <!--
+  <label class="finder">
+    <input
+      type="search"
+      [value]="narrowingFilter()"
+      placeholder="Find an ontology by name or acronym; click to select"
+      aria-label="Find an ontology to narrow to"
+      (input)="narrowingFilter.set($any($event.target).value)"
+    />
+  </label>
+  <!--
       The column on the right is how many of each ontology's terms the query matched, which is the
       whole reason the list is in this order — and it was a bare figure until it was named.
     -->
-    <p class="candidates-head">
-      <span class="grow">
-        @if (narrowingFilter()) {
-          {{ visibleCandidates().length }} of {{ candidates().length }} ontologies
-        } @else {
-          {{ candidates().length }} {{ candidates().length === 1 ? 'ontology' : 'ontologies' }}
-        }
-      </span>
-      <span>matching terms</span>
-    </p>
-    <div class="candidates">
-      @for (candidate of visibleCandidates(); track candidate.sourceAcronym) {
-        <button
-          type="button"
-          class="candidate"
-          [class.on]="isNarrowedTo(candidate.sourceAcronym)"
-          (click)="toggleNarrowing(candidate.sourceAcronym)"
-        >
-          <span class="who">{{ candidate.sourceAcronym }}</span>
-          <span class="dim ellipsis">{{ sourceNameIfDistinct(candidate.sourceAcronym) }}</span>
-          <span class="meta inline">{{ candidate.matchCount?.toLocaleString() }}</span>
-        </button>
-      } @empty {
-        @if (candidates().length > 0) {
-          <p class="empty">No ontology here goes by that.</p>
-        } @else if (searching()) {
-          <p class="empty">Looking…</p>
-        } @else if (text().trim().length > 0) {
-          <p class="empty">No ontology holds a term matching that search.</p>
-        } @else {
-          <p class="empty">Nothing to narrow to — search for something first.</p>
-        }
-      }
-    </div>
-  }
-
-  }
+  <p class="candidates-head">
+    <span class="grow">
+      @if (narrowingFilter()) { {{ visibleCandidates().length }} of {{ candidates().length }} ontologies } @else { {{
+      candidates().length }} {{ candidates().length === 1 ? 'ontology' : 'ontologies' }} }
+    </span>
+    <span>matching terms</span>
+  </p>
+  <div class="candidates">
+    @for (candidate of visibleCandidates(); track candidate.sourceAcronym) {
+    <button
+      type="button"
+      class="candidate"
+      [class.on]="isNarrowedTo(candidate.sourceAcronym)"
+      (click)="toggleNarrowing(candidate.sourceAcronym)"
+    >
+      <span class="who">{{ candidate.sourceAcronym }}</span>
+      <span class="dim ellipsis">{{ sourceNameIfDistinct(candidate.sourceAcronym) }}</span>
+      <span class="meta inline">{{ candidate.matchCount?.toLocaleString() }}</span>
+    </button>
+    } @empty { @if (candidates().length > 0) {
+    <p class="empty">No ontology here goes by that.</p>
+    } @else if (searching()) {
+    <p class="empty">Looking…</p>
+    } @else if (text().trim().length > 0) {
+    <p class="empty">No ontology holds a term matching that search.</p>
+    } @else {
+    <p class="empty">Nothing to narrow to — search for something first.</p>
+    } }
+  </div>
+  } }
   <nav class="tabs" role="tablist">
     @for (tab of tabs(); track tab) {
-      <button
-        type="button"
-        class="tab"
-        role="tab"
-        [attr.aria-selected]="activeTab() === tab"
-        [class.active]="activeTab() === tab"
-        (click)="showTab(tab)"
-      >
-        {{ tabLabels[tab] }}
-        @if (counts()[tab]; as count) {
-          <span class="badge">{{ count }}</span>
-        }
-      </button>
+    <button
+      type="button"
+      class="tab"
+      role="tab"
+      [attr.aria-selected]="activeTab() === tab"
+      [class.active]="activeTab() === tab"
+      (click)="showTab(tab)"
+    >
+      {{ tabLabels[tab] }} @if (counts()[tab]; as count) {
+      <span class="badge">{{ count }}</span>
+      }
+    </button>
     }
   </nav>
 
@@ -481,171 +639,48 @@
   <p class="working" [class.idle]="!searching()" role="status" aria-live="polite">searching…</p>
 
   @if (error(); as message) {
-    <p class="notice">{{ message }}</p>
-  }
-
-  @for (source of unavailable(); track source.sourceAcronym) {
-    <p class="notice">
-      {{ source.sourceAcronym }} was not searched — {{ source.reason }}. Its terms are absent from
-      these results rather than missing from the vocabulary.
-    </p>
+  <p class="notice">{{ message }}</p>
+  } @for (source of unavailable(); track source.sourceAcronym) {
+  <p class="notice">
+    {{ source.sourceAcronym }} was not searched — {{ source.reason }}. Its terms are absent from these results rather
+    than missing from the vocabulary.
+  </p>
   }
 
   <div class="results" #list (scroll)="onScroll($event)">
-  @switch (activeTab()) {
-    @case ('class') {
-      @for (group of labelGroups(); track group.label) {
-        <div class="row group" [class.open]="expanded() === group.label">
-          <button
-              type="button"
-              class="rowhead oneline"
-              [attr.aria-expanded]="expanded() === group.label"
-              (click)="toggle(group.label, group.hits)"
-            >
-            <span class="twist">{{ expanded() === group.label ? '▾' : '▸' }}</span>
-            <span class="grow ellipsis">
-              <span class="title" [class.obsolete]="group.hits[0].obsolete" [title]="group.label">{{
-                elide(group.label)
-              }}</span>
-              @if (group.code) {
-                <span class="who">{{ group.code }}</span>
-              }
-              @if (group.hits[0].obsolete) {
-                <span class="chip warn">obsolete</span>
-              }
-              @if (!group.code && group.hits[0].matchedLabels?.length) {
-                <span class="chip" [title]="group.hits[0].matchedLabels![0].label">matched {{
-                  elide(group.hits[0].matchedLabels![0].label, 64, 20)
-                  }}@if (group.hits[0].matchedLabels![0].language) { · {{
-                  group.hits[0].matchedLabels![0].language }}}</span>
-              }
-            </span>
-            <span class="meta inline">
-              in {{ group.hits.length }} {{ group.hits.length === 1 ? 'ontology' : 'ontologies' }}
-            </span>
-          </button>
-          @if (expanded() === group.label) {
-            <div class="children">
-              @for (hit of group.hits; track hit.termIri) {
-<div
-                  class="child oneline pick"
-                  tabindex="0"
-                  [class.marked]="isSelected(hit)"
-                  role="option"
-                  [attr.aria-selected]="isSelected(hit)"
-                  [attr.aria-expanded]="isMarked(hit)"
-                  (click)="mark(hit)"
-                  (dblclick)="choose(hit)"
-                  (keydown.enter)="mark(hit)"
-                >
-                  <span class="grow ellipsis">
-                    <ng-container *ngTemplateOutlet="opener; context: { $implicit: hit }" />
-                    <span class="who">{{ hit.sourceAcronym }}</span>
-                    <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
-                    <!-- Whose copy this is. Two vocabularies of one name are told apart by it. -->
-                    @if (authorityOf(hit.sourceAcronym); as from) {
-                      <span class="meta inline dim from">· {{ from }}</span>
-                    }
-                    @if (distinguisher(group.hits, hit); as apart) {
-                      <span class="meta inline dim under" [title]="apart">·
-                        @if (distinguishedById(group.hits, hit)) {
-                          <code class="hash">{{ apart }}</code>
-                        } @else {
-                          {{ apart }}
-                        }
-                      </span>
-                    }
-                    @if (hit.replacedBy) {
-                      <span class="meta inline dim">
-                        · replaced by {{ hit.replacedBy.termLabel ?? hit.replacedBy.termIri }}
-                      </span>
-                    }
-                  </span>
-                  <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
-                </div>
-                <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
-                <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
-              }
-            </div>
+    @switch (activeTab()) { @case ('class') { @for (group of labelGroups(); track group.label) {
+    <div class="row group" [class.open]="expanded() === group.label">
+      <button
+        type="button"
+        class="rowhead oneline"
+        [attr.aria-expanded]="expanded() === group.label"
+        (click)="toggle(group.label, group.hits)"
+      >
+        <span class="twist">{{ expanded() === group.label ? '▾' : '▸' }}</span>
+        <span class="grow ellipsis">
+          <span class="title" [class.obsolete]="group.hits[0].obsolete" [title]="group.label"
+            >{{ elide(group.label) }}</span
+          >
+          @if (group.code) {
+          <span class="who">{{ group.code }}</span>
+          } @if (group.hits[0].obsolete) {
+          <span class="chip warn">obsolete</span>
+          } @if (!group.code && group.hits[0].matchedLabels?.length) {
+          <span class="chip" [title]="group.hits[0].matchedLabels![0].label"
+            >matched {{ elide(group.hits[0].matchedLabels![0].label, 64, 20) }}@if
+            (group.hits[0].matchedLabels![0].language) { · {{ group.hits[0].matchedLabels![0].language }}}</span
+          >
           }
-        </div>
-      } @empty {
-        @if (!searching()) {
-          <p class="empty">No terms match.</p>
-        }
-      }
-    }
-
-    @case ('branch') {
-      @for (group of branchGroups(); track group.label) {
-        <div class="row group">
-          <button type="button" class="rowhead oneline" (click)="toggle(group.label, group.hits)">
-            <span class="twist">{{ expanded() === group.label ? '▾' : '▸' }}</span>
-            <span class="grow ellipsis">
-              <span class="title" [title]="group.label">{{ elide(group.label) }}</span>
-            </span>
-            <span class="meta inline">
-              @if (group.hits.length !== group.ontologyCount) {
-                {{ group.hits.length }} branches in
-              }
-              {{ group.ontologyCount }} {{ group.ontologyCount === 1 ? 'ontology' : 'ontologies' }}
-            </span>
-          </button>
-          @if (expanded() === group.label) {
-            <div class="children">
-              @for (hit of group.hits; track hit.termBaseIri) {
-<div
-                  class="child oneline pick"
-                  tabindex="0"
-                  [class.marked]="isSelected(hit)"
-                  role="option"
-                  [attr.aria-selected]="isSelected(hit)"
-                  [attr.aria-expanded]="isMarked(hit)"
-                  (click)="mark(hit)"
-                  (dblclick)="choose(hit)"
-                  (keydown.enter)="mark(hit)"
-                >
-                  <span class="grow ellipsis">
-                    <ng-container *ngTemplateOutlet="opener; context: { $implicit: hit }" />
-                    <span class="who">{{ hit.sourceAcronym }}</span>
-                    <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
-                    <!-- Whose copy this is. Two vocabularies of one name are told apart by it. -->
-                    @if (authorityOf(hit.sourceAcronym); as from) {
-                      <span class="meta inline dim from">· {{ from }}</span>
-                    }
-                    @if (distinguisher(group.hits, hit); as apart) {
-                      <span class="meta inline dim under" [title]="apart">·
-                        @if (distinguishedById(group.hits, hit)) {
-                          <code class="hash">{{ apart }}</code>
-                        } @else {
-                          {{ apart }}
-                        }
-                      </span>
-                    }
-                  </span>
-                  <span class="meta inline">
-                    {{ hit.descendantCount.toLocaleString() }} {{
-                      hit.descendantCount === 1 ? 'descendant' : 'descendants' }}
-                  </span>
-                  <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
-                </div>
-                <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
-                <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
-              }
-            </div>
-          }
-        </div>
-      } @empty {
-        @if (!searching()) {
-          <p class="empty">No branches match. A branch is a term with descendants.</p>
-        }
-      }
-    }
-
-    @case ('ontology') {
-      @for (hit of ontologies(); track hit.sourceAcronym) {
-<div
-          class="row oneline pick"
+        </span>
+        <span class="meta inline">
+          in {{ group.hits.length }} {{ group.hits.length === 1 ? 'ontology' : 'ontologies' }}
+        </span>
+      </button>
+      @if (expanded() === group.label) {
+      <div class="children">
+        @for (hit of group.hits; track hit.termIri) {
+        <div
+          class="child oneline pick"
           tabindex="0"
           [class.marked]="isSelected(hit)"
           role="option"
@@ -656,68 +691,148 @@
           (keydown.enter)="mark(hit)"
         >
           <span class="grow ellipsis">
-            @let parts = splitName(hit.sourceAcronym);
-            <span class="title">{{ parts[0] }}@if (parts[1]) {<mark>{{ parts[1] }}</mark>}{{
-              parts[2] }}</span>
-            @let who = splitAcronym(hit.sourceAcronym);
-            <span class="who">{{ who[0] }}@if (who[1]) {<mark>{{ who[1] }}</mark>}{{ who[2] }}</span>
+            <ng-container *ngTemplateOutlet="opener; context: { $implicit: hit }" />
+            <span class="who">{{ hit.sourceAcronym }}</span>
+            <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
+            <!-- Whose copy this is. Two vocabularies of one name are told apart by it. -->
             @if (authorityOf(hit.sourceAcronym); as from) {
-              <span class="meta inline dim from">· {{ from }}</span>
+            <span class="meta inline dim from">· {{ from }}</span>
+            } @if (distinguisher(group.hits, hit); as apart) {
+            <span class="meta inline dim under" [title]="apart"
+              >· @if (distinguishedById(group.hits, hit)) {
+              <code class="hash">{{ apart }}</code>
+              } @else { {{ apart }} }
+            </span>
+            } @if (hit.replacedBy) {
+            <span class="meta inline dim">
+              · replaced by {{ hit.replacedBy.termLabel ?? hit.replacedBy.termIri }}
+            </span>
+            }
+          </span>
+          <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
+        </div>
+        <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
+        <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
+        }
+      </div>
+      }
+    </div>
+    } @empty { @if (!searching()) {
+    <p class="empty">No terms match.</p>
+    } } } @case ('branch') { @for (group of branchGroups(); track group.label) {
+    <div class="row group">
+      <button type="button" class="rowhead oneline" (click)="toggle(group.label, group.hits)">
+        <span class="twist">{{ expanded() === group.label ? '▾' : '▸' }}</span>
+        <span class="grow ellipsis">
+          <span class="title" [title]="group.label">{{ elide(group.label) }}</span>
+        </span>
+        <span class="meta inline">
+          @if (group.hits.length !== group.ontologyCount) { {{ group.hits.length }} branches in } {{ group.ontologyCount
+          }} {{ group.ontologyCount === 1 ? 'ontology' : 'ontologies' }}
+        </span>
+      </button>
+      @if (expanded() === group.label) {
+      <div class="children">
+        @for (hit of group.hits; track hit.termBaseIri) {
+        <div
+          class="child oneline pick"
+          tabindex="0"
+          [class.marked]="isSelected(hit)"
+          role="option"
+          [attr.aria-selected]="isSelected(hit)"
+          [attr.aria-expanded]="isMarked(hit)"
+          (click)="mark(hit)"
+          (dblclick)="choose(hit)"
+          (keydown.enter)="mark(hit)"
+        >
+          <span class="grow ellipsis">
+            <ng-container *ngTemplateOutlet="opener; context: { $implicit: hit }" />
+            <span class="who">{{ hit.sourceAcronym }}</span>
+            <span class="dim">· {{ sourceName(hit.sourceAcronym) }}</span>
+            <!-- Whose copy this is. Two vocabularies of one name are told apart by it. -->
+            @if (authorityOf(hit.sourceAcronym); as from) {
+            <span class="meta inline dim from">· {{ from }}</span>
+            } @if (distinguisher(group.hits, hit); as apart) {
+            <span class="meta inline dim under" [title]="apart"
+              >· @if (distinguishedById(group.hits, hit)) {
+              <code class="hash">{{ apart }}</code>
+              } @else { {{ apart }} }
+            </span>
             }
           </span>
           <span class="meta inline">
-            @if (hit.matchCount) {
-              {{ hit.matchCount.toLocaleString() }} {{ hit.matchCount === 1 ? 'term' : 'terms' }}
-            } @else {
-              no terms match
-            }
+            {{ hit.descendantCount.toLocaleString() }} {{ hit.descendantCount === 1 ? 'descendant' : 'descendants' }}
           </span>
           <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
         </div>
-          <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
-          <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
-      } @empty {
-        @if (!searching()) {
-          <p class="empty">No vocabulary is named this, and none of them matched terms.</p>
+        <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
+        <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
         }
+      </div>
       }
-    }
-
-    @case ('valueSet') {
-      @for (hit of valueSets(); track hit.termBaseIri) {
-<div
-          class="row oneline pick"
-          tabindex="0"
-          [class.marked]="isSelected(hit)"
-          role="option"
-          [attr.aria-selected]="isSelected(hit)"
-          [attr.aria-expanded]="isMarked(hit)"
-          (click)="mark(hit)"
-          (dblclick)="choose(hit)"
-          (keydown.enter)="mark(hit)"
-        >
-          <span class="grow ellipsis">
-            <span class="title" [title]="hit.termBaseLabel">{{ elide(hit.termBaseLabel) }}</span>
-            <span class="who">{{ hit.sourceAcronym }}</span>
-            @if (authorityOf(hit.sourceAcronym); as from) {
-              <span class="meta inline dim from">· {{ from }}</span>
-            }
-            @if (labelsOf(hit.matchedTerms); as matched) {
-              <span class="meta inline dim">· {{ matched }}</span>
-            }
-          </span>
-          <span class="meta inline">{{ hit.termCount }} values</span>
-          <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
-        </div>
-          <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
-          <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
-      } @empty {
-        @if (!searching()) {
-          <p class="empty">No value set matches.</p>
+    </div>
+    } @empty { @if (!searching()) {
+    <p class="empty">No branches match. A branch is a term with descendants.</p>
+    } } } @case ('ontology') { @for (hit of ontologies(); track hit.sourceAcronym) {
+    <div
+      class="row oneline pick"
+      tabindex="0"
+      [class.marked]="isSelected(hit)"
+      role="option"
+      [attr.aria-selected]="isSelected(hit)"
+      [attr.aria-expanded]="isMarked(hit)"
+      (click)="mark(hit)"
+      (dblclick)="choose(hit)"
+      (keydown.enter)="mark(hit)"
+    >
+      <span class="grow ellipsis">
+        @let parts = splitName(hit.sourceAcronym);
+        <span class="title">{{ parts[0] }}@if (parts[1]) {<mark>{{ parts[1] }}</mark>}{{ parts[2] }}</span>
+        @let who = splitAcronym(hit.sourceAcronym);
+        <span class="who">{{ who[0] }}@if (who[1]) {<mark>{{ who[1] }}</mark>}{{ who[2] }}</span>
+        @if (authorityOf(hit.sourceAcronym); as from) {
+        <span class="meta inline dim from">· {{ from }}</span>
         }
-      }
-    }
-  }
+      </span>
+      <span class="meta inline">
+        @if (hit.matchCount) { {{ hit.matchCount.toLocaleString() }} {{ hit.matchCount === 1 ? 'term' : 'terms' }} }
+        @else { no terms match }
+      </span>
+      <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
+    </div>
+    <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
+    <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
+    } @empty { @if (!searching()) {
+    <p class="empty">No vocabulary is named this, and none of them matched terms.</p>
+    } } } @case ('valueSet') { @for (hit of valueSets(); track hit.termBaseIri) {
+    <div
+      class="row oneline pick"
+      tabindex="0"
+      [class.marked]="isSelected(hit)"
+      role="option"
+      [attr.aria-selected]="isSelected(hit)"
+      [attr.aria-expanded]="isMarked(hit)"
+      (click)="mark(hit)"
+      (dblclick)="choose(hit)"
+      (keydown.enter)="mark(hit)"
+    >
+      <span class="grow ellipsis">
+        <span class="title" [title]="hit.termBaseLabel">{{ elide(hit.termBaseLabel) }}</span>
+        <span class="who">{{ hit.sourceAcronym }}</span>
+        @if (authorityOf(hit.sourceAcronym); as from) {
+        <span class="meta inline dim from">· {{ from }}</span>
+        } @if (labelsOf(hit.matchedTerms); as matched) {
+        <span class="meta inline dim">· {{ matched }}</span>
+        }
+      </span>
+      <span class="meta inline">{{ hit.termCount }} values</span>
+      <ng-container *ngTemplateOutlet="stepper; context: { $implicit: hit.sourceAcronym }" />
+    </div>
+    <ng-container *ngTemplateOutlet="history; context: { $implicit: hit }" />
+    <ng-container *ngTemplateOutlet="detail; context: { $implicit: hit }" />
+    } @empty { @if (!searching()) {
+    <p class="empty">No value set matches.</p>
+    } } } }
   </div>
 
   <!--
@@ -725,10 +840,7 @@
     to be more of, and the tab strip already says that one is running.
   -->
   <p class="tail">
-    @if (loadingMore()) {
-      reading more…
-    } @else if (isExhausted(activeTab()) && pageOf(activeTab()) > 1) {
-      no more matches
-    }
+    @if (loadingMore()) { reading more… } @else if (isExhausted(activeTab()) && pageOf(activeTab()) > 1) { no more
+    matches }
   </p>
 </section>

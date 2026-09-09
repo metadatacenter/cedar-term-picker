@@ -26,9 +26,12 @@
       not part of what the bundle publishes.
     -->
     <h1>Development host</h1>
-    <cedar-term-picker query="disease"></cedar-term-picker>
+    <cedar-term-picker query="disease" selection-mode="constraints"></cedar-term-picker>
     <script>
-      document.querySelector('cedar-term-picker').addEventListener('cancelled', () => {
+      const picker = document.querySelector('cedar-term-picker');
+      picker.setAttribute('selection-mode', new URLSearchParams(location.search).get('mode') || 'constraints');
+      picker.addEventListener('constraintsSelected', (event) => console.log('Applied field constraints', event.detail));
+      picker.addEventListener('cancelled', () => {
         console.log('the picker was closed without a choice');
       });
     </script>

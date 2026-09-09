@@ -476,6 +476,143 @@ describe('TermPicker', () => {
     shadow(fixture).querySelector<HTMLButtonElement>('.dismiss')?.click();
     expect(cancelled).toBe(1);
   });
+  it('assembles and applies a set while targeted changes preserve unrelated entries and actions', async () => {
+    const fixture = TestBed.createComponent(TermPicker);
+    const action = {
+      action: 'delete',
+      termUri: 'urn:old',
+      sourceUri: 'urn:branch',
+      source: 'DOID',
+      type: 'OntologyClass' as const,
+    };
+    const seed = {
+      constraints: [
+        {
+          sourceType: 'ontology' as const,
+          ontologyId: 'DOID',
+          ontologyName: 'Disease',
+          uri: 'urn:doid',
+          version: { id: 'old' },
+        },
+      ],
+      actions: [action],
+    };
+    fixture.componentRef.setInput('selectionMode', 'constraints');
+    fixture.componentRef.setInput('constraintSet', seed);
+    await fixture.whenStable();
+    const emitted = vi.fn();
+    const single = vi.fn();
+    fixture.componentInstance.constraintsSelected.subscribe(emitted);
+    fixture.componentInstance.selected.subscribe(single);
+    const picker = fixture.componentInstance as unknown as {
+      choose(hit: unknown): void;
+      editConstraint(i: number): void;
+      removeConstraint(i: number): void;
+      moveConstraint(i: number, offset: number): void;
+      applyConstraints(): void;
+      draft(): typeof seed;
+    };
+    picker.choose({ type: 'ontology', sourceAcronym: 'NCIT', sourceSystem: 'bioportal' });
+    picker.choose({
+      type: 'branch',
+      sourceAcronym: 'NCIT',
+      sourceSystem: 'bioportal',
+      termBaseIri: 'urn:root',
+      termBaseLabel: 'Root',
+    });
+    expect(picker.draft().constraints).toHaveLength(3);
+    picker.moveConstraint(1, -1);
+    expect(picker.draft().constraints[1]).toEqual(seed.constraints[0]);
+    picker.moveConstraint(0, 1);
+    expect(picker.draft().constraints[0]).toEqual(seed.constraints[0]);
+    picker.editConstraint(1);
+    picker.choose({
+      type: 'valueSet',
+      sourceAcronym: 'VS',
+      sourceSystem: 'bioportal',
+      termBaseIri: 'urn:vs',
+      termBaseLabel: 'Set',
+    });
+    expect(picker.draft().constraints[0]).toEqual(seed.constraints[0]);
+    picker.moveConstraint(2, -1);
+    picker.removeConstraint(2);
+    expect(picker.draft().constraints).toHaveLength(2);
+    expect(picker.draft().actions).toEqual([action]);
+    expect(seed.constraints).toHaveLength(1);
+    expect(single).not.toHaveBeenCalled();
+    expect(emitted).not.toHaveBeenCalled();
+    picker.applyConstraints();
+    expect(emitted).toHaveBeenCalledWith(picker.draft());
+  });
+
+  it('authors exclusions and term positions separately from constraint order', async () => {
+    const fixture = TestBed.createComponent(TermPicker);
+    const seed = {
+      constraints: [
+        {
+          sourceType: 'ontology-branch' as const,
+          sourceId: 'NCIT',
+          branchRootId: 'urn:root',
+          branchRootName: 'Root',
+          searchDepth: 0,
+        },
+      ],
+      actions: [],
+    };
+    fixture.componentRef.setInput('selectionMode', 'constraints');
+    fixture.componentRef.setInput('constraintSet', seed);
+    await fixture.whenStable();
+    const picker = fixture.componentInstance as unknown as {
+      choose(hit: unknown): void;
+      actionMode: { set(value: string): void };
+      actionPosition: { set(value: number): void };
+      updateAction(i: number, changes: object): void;
+      removeAction(i: number): void;
+      draft(): { constraints: unknown[]; actions: unknown[] };
+    };
+    const term = {
+      type: 'class',
+      sourceSystem: 'bioportal',
+      sourceAcronym: 'NCIT',
+      termIri: 'urn:term',
+      termLabel: 'Term',
+    };
+    picker.actionMode.set('delete');
+    picker.choose(term);
+    picker.actionMode.set('move');
+    picker.actionPosition.set(0);
+    picker.choose({ ...term, termIri: 'urn:another' });
+    expect(picker.draft().actions).toEqual([
+      { action: 'delete', termUri: 'urn:term', sourceUri: 'urn:root', source: 'NCIT', type: 'OntologyClass' },
+      { action: 'move', termUri: 'urn:another', sourceUri: 'urn:root', source: 'NCIT', type: 'OntologyClass', to: 0 },
+    ]);
+    picker.updateAction(1, { to: 4 });
+    picker.removeAction(0);
+    expect(picker.draft().actions).toEqual([
+      { action: 'move', termUri: 'urn:another', sourceUri: 'urn:root', source: 'NCIT', type: 'OntologyClass', to: 4 },
+    ]);
+    expect(picker.draft().constraints).toEqual(seed.constraints);
+  });
+
+  it('searches distinct version pins of the same vocabulary without conflating them', async () => {
+    const fixture = TestBed.createComponent(TermPicker);
+    const sources = [
+      { sourceAcronym: 'NCIT', version: { id: 'old' } },
+      { sourceAcronym: 'NCIT', version: { id: 'new' } },
+    ];
+    fixture.componentRef.setInput('selectionMode', 'term');
+    fixture.componentRef.setInput('sources', sources);
+    fixture.componentRef.setInput('query', 'melanoma');
+    await fixture.whenStable();
+    await settle();
+    expect(client.lastQuery?.sources).toEqual([sources[0]]);
+    const select = shadow(fixture).querySelector('select')!;
+    select.value = '1';
+    select.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    await settle();
+    expect(client.lastQuery?.sources).toEqual([sources[1]]);
+  });
 });
 
 function tabsLabel(kind: string): string {

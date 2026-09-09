@@ -13,6 +13,8 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { ControlledTermSet, ControlledTermConfig, ControlledTermAction } from './search/constraint-set';
+import { toControlledTermConfig } from './search/picked-constraint';
 import { NgTemplateOutlet } from '@angular/common';
 import { FontRegistrar } from './font-registrar/font-registrar';
 import { HierarchyOutcome, TerminologyClient } from './search/terminology-client';
@@ -131,9 +133,114 @@ export class TermPicker {
   readonly query = input('');
 
   /** A default is one term; constraint authoring also offers branches and vocabularies. */
-  readonly selectionMode = input<'constraint' | 'term'>('constraint');
+  readonly selectionMode = input<'constraint' | 'constraints' | 'term'>('constraint');
+  /** Editable draft; applying emits the whole set and cancellation changes nothing. */
+  readonly constraintSet = input<ControlledTermSet>({ constraints: [], actions: [] });
+  readonly constraintsSelected = output<ControlledTermSet>();
+  readonly constraintsChanged = output<void>();
+  protected readonly draft = linkedSignal(() => structuredClone(this.constraintSet()));
+  protected readonly editing = signal<number | null>(null);
+  protected readonly actionMode = signal<'delete' | 'move' | null>(null);
+  protected readonly actionPosition = signal(0);
+
+  protected numberOf(event: Event): number {
+    const value = (event.target as HTMLInputElement | HTMLSelectElement).value;
+    return value.trim() === '' ? Number.NaN : Number(value);
+  }
+
+  protected constraintKind(c: ControlledTermConfig): string {
+    return { 'ontology-term': 'Term', 'ontology-branch': 'Branch', ontology: 'Ontology', 'value-set': 'Value set' }[
+      c.sourceType
+    ];
+  }
+
+  protected constraintLabel(c: ControlledTermConfig): string {
+    return c.branchRootName || c.sourceName || c.ontologyName || c.sourceId || c.ontologyId || c.sourceType;
+  }
+
+  protected editConstraint(index: number): void {
+    this.editing.set(index);
+    this.actionMode.set(null);
+    this.text.set(this.constraintLabel(this.draft().constraints[index]));
+  }
+
+  protected updateConstraint(index: number, changes: Partial<ControlledTermConfig>): void {
+    if (changes.searchDepth !== undefined && (!Number.isInteger(changes.searchDepth) || changes.searchDepth < 0))
+      return;
+    this.draft.update((d) => ({
+      ...d,
+      constraints: d.constraints.map((c, i) => (i === index ? { ...c, ...changes } : c)),
+    }));
+  }
+
+  protected removeConstraint(index: number): void {
+    this.draft.update((d) => ({ ...d, constraints: d.constraints.filter((_, i) => i !== index) }));
+    this.editing.set(null);
+    this.actionMode.set(null);
+    this.actionConstraint.set(0);
+  }
+
+  protected adjacentConstraint(index: number, offset: number): number {
+    const constraints = this.draft().constraints;
+    for (let target = index + offset; target >= 0 && target < constraints.length; target += offset) {
+      if (constraints[target].sourceType === constraints[index].sourceType) return target;
+    }
+    return -1;
+  }
+
+  protected moveConstraint(index: number, offset: number): void {
+    const target = this.adjacentConstraint(index, offset);
+    if (target < 0) return;
+    this.draft.update((d) => {
+      const constraints = [...d.constraints];
+      [constraints[index], constraints[target]] = [constraints[target], constraints[index]];
+      return { ...d, constraints };
+    });
+    this.editing.set(null);
+    this.actionMode.set(null);
+  }
+
+  protected updateAction(index: number, changes: Partial<ControlledTermAction>): void {
+    if (changes.to !== undefined && (!Number.isInteger(changes.to) || changes.to < 0)) return;
+    this.draft.update((d) => ({ ...d, actions: d.actions.map((a, i) => (i === index ? { ...a, ...changes } : a)) }));
+  }
+
+  protected removeAction(index: number): void {
+    this.draft.update((d) => ({ ...d, actions: d.actions.filter((_, i) => i !== index) }));
+  }
+
+  protected applyConstraints(): void {
+    this.constraintsSelected.emit(structuredClone(this.draft()));
+  }
+
   /** Optional fixed search scope supplied by a host's field constraint. */
   readonly sources = input<readonly SourceSelector[]>([]);
+
+  protected readonly scopeIndex = linkedSignal(() => {
+    this.sources();
+    return 0;
+  });
+  protected readonly actionConstraint = signal(0);
+  protected readonly effectiveSources = computed<readonly SourceSelector[]>(() => {
+    if (this.actionMode()) {
+      const c = this.draft().constraints[this.actionConstraint()];
+      if (!c) return [];
+      const source = c.sourceType === 'ontology-branch' ? c.sourceId : c.ontologyId;
+      return source
+        ? [
+            {
+              sourceAcronym: source.split('/').filter(Boolean).at(-1)!,
+              sourceSystem: c.sourceSystem,
+              ...(c.version ? { version: { id: c.version.id } } : {}),
+            },
+          ]
+        : [];
+    }
+    const sources = this.sources();
+    // The search response groups by acronym, so two releases of one source must
+    // be browsed separately to keep the hierarchy and selected term unambiguous.
+    return sources.length > 1 ? [sources[this.scopeIndex()] ?? sources[0]] : sources;
+  });
 
   /**
    * Where the terminology server is, for a host that is not on its origin.
@@ -276,7 +383,7 @@ export class TermPicker {
   protected readonly historyFor = signal<string | null>(null);
 
   protected readonly tabs = computed<readonly SearchKind[]>(() =>
-    this.selectionMode() === 'term' ? ['class'] : TAB_ORDER,
+    this.selectionMode() === 'term' || this.actionMode() ? ['class'] : TAB_ORDER,
   );
   protected readonly tabLabels = TAB_LABELS;
 
@@ -284,15 +391,28 @@ export class TermPicker {
   private inFlight?: AbortController;
 
   constructor() {
+    effect(() => {
+      this.draft();
+      this.constraintsChanged.emit();
+    });
+    effect(() => {
+      this.effectiveSources();
+      this.inFlight?.abort();
+      this.response.set(null);
+      this.picked.set(null);
+      this.marked.set(null);
+      this.expanded.set(null);
+    });
+
     // A host that names a terminology server does so before the first search, and
     // may change it; either way the client follows the input rather than reading
     // it once at construction.
     effect(() => this.client.setBaseUrl(this.terminologyBaseUrl()));
 
     effect(() => {
-      if (this.selectionMode() === 'term') this.activeTab.set('class');
+      if (this.selectionMode() === 'term' || this.actionMode()) this.activeTab.set('class');
       const query = this.text().trim();
-      const sources = this.sources();
+      const sources = this.effectiveSources();
       const belowFloor =
         query.length > 0 && query.length < MIN_CORPUS_QUERY && this.narrowedTo().length === 0 && sources.length === 0;
       clearTimeout(this.debounce);
@@ -357,7 +477,7 @@ export class TermPicker {
           query,
           pageSize: PAGE_SIZE,
           sources: this.sourceSelectors(),
-          ...(this.selectionMode() === 'term' ? { types: ['class'] as const } : {}),
+          ...(this.selectionMode() === 'term' || this.actionMode() ? { types: ['class'] as const } : {}),
         },
         controller.signal,
       );
@@ -493,12 +613,12 @@ export class TermPicker {
 
   /** A field's fixed release applies to browsing as well as search. */
   private hierarchyVersion(acronym: string): string | undefined {
-    const fixed = this.sources().find((source) => source.sourceAcronym === acronym)?.version;
+    const fixed = this.effectiveSources().find((source) => source.sourceAcronym === acronym)?.version;
     return fixed && fixed !== 'latest' ? fixed.id : this.pinned().get(acronym)?.id;
   }
 
   private sourceSelectors(): readonly SourceSelector[] | undefined {
-    if (this.sources().length) return this.sources();
+    if (this.effectiveSources().length) return this.effectiveSources();
     const acronyms = this.narrowedTo();
     return acronyms.length === 0 ? undefined : acronyms.map((sourceAcronym) => ({ sourceAcronym }));
   }
@@ -1146,7 +1266,9 @@ export class TermPicker {
       return null;
     }
     const acronym = hit.sourceAcronym;
-    const pinned = this.pinned().get(acronym);
+    const fixed = this.effectiveSources().find((source) => source.sourceAcronym === acronym)?.version;
+    const pinned =
+      fixed && fixed !== 'latest' ? { ...this.sourceOf(acronym)?.version, id: fixed.id } : this.pinned().get(acronym);
     const version = TermPicker.nameOf(pinned ?? this.sourceOf(acronym)?.version);
     // The date and the hash only where one was chosen: they are what a pinned constraint records
     // beside the declared version, and an unpinned one records none of the three.
@@ -1563,9 +1685,14 @@ export class TermPicker {
    * at publish time, so there is nothing here to be inconsistent with.
    */
   protected unrecordable(hit: Hit | null): string | null {
+    if (hit && this.actionMode() && hit.type !== 'class') return 'Choose an individual term for the action.';
     if (hit && this.selectionMode() === 'term' && hit.type !== 'class')
       return 'Choose a single term for the default value.';
-    if (hit && this.sources().length && !this.sources().some((source) => source.sourceAcronym === hit.sourceAcronym))
+    if (
+      hit &&
+      this.effectiveSources().length &&
+      !this.effectiveSources().some((source) => source.sourceAcronym === hit.sourceAcronym)
+    )
       return 'Choose a term from the field vocabulary.';
     if (hit === null || (hit.type !== 'class' && hit.type !== 'branch')) {
       return null;
@@ -1596,7 +1723,7 @@ export class TermPicker {
 
   /** How many releases this ontology has, when it has more than the one on the row. */
   protected versionCount(acronym: string): number | undefined {
-    if (this.selectionMode() === 'term') return undefined;
+    if (this.selectionMode() === 'term' || this.actionMode()) return undefined;
     const source = this.sourceOf(acronym);
     const count = source?.versionCount ?? 1;
     return source?.pinnable === true && count > 1 ? count : undefined;
@@ -1608,8 +1735,56 @@ export class TermPicker {
     if (this.unrecordable(hit) !== null) {
       return;
     }
-    const version = hit.type === 'class' ? undefined : this.pinned().get(hit.sourceAcronym);
-    this.selected.emit(version === undefined ? hit : { ...hit, version });
+    const version = this.selectionMode() === 'term' ? undefined : this.pinned().get(hit.sourceAcronym);
+    if (this.selectionMode() !== 'constraints') {
+      this.selected.emit(version === undefined ? hit : { ...hit, version });
+      return;
+    }
+    const action = this.actionMode();
+    if (action) {
+      if (hit.type !== 'class') return;
+      if (action === 'move' && (!Number.isInteger(this.actionPosition()) || this.actionPosition() < 0)) {
+        this.error.set('Use a non-negative whole number for the result position.');
+        return;
+      }
+      const target = this.draft().constraints[this.actionConstraint()];
+      const sourceUri =
+        target?.uri ?? (target?.sourceType === 'ontology-branch' ? target.branchRootId : target?.sourceId);
+      if (!sourceUri) {
+        this.error.set('Choose a constraint with a source identifier for this action.');
+        return;
+      }
+      this.draft.update((d) => ({
+        ...d,
+        actions: [
+          ...d.actions,
+          {
+            action,
+            termUri: hit.termIri,
+            sourceUri,
+            source: hit.sourceAcronym,
+            type: hit.termType === 'value' ? 'Value' : 'OntologyClass',
+            ...(action === 'move' ? { to: this.actionPosition() } : {}),
+          },
+        ],
+      }));
+      this.actionMode.set(null);
+      return;
+    }
+    const source = this.sourceOf(hit.sourceAcronym);
+    const config = toControlledTermConfig({
+      ...hit,
+      version,
+      sourceName: source?.sourceName,
+      sourceIri: source?.sourceIri,
+    });
+    const index = this.editing();
+    this.draft.update((d) => ({
+      ...d,
+      constraints:
+        index === null ? [...d.constraints, config] : d.constraints.map((c, i) => (i === index ? config : c)),
+    }));
+    this.editing.set(null);
   }
 
   protected onCancel(): void {

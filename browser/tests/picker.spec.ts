@@ -1074,3 +1074,30 @@ test('a term the pinned release does not hold cannot be recorded', async ({ page
   await ncit.dblclick();
   expect(await page.evaluate(() => (window as unknown as { picks: number }).picks)).toBe(0);
 });
+
+test('authors a constraint set in compact tables and applies it as one event', async ({ page }) => {
+  await stubSearch(page, () => MELANOMA);
+  await stubHierarchy(page, () => null);
+  await openPicker(page);
+  await page.locator('cedar-term-picker').evaluate((node) => {
+    const picker = node as HTMLElement & { selectionMode: string; constraintSet: object };
+    picker.selectionMode = 'constraints';
+    picker.constraintSet = { constraints: [{ sourceType: 'ontology', ontologyId: 'DOID', ontologyName: 'Disease Ontology', uri: 'urn:doid', version: { id: 'sha256:original', declaredVersion: '2026-06' } }], actions: [] };
+    picker.addEventListener('constraintsSelected', (event) => { (window as unknown as { applied: unknown }).applied = (event as CustomEvent).detail; });
+  });
+  await search(page, 'melanoma');
+  const picker = page.locator('cedar-term-picker');
+  await picker.locator('.rowhead').first().click();
+  await picker.locator('.child.pick').first().dblclick();
+  await expect(picker.locator('.constraint-table').first().locator('tbody tr')).toHaveCount(2);
+  await picker.getByRole('button', { name: 'Exclude a term', exact: true }).click();
+  await picker.getByLabel('Within constraint').selectOption('1');
+  await picker.locator('.rowhead').first().click();
+  await picker.locator('.child.pick').first().dblclick();
+  await expect(picker.locator('.constraint-table')).toHaveCount(2);
+  await picker.getByRole('button', { name: 'Apply constraints', exact: true }).click();
+  const applied = await page.evaluate(() => (window as unknown as { applied: { constraints: unknown[]; actions: { action: string }[] } }).applied);
+  expect(applied.constraints).toHaveLength(2);
+  expect(applied.actions[0].action).toBe('delete');
+  await picker.screenshot({ path: '/tmp/ced-constraint-picker.png' });
+});

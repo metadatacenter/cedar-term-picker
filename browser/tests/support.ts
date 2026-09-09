@@ -190,7 +190,7 @@ export function results(collection: readonly object[], options: ResultsOptions =
 
 /** Opens the host page and waits for the element to have rendered something. */
 export async function openPicker(page: Page): Promise<void> {
-  await page.goto('/');
+  await page.goto('/?mode=constraint');
   await page.locator('cedar-term-picker .picker').waitFor();
 }
 
