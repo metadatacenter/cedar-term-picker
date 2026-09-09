@@ -14,8 +14,8 @@
 <section class="constraint-set" aria-label="Field constraints">
   <header class="constraint-heading">
     <h2>Field constraints</h2>
-    <button type="button" class="use" (click)="applyConstraints()">Apply constraints</button>
   </header>
+  <div class="constraint-table-layout">
   <table class="constraint-table">
     <thead>
       <tr>
@@ -84,6 +84,11 @@
       }
     </tbody>
   </table>
+  <div class="constraint-table-controls">
+    <button type="button" (click)="onCancel()">Cancel</button>
+    <button type="button" class="use" (click)="applyConstraints()">Done</button>
+  </div>
+  </div>
   @if (draft().actions.length) {
   <details class="saved-actions">
     <summary>{{ draft().actions.length }} saved term actions</summary>

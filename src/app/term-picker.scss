@@ -1069,6 +1069,7 @@ mark {
   }
   button:hover:enabled {
     background: var(--ctp-color-surface);
+    &.use { background: var(--ctp-color-primary); filter: brightness(0.95); }
   }
   input {
     width: 80px;
@@ -1256,3 +1257,16 @@ mark {
 }
 
 .constraint-kind.term-kind { font-style: italic; }
+
+.constraint-table-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+.constraint-table-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  .use { margin: 0; }
+}

@@ -1096,7 +1096,7 @@ test('authors a constraint set in compact tables and applies it as one event', a
   await expect(picker.getByRole('button', { name: 'Move constraint earlier' })).toHaveCount(0);
   await picker.getByRole('button', { name: 'Remove constraint 2', exact: true }).click();
   await expect(picker.locator('.constraint-table tbody tr')).toHaveCount(1);
-  await picker.getByRole('button', { name: 'Apply constraints', exact: true }).click();
+  await picker.getByRole('button', { name: 'Done', exact: true }).click();
   const applied = await page.evaluate(() => (window as unknown as { applied: { constraints: unknown[]; actions: { action: string }[] } }).applied);
   expect(applied.constraints).toHaveLength(1);
   expect(applied.actions).toEqual([]);

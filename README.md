@@ -152,7 +152,7 @@ individual entries and edit branch depth. Term
 exclusions (`delete`) and result positions (`move`, zero-based) are preserved actions;
 their authoring controls and constraint reordering are deferred. Use the bin icon to
 remove a constraint.
-`constraintsSelected` emits the complete draft when **Apply constraints** is pressed;
+`constraintsSelected` emits the complete draft when **Done** is pressed;
 `constraintsChanged` signals that the draft has changed (for invalidating pending
 host validation). `cancelled` leaves the host's original set unchanged. The import-free
 `ControlledTermSet`, `ControlledTermConfig` and `ControlledTermAction` declarations
