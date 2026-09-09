@@ -1266,7 +1266,8 @@ mark {
 }
 .constraint-table-controls {
   display: flex;
-  gap: 6px;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
+  align-items: stretch;
   .use { margin: 0; }
 }
