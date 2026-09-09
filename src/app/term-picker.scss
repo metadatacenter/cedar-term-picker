@@ -1271,3 +1271,15 @@ mark {
   align-items: stretch;
   .use { margin: 0; }
 }
+
+.set-mode .selection-detail:has(.hierarchy-choice) { display: block; }
+.set-mode .hierarchy-choice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  > div { min-width: 0; }
+  .tree { margin: 0; }
+  .use { grid-column: 2; grid-row: 1; margin: 0; }
+}
+.set-mode .chosen { padding-right: 0; }

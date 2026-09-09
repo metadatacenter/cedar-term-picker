@@ -60,7 +60,9 @@
         <td>
           <span>{{ c.ontologyId || c.sourceId }}</span
           ><small
-            > · {{ c.sourceSystem || 'bioportal' }} · @if (c.version) { {{ c.version.declaredVersion || c.version.id }} } @else { <em>latest</em> }</small
+            > · {{ c.sourceSystem || 'bioportal' }} · @if (c.version) { {{ c.version.declaredVersion || c.version.id }} } @else { <em>latest</em> }
+            @if (constraintHash(c); as hash) { · <code class="hash" [title]="hash">{{ shortHash(hash) }}</code> }
+          </small
           >
         </td>
         <td class="constraint-row-actions">
@@ -156,7 +158,8 @@
           Unlabelled, unlike the sections around it: a tree of terms under the row it belongs to
           reads as what it is, and a caption on it was a line of chrome saying so again.
         -->
-    <dd class="wide">
+    <dd class="wide hierarchy-choice">
+      <div>
       <!--
             The tree is about the term last clicked in it, not the row the author searched into.
             `focus` is that term, and it is the row's own until something inside is clicked, so
@@ -230,6 +233,10 @@
       } @else {
       <span class="meta inline">reading…</span>
       }
+      </div>
+      @if (selectionMode() === 'constraints') {
+        <button type="button" class="use" [disabled]="!!selectionBlocked()" (click)="choose(picked() || hit)">Select</button>
+      }
     </dd>
     } @if (hit.matchedLabels?.length) {
     <dt>Matched</dt>
@@ -255,9 +262,11 @@
     </dd>
     }
   </dl>
+  @if (selectionMode() !== 'constraints' || (hit.type !== 'class' && hit.type !== 'branch')) {
   <button type="button" class="use" [disabled]="!!selectionBlocked()" (click)="choose(picked() || hit)">
     {{ selectionMode() === 'constraints' ? 'Select' : 'Use this term' }}
   </button>
+  }
   </div>
   }
 </ng-template>
@@ -383,7 +392,7 @@
         <span class="meta inline">
           @if (chosen.pinned) { @if (chosen.version) { · {{ elide(chosen.version, 20, 8) }} } @if (chosen.effectiveDate
           && chosen.effectiveDate !== chosen.version) { · {{ chosen.effectiveDate }} } @if (chosen.id) { ·
-          <code class="hash">{{ chosen.id }}</code>
+          <code class="hash" [title]="chosen.id">{{ shortHash(chosen.id) }}</code>
           }
           <!--
                 A release the store has since re-read. The pin still resolves and is left alone —
@@ -394,7 +403,9 @@
           <span class="stale" title="A later reading of these same source bytes exists. This pin still resolves."
             >superseded</span
           >
-          } } @else { · latest }
+          } } @else { · <em>latest</em>
+            @if (sourceOf(chosen.acronym)?.version?.id; as hash) { · <code class="hash" [title]="hash">{{ shortHash(hash) }}</code> }
+          }
           <!--
               How much a branch or a value set brings with it — the size of the constraint, which a
               term and a whole ontology have no need of. On this line rather than beside the name,
@@ -433,6 +444,7 @@
       closes with the field's constraints as they were. The label is the glyph, so it carries the
       words for anyone who cannot see it.
     -->
+    @if (selectionMode() !== 'constraints') {
     <button
       type="button"
       class="dismiss"
@@ -442,6 +454,7 @@
     >
       ✕
     </button>
+    }
   </header>
 
   @if (effectiveSources().length) {

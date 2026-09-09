@@ -390,7 +390,23 @@ export class TermPicker {
   private debounce?: ReturnType<typeof setTimeout>;
   private inFlight?: AbortController;
 
+  private readonly observedHashes = signal(new Map<string, string>());
+
+  private hashKey(system: string, acronym: string): string {
+    return `${this.terminologyBaseUrl()}|${system}|${acronym}`;
+  }
+
   constructor() {
+    effect(() => {
+      const sources = this.response()?.sources ?? [];
+      this.observedHashes.update((previous) => {
+        const next = new Map(previous);
+        for (const source of sources) {
+          if (source.version?.id) next.set(this.hashKey(source.sourceSystem, source.sourceAcronym), source.version.id);
+        }
+        return next;
+      });
+    });
     effect(() => {
       this.draft();
       this.constraintsChanged.emit();
@@ -1001,6 +1017,15 @@ export class TermPicker {
   }
 
   /** Enough of a content hash to tell two releases apart, with the whole of it on hover. */
+  protected constraintHash(constraint: ControlledTermConfig): string | undefined {
+    if (constraint.version?.id) return constraint.version.id;
+    const acronym = constraint.ontologyId || constraint.sourceId || '';
+    const source = this.sourceOf(acronym);
+    return source && (!constraint.sourceSystem || constraint.sourceSystem === source.sourceSystem)
+      ? source.version?.id
+      : this.observedHashes().get(this.hashKey(constraint.sourceSystem || 'bioportal', acronym));
+  }
+
   protected shortHash(id: string | undefined): string {
     return id === undefined ? '' : id.slice(0, 12);
   }
@@ -1274,7 +1299,7 @@ export class TermPicker {
     // beside the declared version, and an unpinned one records none of the three.
     const of = {
       effectiveDate: pinned?.effectiveDate?.slice(0, 10),
-      id: pinned?.id?.slice(0, 12),
+      id: pinned?.id,
       definition: hit.type === 'class' ? hit.definition : undefined,
       iri: this.iriOf(hit),
       // A pin can name an extraction a later one has corrected. It still resolves, so this is

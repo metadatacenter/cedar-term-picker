@@ -1089,8 +1089,11 @@ test('authors a constraint set in compact tables and applies it as one event', a
   const picker = page.locator('cedar-term-picker');
   await picker.locator('.rowhead').first().click();
   await picker.locator('.child.pick').first().click();
+  await expect(picker.locator('.chosen .hash')).toHaveAttribute('title', 'hash');
+  await expect(picker.getByRole('button', { name: 'Close without choosing' })).toHaveCount(0);
   await picker.locator('.chosen').getByRole('button', { name: 'Select', exact: true }).click();
   await expect(picker.locator('.constraint-table').first().locator('tbody tr')).toHaveCount(2);
+  await expect(picker.locator('.constraint-table tbody tr').last().locator('.hash')).toHaveAttribute('title', 'hash');
   await expect(picker.locator('.constraint-table tbody tr').last().locator('details')).toHaveCount(0);
   await expect(picker.getByRole('button', { name: 'Exclude a term', exact: true })).toHaveCount(0);
   await expect(picker.getByRole('button', { name: 'Move constraint earlier' })).toHaveCount(0);
