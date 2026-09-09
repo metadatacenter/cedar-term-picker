@@ -1030,13 +1030,13 @@ mark {
 
 // Compact bordered rows and quiet column headings follow the Groups and Permissions dialogs.
 .constraint-set {
-  padding: 16px 24px;
+  padding: 8px 14px;
   border-bottom: 1px solid var(--ctp-color-border);
   max-height: 38vh;
   @include scrolls;
   h2 {
-    margin: 0 0 6px;
-    font-size: 18px;
+    margin: 0;
+    font-size: 15px;
     font-weight: 500;
   }
   h3 {
@@ -1055,8 +1055,8 @@ mark {
     font-size: 13px;
   }
   button {
-    margin: 4px;
-    padding: 6px 10px;
+    margin: 0;
+    padding: 4px 8px;
     cursor: pointer;
     border: 1px solid var(--ctp-color-border);
     border-radius: 3px;
@@ -1097,7 +1097,7 @@ mark {
   border-collapse: collapse;
   table-layout: fixed;
   th {
-    padding: 8px 12px;
+    padding: 6px 10px;
     color: #666;
     font-size: 12px;
     font-weight: 600;
@@ -1110,9 +1110,9 @@ mark {
     width: 112px;
   }
   td {
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-top: 1px solid #ccc;
-    min-height: 42px;
+    min-height: 36px;
     font-size: 13px;
     vertical-align: top;
     overflow-wrap: anywhere;
@@ -1138,7 +1138,7 @@ mark {
   }
   .constraint-empty {
     color: #666;
-    padding: 18px 12px;
+    padding: 8px 10px;
   }
 }
 .constraint-kind {
@@ -1157,4 +1157,30 @@ mark {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+// CEE's compact specification rows: inline controls, details only when present.
+.constraint-heading,
+.term-action-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.constraint-heading {
+  justify-content: space-between;
+  margin-bottom: 6px;
+  .use { margin: 0; }
+}
+.term-action-controls { margin-top: 6px; }
+.constraint-table + .constraint-table { margin-top: 6px; }
+.picker.set-mode {
+  padding: 8px 14px;
+  .chosen.awaiting { display: none; }
+  .search { padding-right: 24px; }
+  .narrowing { margin-top: 6px; }
+  .tabs { margin-top: 4px; }
+  .working.idle { display: none; }
+  .tail:empty { display: none; }
+  .empty { margin: 0; padding: 10px 2px; }
 }

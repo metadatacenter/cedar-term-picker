@@ -12,8 +12,10 @@
 </label>
 } @if (selectionMode() === 'constraints') {
 <section class="constraint-set" aria-label="Field constraints">
-  <h2>Field constraints</h2>
-  <p>Add terms, branches, ontologies and value sets, then apply the complete set.</p>
+  <header class="constraint-heading">
+    <h2>Field constraints</h2>
+    <button type="button" class="use" (click)="applyConstraints()">Apply constraints</button>
+  </header>
   <table class="constraint-table">
     <thead>
       <tr>
@@ -96,11 +98,7 @@
   <p role="status">Choose a replacement for constraint {{ editing()! + 1 }}.</p>
   <button type="button" (click)="editing.set(null)">Add instead</button>
   }
-  <h3>Term exclusions and ordering</h3>
-  <p>
-    These actions affect the allowed terms and their result positions. The arrows above arrange constraints of the same
-    kind.
-  </p>
+  <h3 class="sr-only">Term exclusions and ordering</h3>
   @if (draft().actions.length) {
   <table class="constraint-table">
     <thead>
@@ -147,6 +145,7 @@
     </tbody>
   </table>
   }
+  <div class="term-action-controls" aria-label="Term exclusions and result ordering">
   <button
     type="button"
     [disabled]="draft().constraints.length === 0"
@@ -161,6 +160,7 @@
   >
     Set a term's result position
   </button>
+  </div>
   @if (actionMode(); as mode) {
   <label
     >Within constraint
@@ -179,7 +179,6 @@
   }
   <button type="button" (click)="actionMode.set(null)">Cancel action</button>
   }
-  <button type="button" class="use" (click)="applyConstraints()">Apply constraints</button>
 </section>
 }
 <ctp-font-registrar />
@@ -395,7 +394,7 @@
   }
 </ng-template>
 
-<section class="picker">
+<section class="picker" [class.set-mode]="selectionMode() === 'constraints'">
   <header class="bar">
     <label class="search">
       <span class="label">Find a controlled value for this field</span>
