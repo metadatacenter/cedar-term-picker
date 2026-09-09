@@ -1241,7 +1241,7 @@ mark {
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
+  align-items: center;
   gap: 8px;
   background: var(--ctp-color-surface);
   .detail { grid-column: 1; margin: 0; }
@@ -1254,3 +1254,5 @@ mark {
   }
   .use:disabled { opacity: 0.4; cursor: default; }
 }
+
+.constraint-kind.term-kind { font-style: italic; }

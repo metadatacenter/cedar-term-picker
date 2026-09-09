@@ -53,14 +53,14 @@
           </details>
           } @else {
             <span [title]="(c.uri || c.sourceId || '') + '\nSource: ' + (c.iri || c.ontologyId || c.sourceId || '') + '\nVersion: ' + (c.version?.id || 'latest')">
-              <span class="constraint-kind">{{ constraintKind(c) }}</span> {{ constraintLabel(c) }}
+              <span class="constraint-kind" [class.term-kind]="c.sourceType === 'ontology-term'">{{ constraintKind(c) }}</span> {{ constraintLabel(c) }}
             </span>
           }
         </td>
         <td>
           <span>{{ c.ontologyId || c.sourceId }}</span
           ><small
-            > · {{ c.sourceSystem || 'bioportal' }} · {{ c.version?.declaredVersion || c.version?.id || 'latest' }}</small
+            > · {{ c.sourceSystem || 'bioportal' }} · @if (c.version) { {{ c.version.declaredVersion || c.version.id }} } @else { <em>latest</em> }</small
           >
         </td>
         <td class="constraint-row-actions">
