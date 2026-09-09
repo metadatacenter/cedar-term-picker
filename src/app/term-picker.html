@@ -21,7 +21,7 @@
       <tr>
         <th scope="col">Constraint</th>
         <th scope="col">Source and release</th>
-        <th scope="col">Arrange</th>
+        <th scope="col"><span class="sr-only">Remove</span></th>
       </tr>
     </thead>
     <tbody>
@@ -61,29 +61,13 @@
         <td class="constraint-row-actions">
           <button
             type="button"
-            [disabled]="adjacentConstraint(i, -1) < 0"
-            (click)="moveConstraint(i, -1)"
-            aria-label="Move constraint earlier"
-            title="Move constraint earlier"
-          >
-            ↑
-          </button>
-          <button
-            type="button"
-            [disabled]="adjacentConstraint(i, 1) < 0"
-            (click)="moveConstraint(i, 1)"
-            aria-label="Move constraint later"
-            title="Move constraint later"
-          >
-            ↓
-          </button>
-          <button
-            type="button"
             (click)="removeConstraint(i)"
             [attr.aria-label]="'Remove constraint ' + (i + 1)"
             title="Remove constraint"
           >
-            ×
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+            </svg>
           </button>
         </td>
       </tr>
@@ -98,86 +82,13 @@
   <p role="status">Choose a replacement for constraint {{ editing()! + 1 }}.</p>
   <button type="button" (click)="editing.set(null)">Add instead</button>
   }
-  <h3 class="sr-only">Term exclusions and ordering</h3>
   @if (draft().actions.length) {
-  <table class="constraint-table">
-    <thead>
-      <tr>
-        <th scope="col">Term action</th>
-        <th scope="col">Result position</th>
-        <th scope="col"><span class="sr-only">Remove</span></th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (a of draft().actions; track $index; let i = $index) {
-      <tr>
-        <td>
-          <details>
-            <summary>
-              <span class="constraint-kind"
-                >{{ a.action === 'delete' ? 'Exclude' : a.action === 'move' ? 'Move' : a.action }}</span
-              >
-              {{ a.termUri }}
-            </summary>
-            <p>{{ a.source }} · {{ a.sourceUri }} · {{ a.type }}</p>
-          </details>
-        </td>
-        <td>
-          @if (a.action === 'move') {
-          <label
-            ><span class="sr-only">Result position (zero-based)</span
-            ><input type="number" min="0" step="1" [value]="a.to" (change)="updateAction(i, { to: numberOf($event) })"
-          /></label>
-          } @else { — }
-        </td>
-        <td class="constraint-row-actions">
-          <button
-            type="button"
-            (click)="removeAction(i)"
-            [attr.aria-label]="'Remove action ' + (i + 1)"
-            title="Remove action"
-          >
-            ×
-          </button>
-        </td>
-      </tr>
-      }
-    </tbody>
-  </table>
-  }
-  <div class="term-action-controls" aria-label="Term exclusions and result ordering">
-  <button
-    type="button"
-    [disabled]="draft().constraints.length === 0"
-    (click)="actionMode.set('delete'); editing.set(null)"
-  >
-    Exclude a term
-  </button>
-  <button
-    type="button"
-    [disabled]="draft().constraints.length === 0"
-    (click)="actionMode.set('move'); editing.set(null)"
-  >
-    Set a term's result position
-  </button>
-  </div>
-  @if (actionMode(); as mode) {
-  <label
-    >Within constraint
-    <select [value]="actionConstraint()" (change)="actionConstraint.set(numberOf($event))">
-      @for (c of draft().constraints; track $index) {
-      <option [value]="$index">{{ constraintLabel(c) }}</option>
-      }
-    </select>
-  </label>
-  <p role="status">Choose the term to {{ mode === 'delete' ? 'exclude' : 'move' }}.</p>
-  @if (mode === 'move') {
-  <label
-    >Result position (zero-based)
-    <input type="number" min="0" [value]="actionPosition()" (change)="actionPosition.set(numberOf($event))"
-  /></label>
-  }
-  <button type="button" (click)="actionMode.set(null)">Cancel action</button>
+  <details class="saved-actions">
+    <summary>{{ draft().actions.length }} saved term actions</summary>
+    @for (action of draft().actions; track $index) {
+      <p>{{ action.action }} · {{ action.termUri }}@if (action.to !== undefined) { · position {{ action.to }} }</p>
+    }
+  </details>
   }
 </section>
 }

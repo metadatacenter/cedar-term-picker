@@ -148,8 +148,10 @@ answers and what no host page has.
 To assemble a field's complete constraint set, set `selectionMode = 'constraints'`
 and assign `constraintSet = { constraints: [], actions: [] }` (or the existing set).
 Selections add to the draft. Its tables let authors inspect, replace and remove
-individual entries, edit branch depth, and arrange the constraint list. Term
-exclusions (`delete`) and result positions (`move`, zero-based) are separate actions.
+individual entries and edit branch depth. Term
+exclusions (`delete`) and result positions (`move`, zero-based) are preserved actions;
+their authoring controls and constraint reordering are deferred. Use the bin icon to
+remove a constraint.
 `constraintsSelected` emits the complete draft when **Apply constraints** is pressed;
 `constraintsChanged` signals that the draft has changed (for invalidating pending
 host validation). `cancelled` leaves the host's original set unchanged. The import-free

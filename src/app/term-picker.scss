@@ -1107,7 +1107,7 @@ mark {
     width: 48%;
   }
   th:last-child {
-    width: 112px;
+    width: 40px;
   }
   td {
     padding: 6px 10px;
@@ -1183,4 +1183,26 @@ mark {
   .working.idle { display: none; }
   .tail:empty { display: none; }
   .empty { margin: 0; padding: 10px 2px; }
+}
+
+.picker.set-mode {
+  .chosen {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 2px 8px;
+    .label { grid-column: 1 / -1; }
+    .phrase, .about { padding: 0; }
+    .iri { grid-column: 1 / -1; height: auto; }
+    .meaning { display: none; }
+  }
+  .chosen.awaiting { display: none; }
+  .tree { max-height: 8rem; }
+  .detail { padding-bottom: 0; }
+  .use { margin: 4px 0; }
+}
+.saved-actions {
+  margin-top: 6px;
+  font-size: var(--ctp-font-size-small);
+  color: var(--ctp-color-muted);
+  summary { cursor: pointer; }
 }
