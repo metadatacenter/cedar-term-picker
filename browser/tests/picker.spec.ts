@@ -1089,7 +1089,7 @@ test('authors a constraint set in compact tables and applies it as one event', a
   const picker = page.locator('cedar-term-picker');
   await picker.locator('.rowhead').first().click();
   await picker.locator('.child.pick').first().click();
-  await picker.getByRole('button', { name: 'Add to table', exact: true }).click();
+  await picker.locator('.chosen').getByRole('button', { name: 'Add to table', exact: true }).click();
   await expect(picker.locator('.constraint-table').first().locator('tbody tr')).toHaveCount(2);
   await expect(picker.getByRole('button', { name: 'Exclude a term', exact: true })).toHaveCount(0);
   await expect(picker.getByRole('button', { name: 'Move constraint earlier' })).toHaveCount(0);
@@ -1099,5 +1099,7 @@ test('authors a constraint set in compact tables and applies it as one event', a
   const applied = await page.evaluate(() => (window as unknown as { applied: { constraints: unknown[]; actions: { action: string }[] } }).applied);
   expect(applied.constraints).toHaveLength(1);
   expect(applied.actions).toEqual([]);
+  await picker.locator('.constraint-table summary').first().click();
+  await expect(picker.getByRole('button', { name: /Replace constraint|Replace in table/ })).toHaveCount(0);
   await picker.screenshot({ path: '/tmp/ced-constraint-picker.png' });
 });

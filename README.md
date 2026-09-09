@@ -147,7 +147,7 @@ answers and what no host page has.
 
 To assemble a field's complete constraint set, set `selectionMode = 'constraints'`
 and assign `constraintSet = { constraints: [], actions: [] }` (or the existing set).
-Selections add to the draft. Its tables let authors inspect, replace and remove
+Selections add to the draft. Its tables let authors inspect and remove
 individual entries and edit branch depth. Term
 exclusions (`delete`) and result positions (`move`, zero-based) are preserved actions;
 their authoring controls and constraint reordering are deferred. Use the bin icon to

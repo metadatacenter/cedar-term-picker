@@ -49,7 +49,6 @@
                 (change)="updateConstraint(i, { searchDepth: numberOf($event) })"
             /></label>
             }
-            <button type="button" (click)="editConstraint(i)">Replace constraint {{ i + 1 }}</button>
           </details>
         </td>
         <td>
@@ -79,10 +78,6 @@
       }
     </tbody>
   </table>
-  @if (editing() !== null) {
-  <p role="status">Choose a replacement for constraint {{ editing()! + 1 }}.</p>
-  <button type="button" (click)="editing.set(null)">Add instead</button>
-  }
   @if (draft().actions.length) {
   <details class="saved-actions">
     <summary>{{ draft().actions.length }} saved term actions</summary>
@@ -255,8 +250,7 @@
       ends. Double click still commits, being quicker for someone who can already see the choice.
     -->
   <button type="button" class="use" (click)="choose(hit)">
-    {{ selectionMode() === 'constraints' ? (actionMode() ? 'Add term action' : editing() !== null ? 'Replace constraint'
-    : 'Add constraint') : 'Use this term' }}
+    {{ selectionMode() === 'constraints' ? 'Add to table' : 'Use this term' }}
   </button>
   }
 </ng-template>
@@ -346,7 +340,7 @@
         @if (selectionMode() === 'constraints') {
           @if (picked(); as hit) {
             <button type="button" [disabled]="!!selectionBlocked()" (click)="choose(hit)">
-              {{ editing() !== null ? 'Replace in table' : 'Add to table' }}
+              Add to table
             </button>
           }
         }
