@@ -1225,7 +1225,8 @@ mark {
 }
 
 .constraint-table {
-  td { vertical-align: top; }
+  td { vertical-align: middle; }
+  tr:has(details[open]) td { vertical-align: top; }
   dl {
     display: grid;
     grid-template-columns: max-content minmax(0, 1fr);

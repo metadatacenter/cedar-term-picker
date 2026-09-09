@@ -149,7 +149,7 @@ export class TermPicker {
   }
 
   protected constraintKind(c: ControlledTermConfig): string {
-    return { 'ontology-term': 'Term', 'ontology-branch': 'Branch', ontology: 'Ontology', 'value-set': 'Value set' }[
+    return { 'ontology-term': 'term', 'ontology-branch': 'Branch', ontology: 'Ontology', 'value-set': 'Value set' }[
       c.sourceType
     ];
   }
