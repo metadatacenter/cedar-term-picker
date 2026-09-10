@@ -154,8 +154,59 @@ export class TermPicker {
     ];
   }
 
+  /**
+   * What an author reads on a constraint row.
+   *
+   * A switch rather than five fallbacks. The old chain,
+   * `branchRootName || sourceName || ontologyName || sourceId || ontologyId`, worked by
+   * knowing which fields happened to be absent on which kind — so it read as a puzzle
+   * and it silently picked the wrong field the moment a variant grew one.
+   */
   protected constraintLabel(c: ControlledTermConfig): string {
-    return c.branchRootName || c.sourceName || c.ontologyName || c.sourceId || c.ontologyId || c.sourceType;
+    switch (c.sourceType) {
+      case 'ontology-branch':
+        return c.branchRootName || c.branchRootId || c.sourceType;
+      case 'ontology':
+        return c.ontologyName || c.ontologyId || c.sourceType;
+      case 'ontology-term':
+        return c.label || c.sourceName || c.sourceId || c.sourceType;
+      case 'value-set':
+        return c.sourceName || c.sourceId || c.sourceType;
+    }
+  }
+
+  /**
+   * The identifier the constraint names: an ontology, a branch root, a term, a list.
+   *
+   * One question with four answers, which the template used to ask as
+   * `c.uri || c.branchRootId || c.sourceId` in one place and `c.uri || c.sourceId` in
+   * another — two chains that disagreed about branches.
+   */
+  protected constraintUri(c: ControlledTermConfig): string {
+    switch (c.sourceType) {
+      case 'ontology-branch':
+        return c.branchRootId;
+      case 'ontology':
+        return c.uri || c.ontologyId;
+      case 'ontology-term':
+      case 'value-set':
+        return c.sourceId;
+    }
+  }
+
+  /** The acronym of the ontology a constraint belongs to, where it belongs to one. */
+  protected constraintAcronym(c: ControlledTermConfig): string {
+    switch (c.sourceType) {
+      case 'ontology':
+        return c.ontologyId;
+      case 'ontology-branch':
+        return c.sourceId || c.source || '';
+      case 'ontology-term':
+        return c.ontologyId || c.source || '';
+      case 'value-set':
+        // A value set names the collection it belongs to and carries no `source`.
+        return c.ontologyId || '';
+    }
   }
 
   protected editConstraint(index: number): void {
@@ -164,12 +215,21 @@ export class TermPicker {
     this.text.set(this.constraintLabel(this.draft().constraints[index]));
   }
 
-  protected updateConstraint(index: number, changes: Partial<ControlledTermConfig>): void {
-    if (changes.searchDepth !== undefined && (!Number.isInteger(changes.searchDepth) || changes.searchDepth < 0))
-      return;
+  /**
+   * The depth of one branch constraint, which is the only field a row edits.
+   *
+   * It used to take a `Partial<ControlledTermConfig>` and merge it, which said the row
+   * could change anything on any kind of constraint — a `Partial` of a bag being the
+   * broadest type there is. Depth belongs to a branch and nothing else, so the
+   * signature says so and the merge cannot reach another variant.
+   */
+  protected updateBranchDepth(index: number, searchDepth: number): void {
+    if (!Number.isInteger(searchDepth) || searchDepth < 0) return;
     this.draft.update((d) => ({
       ...d,
-      constraints: d.constraints.map((c, i) => (i === index ? { ...c, ...changes } : c)),
+      constraints: d.constraints.map((c, i) =>
+        i === index && c.sourceType === 'ontology-branch' ? { ...c, searchDepth } : c,
+      ),
     }));
   }
 
@@ -1019,7 +1079,7 @@ export class TermPicker {
   /** Enough of a content hash to tell two releases apart, with the whole of it on hover. */
   protected constraintHash(constraint: ControlledTermConfig): string | undefined {
     if (constraint.version?.id) return constraint.version.id;
-    const acronym = constraint.ontologyId || constraint.sourceId || '';
+    const acronym = this.constraintAcronym(constraint);
     const source = this.sourceOf(acronym);
     return source && (!constraint.sourceSystem || constraint.sourceSystem === source.sourceSystem)
       ? source.version?.id
@@ -1773,8 +1833,8 @@ export class TermPicker {
         return;
       }
       const target = this.draft().constraints[this.actionConstraint()];
-      const sourceUri =
-        target?.uri ?? (target?.sourceType === 'ontology-branch' ? target.branchRootId : target?.sourceId);
+      // The same question the constraint row asks, so it is asked in one place.
+      const sourceUri = target === undefined ? undefined : this.constraintUri(target);
       if (!sourceUri) {
         this.error.set('Choose a constraint with a source identifier for this action.');
         return;

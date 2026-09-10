@@ -16,86 +16,94 @@
     <h2>Field constraints</h2>
   </header>
   <div class="constraint-table-layout">
-  <table class="constraint-table">
-    <thead>
-      <tr>
-        <th scope="col">Constraint</th>
-        <th scope="col">Source and release</th>
-        <th scope="col"><span class="sr-only">Remove</span></th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (c of draft().constraints; track $index; let i = $index) {
-      <tr>
-        <td>
-          @if (c.sourceType === 'ontology-branch') {
-          <details>
-            <summary><span class="constraint-kind">{{ constraintKind(c) }}</span> {{ constraintLabel(c) }}</summary>
-            <dl>
-              <dt>Identifier</dt>
-              <dd>{{ c.uri || c.branchRootId || c.sourceId }}</dd>
-              <dt>Source identity</dt>
-              <dd>{{ c.iri || 'Not recorded' }}</dd>
-              <dt>Version pin</dt>
-              <dd>{{ c.version?.id || 'Latest' }} {{ c.version?.effectiveDate }}</dd>
-            </dl>
+    <table class="constraint-table">
+      <thead>
+        <tr>
+          <th scope="col">Constraint</th>
+          <th scope="col">Source and release</th>
+          <th scope="col"><span class="sr-only">Remove</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of draft().constraints; track $index; let i = $index) {
+        <tr>
+          <td>
             @if (c.sourceType === 'ontology-branch') {
-            <label
-              >Maximum depth
-              <input
-                type="number"
-                min="0"
-                step="1"
-                [value]="c.searchDepth"
-                (change)="updateConstraint(i, { searchDepth: numberOf($event) })"
-            /></label>
-            }
-          </details>
-          } @else {
-            <span [title]="(c.uri || c.sourceId || '') + '\nSource: ' + (c.iri || c.ontologyId || c.sourceId || '') + '\nVersion: ' + (c.version?.id || 'latest')">
-              <span class="constraint-kind" [class.term-kind]="c.sourceType === 'ontology-term'">{{ constraintKind(c) }}</span> {{ constraintLabel(c) }}
+            <details>
+              <summary><span class="constraint-kind">{{ constraintKind(c) }}</span> {{ constraintLabel(c) }}</summary>
+              <dl>
+                <dt>Identifier</dt>
+                <dd>{{ constraintUri(c) }}</dd>
+                <dt>Source identity</dt>
+                <dd>{{ c.iri || 'Not recorded' }}</dd>
+                <dt>Version pin</dt>
+                <dd>{{ c.version?.id || 'Latest' }} {{ c.version?.effectiveDate }}</dd>
+              </dl>
+              @if (c.sourceType === 'ontology-branch') {
+              <label
+                >Maximum depth
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  [value]="c.searchDepth"
+                  (change)="updateBranchDepth(i, numberOf($event))"
+              /></label>
+              }
+            </details>
+            } @else {
+            <span
+              [title]="constraintUri(c) + '\nSource: ' + (c.iri || constraintAcronym(c)) + '\nVersion: ' + (c.version?.id || 'latest')"
+            >
+              <span class="constraint-kind" [class.term-kind]="c.sourceType === 'ontology-term'"
+                >{{ constraintKind(c) }}</span
+              >
+              {{ constraintLabel(c) }}
             </span>
-          }
-        </td>
-        <td>
-          <span>{{ c.ontologyId || c.sourceId }}</span
-          ><small
-            > · {{ c.sourceSystem || 'bioportal' }} · @if (c.version) { {{ c.version.declaredVersion || c.version.id }} } @else { <em>latest</em> }
-            @if (constraintHash(c); as hash) { · <code class="hash" [title]="hash">{{ shortHash(hash) }}</code> }
-          </small
-          >
-        </td>
-        <td class="constraint-row-actions">
-          <button
-            type="button"
-            (click)="removeConstraint(i)"
-            [attr.aria-label]="'Remove constraint ' + (i + 1)"
-            title="Remove constraint"
-          >
-            <!-- Same Font Awesome trash glyph as the Groups/Permissions dialogs. -->
-            <svg viewBox="0 0 1408 1536" width="14" height="15" fill="currentColor" aria-hidden="true">
-              <path transform="translate(0 1408) scale(1 -1)" d="M512 160v704q0 14 -9 23t-23 9h-64q-14 0 -23 -9t-9 -23v-704q0 -14 9 -23t23 -9h64q14 0 23 9t9 23zM768 160v704q0 14 -9 23t-23 9h-64q-14 0 -23 -9t-9 -23v-704q0 -14 9 -23t23 -9h64q14 0 23 9t9 23zM1024 160v704q0 14 -9 23t-23 9h-64q-14 0 -23 -9t-9 -23v-704 q0 -14 9 -23t23 -9h64q14 0 23 9t9 23zM480 1152h448l-48 117q-7 9 -17 11h-317q-10 -2 -17 -11zM1408 1120v-64q0 -14 -9 -23t-23 -9h-96v-948q0 -83 -47 -143.5t-113 -60.5h-832q-66 0 -113 58.5t-47 141.5v952h-96q-14 0 -23 9t-9 23v64q0 14 9 23t23 9h309l70 167 q15 37 54 63t79 26h320q40 0 79 -26t54 -63l70 -167h309q14 0 23 -9t9 -23z" />
-            </svg>
-          </button>
-        </td>
-      </tr>
-      } @empty {
-      <tr>
-        <td colspan="3" class="constraint-empty">No constraints yet. Search below to add one.</td>
-      </tr>
-      }
-    </tbody>
-  </table>
-  <div class="constraint-table-controls">
-    <button type="button" class="use" (click)="applyConstraints()">Done</button>
-    <button type="button" (click)="onCancel()">Cancel</button>
-  </div>
+            }
+          </td>
+          <td>
+            <span>{{ constraintAcronym(c) }}</span
+            ><small>
+              · {{ c.sourceSystem || 'bioportal' }} · @if (c.version) { {{ c.version.declaredVersion || c.version.id }}
+              } @else { <em>latest</em> } @if (constraintHash(c); as hash) { ·
+              <code class="hash" [title]="hash">{{ shortHash(hash) }}</code> }
+            </small>
+          </td>
+          <td class="constraint-row-actions">
+            <button
+              type="button"
+              (click)="removeConstraint(i)"
+              [attr.aria-label]="'Remove constraint ' + (i + 1)"
+              title="Remove constraint"
+            >
+              <!-- Same Font Awesome trash glyph as the Groups/Permissions dialogs. -->
+              <svg viewBox="0 0 1408 1536" width="14" height="15" fill="currentColor" aria-hidden="true">
+                <path
+                  transform="translate(0 1408) scale(1 -1)"
+                  d="M512 160v704q0 14 -9 23t-23 9h-64q-14 0 -23 -9t-9 -23v-704q0 -14 9 -23t23 -9h64q14 0 23 9t9 23zM768 160v704q0 14 -9 23t-23 9h-64q-14 0 -23 -9t-9 -23v-704q0 -14 9 -23t23 -9h64q14 0 23 9t9 23zM1024 160v704q0 14 -9 23t-23 9h-64q-14 0 -23 -9t-9 -23v-704 q0 -14 9 -23t23 -9h64q14 0 23 9t9 23zM480 1152h448l-48 117q-7 9 -17 11h-317q-10 -2 -17 -11zM1408 1120v-64q0 -14 -9 -23t-23 -9h-96v-948q0 -83 -47 -143.5t-113 -60.5h-832q-66 0 -113 58.5t-47 141.5v952h-96q-14 0 -23 9t-9 23v64q0 14 9 23t23 9h309l70 167 q15 37 54 63t79 26h320q40 0 79 -26t54 -63l70 -167h309q14 0 23 -9t9 -23z"
+                />
+              </svg>
+            </button>
+          </td>
+        </tr>
+        } @empty {
+        <tr>
+          <td colspan="3" class="constraint-empty">No constraints yet. Search below to add one.</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    <div class="constraint-table-controls">
+      <button type="button" class="use" (click)="applyConstraints()">Done</button>
+      <button type="button" (click)="onCancel()">Cancel</button>
+    </div>
   </div>
   @if (draft().actions.length) {
   <details class="saved-actions">
     <summary>{{ draft().actions.length }} saved term actions</summary>
     @for (action of draft().actions; track $index) {
-      <p>{{ action.action }} · {{ action.termUri }}@if (action.to !== undefined) { · position {{ action.to }} }</p>
+    <p>{{ action.action }} · {{ action.termUri }}@if (action.to !== undefined) { · position {{ action.to }} }</p>
     }
   </details>
   }
@@ -149,77 +157,77 @@
       IRI is here in full, beside the things that say whether it is the right concept.
     -->
   <div class="selection-detail">
-  <dl class="detail">
-    @if (hit.type === 'ontology' || hit.type === 'valueSet') {
-    <dt>{{ hit.type === 'ontology' ? 'Ontology IRI' : 'Value set IRI' }}</dt>
-    <dd class="iri" [title]="termIriOf(hit)">{{ hit.type === 'ontology' ? sourceIriOf(hit) : termIriOf(hit) }}</dd>
-    } @if (hit.type === 'class' || hit.type === 'branch') {
-    <!--
+    <dl class="detail">
+      @if (hit.type === 'ontology' || hit.type === 'valueSet') {
+      <dt>{{ hit.type === 'ontology' ? 'Ontology IRI' : 'Value set IRI' }}</dt>
+      <dd class="iri" [title]="termIriOf(hit)">{{ hit.type === 'ontology' ? sourceIriOf(hit) : termIriOf(hit) }}</dd>
+      } @if (hit.type === 'class' || hit.type === 'branch') {
+      <!--
           Unlabelled, unlike the sections around it: a tree of terms under the row it belongs to
           reads as what it is, and a caption on it was a line of chrome saying so again.
         -->
-    <dd class="wide hierarchy-choice">
-      <div>
-      <!--
+      <dd class="wide hierarchy-choice">
+        <div>
+          <!--
             The tree is about the term last clicked in it, not the row the author searched into.
             `focus` is that term, and it is the row's own until something inside is clicked, so
             every read below — the tree, its rows, its paging, its refusal — addresses one subject.
           -->
-      @let focus = treeFocus(hit); @if (hierarchyOf(focus)) {
-      <ol class="tree" (scroll)="onTreeScroll($event, focus)">
-        @for (row of treeRows(focus); track row.key) {
-        <li
-          class="node"
-          [class.self]="row.self"
-          [class.spine]="row.onSpine"
-          [class.picked]="isPicked(row)"
-          [style.padding-left.rem]="row.depth * 0.9"
-        >
-          @if (row.hasChildren) {
-          <button
-            type="button"
-            class="twist"
-            [attr.aria-expanded]="row.open"
-            [title]="(row.open ? 'Collapse ' : 'Expand ') + row.label"
-            (click)="toggleNode(row.acronym, row.iri)"
-          >
-            {{ row.open ? '▾' : '▸' }}
-          </button>
-          } @else {
-          <span class="twist"></span>
-          }
-          <!--
+          @let focus = treeFocus(hit); @if (hierarchyOf(focus)) {
+          <ol class="tree" (scroll)="onTreeScroll($event, focus)">
+            @for (row of treeRows(focus); track row.key) {
+            <li
+              class="node"
+              [class.self]="row.self"
+              [class.spine]="row.onSpine"
+              [class.picked]="isPicked(row)"
+              [style.padding-left.rem]="row.depth * 0.9"
+            >
+              @if (row.hasChildren) {
+              <button
+                type="button"
+                class="twist"
+                [attr.aria-expanded]="row.open"
+                [title]="(row.open ? 'Collapse ' : 'Expand ') + row.label"
+                (click)="toggleNode(row.acronym, row.iri)"
+              >
+                {{ row.open ? '▾' : '▸' }}
+              </button>
+              } @else {
+              <span class="twist"></span>
+              }
+              <!--
                     A click selects the term, which the bar then states; opening a node is the
                     twist's job. Selecting inside the tree leaves the panel where it is: the tree is
                     where the term was found, and closing it would take the context with it.
                   -->
-          <button
-            type="button"
-            class="term"
-            [title]="row.iri + ' — double click to use it'"
-            (click)="pickNode(hit, row)"
-            (dblclick)="chooseNode(hit, row)"
-          >
-            {{ row.label }}
-          </button>
-          @if (row.loading) {
-          <span class="meta inline">· reading…</span>
-          }
-          <!--
+              <button
+                type="button"
+                class="term"
+                [title]="row.iri + ' — double click to use it'"
+                (click)="pickNode(hit, row)"
+                (dblclick)="chooseNode(hit, row)"
+              >
+                {{ row.label }}
+              </button>
+              @if (row.loading) {
+              <span class="meta inline">· reading…</span>
+              }
+              <!--
                     An open node says how much of itself is on screen. Without it a capped list reads
                     as everything the node has: DOID's "disease" shows 50 of 194 children, and a
                     reader who scanned them for a term and did not find it concluded the release did
                     not hold it. Scrolling fetches the rest, so this is a statement about now rather
                     than a limit.
                   -->
-          @if (row.open && row.total > row.shown) {
-          <span class="meta inline">· {{ row.shown }} of {{ row.total }}</span>
-          }
-        </li>
-        }
-      </ol>
-      } @else if (hierarchyRefusal(focus); as refusal) {
-      <!--
+              @if (row.open && row.total > row.shown) {
+              <span class="meta inline">· {{ row.shown }} of {{ row.total }}</span>
+              }
+            </li>
+            }
+          </ol>
+          } @else if (hierarchyRefusal(focus); as refusal) {
+          <!--
               The store's own sentence rather than a summary of it. One line covered every case and
               said the store holds no hierarchy for the term, which was wrong for a request that
               failed and wrong in a subtler way for a term absent from the pinned release alone: the
@@ -227,46 +235,48 @@
               looking for a broken ingest. A failure is said as a failure, so it is not read as an
               answer about what the store holds.
             -->
-      <span class="meta inline"
-        >{{ refusal.answered ? refusal.reason : 'the hierarchy could not be read: ' + refusal.reason }}</span
-      >
-      } @else {
-      <span class="meta inline">reading…</span>
+          <span class="meta inline"
+            >{{ refusal.answered ? refusal.reason : 'the hierarchy could not be read: ' + refusal.reason }}</span
+          >
+          } @else {
+          <span class="meta inline">reading…</span>
+          }
+        </div>
+        @if (selectionMode() === 'constraints') {
+        <button type="button" class="use" [disabled]="!!selectionBlocked()" (click)="choose(picked() || hit)">
+          Select
+        </button>
+        }
+      </dd>
+      } @if (hit.matchedLabels?.length) {
+      <dt>Matched</dt>
+      <dd>
+        @for (name of hit.matchedLabels; track name.label) {
+        <span class="chip">{{ name.label }}@if (name.language) { · {{ name.language }}}</span>
+        }
+      </dd>
+      } @if (namesOf(hit); as names) {
+      <dt>Also called</dt>
+      <dd>
+        @for (name of names; track name.label) {
+        <span class="alias">{{ elide(name.label, 44, 12) }}@if (name.language) { · {{ name.language }}}</span>
+        } @if (moreNames(hit); as more) {
+        <span class="meta inline">and {{ more }} more</span>
+        }
+      </dd>
+      } @if (hit.obsolete) {
+      <dt>Deprecated</dt>
+      <dd>
+        @if (hit.replacedBy) { replaced by {{ hit.replacedBy.termLabel ?? hit.replacedBy.termIri }} } @else { the source
+        names no replacement }
+      </dd>
       }
-      </div>
-      @if (selectionMode() === 'constraints') {
-        <button type="button" class="use" [disabled]="!!selectionBlocked()" (click)="choose(picked() || hit)">Select</button>
-      }
-    </dd>
-    } @if (hit.matchedLabels?.length) {
-    <dt>Matched</dt>
-    <dd>
-      @for (name of hit.matchedLabels; track name.label) {
-      <span class="chip">{{ name.label }}@if (name.language) { · {{ name.language }}}</span>
-      }
-    </dd>
-    } @if (namesOf(hit); as names) {
-    <dt>Also called</dt>
-    <dd>
-      @for (name of names; track name.label) {
-      <span class="alias">{{ elide(name.label, 44, 12) }}@if (name.language) { · {{ name.language }}}</span>
-      } @if (moreNames(hit); as more) {
-      <span class="meta inline">and {{ more }} more</span>
-      }
-    </dd>
-    } @if (hit.obsolete) {
-    <dt>Deprecated</dt>
-    <dd>
-      @if (hit.replacedBy) { replaced by {{ hit.replacedBy.termLabel ?? hit.replacedBy.termIri }} } @else { the source
-      names no replacement }
-    </dd>
+    </dl>
+    @if (selectionMode() !== 'constraints' || (hit.type !== 'class' && hit.type !== 'branch')) {
+    <button type="button" class="use" [disabled]="!!selectionBlocked()" (click)="choose(picked() || hit)">
+      {{ selectionMode() === 'constraints' ? 'Select' : 'Use this term' }}
+    </button>
     }
-  </dl>
-  @if (selectionMode() !== 'constraints' || (hit.type !== 'class' && hit.type !== 'branch')) {
-  <button type="button" class="use" [disabled]="!!selectionBlocked()" (click)="choose(picked() || hit)">
-    {{ selectionMode() === 'constraints' ? 'Select' : 'Use this term' }}
-  </button>
-  }
   </div>
   }
 </ng-template>
@@ -353,13 +363,9 @@
         -->
       <div class="selection-heading">
         <span class="label">Selected {{ chosen.noun }}</span>
-        @if (selectionMode() === 'constraints') {
-          @if (picked(); as hit) {
-            <button type="button" [disabled]="!!selectionBlocked()" (click)="choose(hit)">
-              Select
-            </button>
-          }
-        }
+        @if (selectionMode() === 'constraints') { @if (picked(); as hit) {
+        <button type="button" [disabled]="!!selectionBlocked()" (click)="choose(hit)">Select</button>
+        } }
       </div>
       <p class="phrase">
         <strong [title]="chosen.what">{{ elide(chosen.what, 72, 20) }}</strong>
@@ -403,9 +409,8 @@
           <span class="stale" title="A later reading of these same source bytes exists. This pin still resolves."
             >superseded</span
           >
-          } } @else { · <em>latest</em>
-            @if (sourceOf(chosen.acronym)?.version?.id; as hash) { · <code class="hash" [title]="hash">{{ shortHash(hash) }}</code> }
-          }
+          } } @else { · <em>latest</em> @if (sourceOf(chosen.acronym)?.version?.id; as hash) { ·
+          <code class="hash" [title]="hash">{{ shortHash(hash) }}</code> } }
           <!--
               How much a branch or a value set brings with it — the size of the constraint, which a
               term and a whole ontology have no need of. On this line rather than beside the name,
