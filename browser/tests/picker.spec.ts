@@ -960,7 +960,7 @@ test('a term outside the pinned release says which release, not that the store i
   await stubSearch(page, () => MELANOMA);
   await stubHierarchy(page, () => ({
     status: 404,
-    errorMessage: 'Release 4d5f70524a48 of ICO does not contain http://purl.obolibrary.org/obo/MONDO_0000001. '
+    message: 'Release 4d5f70524a48 of ICO does not contain http://purl.obolibrary.org/obo/MONDO_0000001. '
       + 'Another release of the same source may contain it.',
   }));
   await openPicker(page);
@@ -978,7 +978,7 @@ test('a term outside the pinned release says which release, not that the store i
 
 test('a hierarchy that could not be read is reported as a failure, not as an answer', async ({ page }) => {
   await stubSearch(page, () => MELANOMA);
-  await stubHierarchy(page, () => ({ status: 500, errorMessage: 'the index is being rebuilt' }));
+  await stubHierarchy(page, () => ({ status: 500, message: 'the index is being rebuilt' }));
   await openPicker(page);
   await search(page, 'melanoma');
 
@@ -1040,7 +1040,7 @@ test('a term the pinned release does not hold cannot be recorded', async ({ page
   );
   await stubHierarchy(page, (query) =>
     query.get('versionId') === 'hash-old'
-      ? { status: 404, errorMessage: 'Release hash-old of NCIT does not contain ' + query.get('termIri') + '.' }
+      ? { status: 404, message: 'Release hash-old of NCIT does not contain ' + query.get('termIri') + '.' }
       : {
           sourceAcronym: 'NCIT',
           termIri: query.get('termIri'),

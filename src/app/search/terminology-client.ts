@@ -108,6 +108,6 @@ function refusalMessage(body: unknown): string | null {
   if (body === null || typeof body !== 'object') {
     return null;
   }
-  const message = (body as { errorMessage?: unknown }).errorMessage;
+  const message = (body as { message?: unknown }).message;
   return typeof message === 'string' && message.length > 0 ? message : null;
 }
